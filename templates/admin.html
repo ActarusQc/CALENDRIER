@@ -1,12 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12 mb-4">
+<div class="row mb-4">
+    <div class="col-md-8">
         <h2>Activity Management</h2>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
             Add New Activity
         </button>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Share Calendar</h5>
+                <p class="card-text">Share your calendar with others using this public link:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="shareLink" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">Copy</button>
+                </div>
+                <button class="btn btn-sm btn-outline-primary" onclick="generateNewShareLink()">Generate New Link</button>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -65,6 +65,29 @@ def admin():
         return redirect(url_for('index'))
     return render_template('admin.html')
 
+@app.route('/calendar/<token>')
+def public_calendar(token):
+    user = User.query.filter_by(share_token=token).first()
+    if not user:
+        flash('Invalid share link')
+        return redirect(url_for('index'))
+    return render_template('public_calendar.html')
+
+@app.route('/api/share-link')
+@login_required
+def get_share_link():
+    if not current_user.share_token:
+        current_user.generate_share_token()
+        db.session.commit()
+    return jsonify({'share_link': current_user.share_token})
+
+@app.route('/api/share-link/generate', methods=['POST'])
+@login_required
+def generate_share_link():
+    current_user.generate_share_token()
+    db.session.commit()
+    return jsonify({'share_link': current_user.share_token})
+
 def generate_recurring_activities(base_activity, end_date):
     activities = []
     current_date = base_activity.date

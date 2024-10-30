@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
+    loadShareLink();
     
     // Setup recurring activity checkbox handler
     document.getElementById('is_recurring').addEventListener('change', function(e) {
@@ -7,6 +8,39 @@ document.addEventListener('DOMContentLoaded', function() {
         recurrenceOptions.style.display = e.target.checked ? 'block' : 'none';
     });
 });
+
+async function loadShareLink() {
+    try {
+        const response = await fetch('/api/share-link');
+        const data = await response.json();
+        if (data.share_link) {
+            document.getElementById('shareLink').value = window.location.origin + '/calendar/' + data.share_link;
+        }
+    } catch (error) {
+        console.error('Error loading share link:', error);
+    }
+}
+
+async function generateNewShareLink() {
+    try {
+        const response = await fetch('/api/share-link/generate', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        if (data.share_link) {
+            document.getElementById('shareLink').value = window.location.origin + '/calendar/' + data.share_link;
+        }
+    } catch (error) {
+        console.error('Error generating share link:', error);
+    }
+}
+
+function copyShareLink() {
+    const shareLink = document.getElementById('shareLink');
+    shareLink.select();
+    document.execCommand('copy');
+    alert('Share link copied to clipboard!');
+}
 
 async function loadActivities() {
     try {

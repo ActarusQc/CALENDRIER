@@ -1,6 +1,7 @@
 from app import db
 from flask_login import UserMixin
 from datetime import datetime
+import secrets
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -8,6 +9,11 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
     is_admin = db.Column(db.Boolean, default=False)
+    share_token = db.Column(db.String(32), unique=True, index=True)
+
+    def generate_share_token(self):
+        self.share_token = secrets.token_hex(16)
+        return self.share_token
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="calendar-header">
+    <h1>
+        <button class="btn btn-link text-purple" id="prevMonth">&lt;</button>
+        <span id="currentMonth"></span>
+        <button class="btn btn-link text-purple" id="nextMonth">&gt;</button>
+    </h1>
+    <div class="text-center mb-4">
+        <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="Hawthorn Park Logo" style="height: 60px;">
+        <h2 class="mt-2">Hawthorn Park</h2>
+        <p class="text-muted">Public Calendar View</p>
+    </div>
+</div>
+
+<div class="calendar-container">
+    <div class="calendar-grid">
+        <div class="calendar-days">
+            <div>Sunday</div>
+            <div>Monday</div>
+            <div>Tuesday</div>
+            <div>Wednesday</div>
+            <div>Thursday</div>
+            <div>Friday</div>
+            <div>Saturday</div>
+        </div>
+        <div id="calendarDates" class="calendar-dates"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}
