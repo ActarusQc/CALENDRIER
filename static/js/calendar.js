@@ -44,6 +44,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return cell;
     }
     
+    function getActivityClass(category) {
+        const categoryMap = {
+            'Walking Club': 'walking-club',
+            'Bingo': 'bingo',
+            'Social': 'social',
+            'Coffee Time': 'coffee-time'
+        };
+        return categoryMap[category] || 'default';
+    }
+    
     async function fetchActivities(year, month) {
         try {
             const response = await fetch('/api/activities');
@@ -55,12 +65,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     const dateCell = document.querySelector(`[data-date="${activity.date}"]`);
                     if (dateCell) {
                         const activityDiv = document.createElement('div');
-                        activityDiv.className = `activity ${activity.category.toLowerCase()}`;
-                        activityDiv.textContent = `${activity.time} - ${activity.title}`;
+                        activityDiv.className = `activity ${getActivityClass(activity.category)}`;
+                        
+                        const timeSpan = document.createElement('div');
+                        timeSpan.className = 'time';
+                        timeSpan.textContent = activity.time;
+                        
+                        const titleSpan = document.createElement('div');
+                        titleSpan.textContent = activity.title;
+                        
                         if (activity.location) {
-                            activityDiv.title = `Location: ${activity.location}`;
+                            const locationSpan = document.createElement('div');
+                            locationSpan.className = 'location';
+                            locationSpan.textContent = activity.location;
+                            activityDiv.appendChild(locationSpan);
                         }
-                        dateCell.appendChild(activityDiv);
+                        
+                        activityDiv.appendChild(timeSpan);
+                        activityDiv.appendChild(titleSpan);
+                        dateCell.querySelector('.activities').appendChild(activityDiv);
                     }
                 }
             });

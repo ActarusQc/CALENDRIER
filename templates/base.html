@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +7,13 @@
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<body class="bg-white text-dark">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Hawthorn Park</a>
+            <div class="d-flex align-items-center">
+                <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="Verve Logo" class="navbar-logo me-2">
+                <span class="navbar-brand">INSPIRED SENIOR LIVING</span>
+            </div>
             <div class="navbar-nav ms-auto">
                 {% if current_user.is_authenticated %}
                     {% if current_user.is_admin %}
