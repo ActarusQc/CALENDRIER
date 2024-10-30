@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="calendar-header">
+    <h1 class="text-center mb-4">
+        <button class="btn btn-link" id="prevMonth">&lt;</button>
+        <span id="currentMonth"></span>
+        <button class="btn btn-link" id="nextMonth">&gt;</button>
+    </h1>
+</div>
+
+<div class="calendar-container">
+    <div class="calendar-grid">
+        <div class="calendar-days">
+            <div>Sunday</div>
+            <div>Monday</div>
+            <div>Tuesday</div>
+            <div>Wednesday</div>
+            <div>Thursday</div>
+            <div>Friday</div>
+            <div>Saturday</div>
+        </div>
+        <div id="calendarDates" class="calendar-dates"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}
