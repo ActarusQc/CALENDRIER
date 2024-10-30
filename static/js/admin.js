@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
     loadShareLink();
+    setupShareCardVisibility();
     
     // Setup recurring activity checkbox handler
     document.getElementById('is_recurring').addEventListener('change', function(e) {
@@ -8,6 +9,36 @@ document.addEventListener('DOMContentLoaded', function() {
         recurrenceOptions.style.display = e.target.checked ? 'block' : 'none';
     });
 });
+
+function setupShareCardVisibility() {
+    const shareCardContainer = document.getElementById('shareCardContainer');
+    const toggleShareCard = document.getElementById('toggleShareCard');
+    const closeShareCard = document.getElementById('closeShareCard');
+    
+    // Load initial state from localStorage
+    const isVisible = localStorage.getItem('shareCardVisible') === 'true';
+    if (isVisible) {
+        shareCardContainer.classList.add('show');
+    }
+    
+    // Toggle button click handler
+    toggleShareCard.addEventListener('click', function() {
+        const isCurrentlyVisible = shareCardContainer.classList.contains('show');
+        if (isCurrentlyVisible) {
+            shareCardContainer.classList.remove('show');
+            localStorage.setItem('shareCardVisible', 'false');
+        } else {
+            shareCardContainer.classList.add('show');
+            localStorage.setItem('shareCardVisible', 'true');
+        }
+    });
+    
+    // Close button click handler
+    closeShareCard.addEventListener('click', function() {
+        shareCardContainer.classList.remove('show');
+        localStorage.setItem('shareCardVisible', 'false');
+    });
+}
 
 async function loadShareLink() {
     try {

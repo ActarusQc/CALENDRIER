@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime, timedelta
 from email_notifier import mail, EmailNotifier
 from translations import translations, form_helpers
+from functools import wraps
 
 class Base(DeclarativeBase):
     pass
@@ -34,6 +35,24 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 from models import User, Category, Activity
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.can_manage_users():
+            flash('Access denied. Admin privileges required.')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def activity_manager_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.can_manage_activities():
+            flash('Access denied. Creator or admin privileges required.')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -73,11 +92,42 @@ def logout():
 
 @app.route('/admin')
 @login_required
+@activity_manager_required
 def admin():
-    if not current_user.is_admin:
-        return redirect(url_for('index'))
     trans, helpers = get_translations()
-    return render_template('admin.html', trans=trans, helpers=helpers)
+    return render_template('admin.html', trans=trans, helpers=helpers, user=current_user)
+
+@app.route('/users')
+@login_required
+@admin_required
+def manage_users():
+    trans, helpers = get_translations()
+    users = User.query.all()
+    return render_template('users.html', trans=trans, helpers=helpers, users=users)
+
+@app.route('/users', methods=['POST'])
+@login_required
+@admin_required
+def create_user():
+    username = request.form['username']
+    email = request.form['email']
+    password = request.form['password']
+    role = request.form['role']
+    
+    if User.query.filter_by(username=username).first():
+        flash('Username already exists')
+        return redirect(url_for('manage_users'))
+        
+    user = User(
+        username=username,
+        email=email,
+        password_hash=generate_password_hash(password),
+        role=role
+    )
+    db.session.add(user)
+    db.session.commit()
+    flash('User created successfully')
+    return redirect(url_for('manage_users'))
 
 @app.route('/calendar/<token>')
 def public_calendar(token):
@@ -88,6 +138,7 @@ def public_calendar(token):
     trans, helpers = get_translations()
     return render_template('public_calendar.html', trans=trans, helpers=helpers)
 
+# API routes with role-based access control
 @app.route('/api/share-link')
 @login_required
 def get_share_link():
@@ -102,43 +153,6 @@ def generate_share_link():
     current_user.generate_share_token()
     db.session.commit()
     return jsonify({'share_link': current_user.share_token})
-
-def generate_recurring_activities(base_activity, end_date):
-    activities = []
-    current_date = base_activity.date
-    
-    while current_date <= end_date:
-        if base_activity.recurrence_type == 'daily':
-            next_date = current_date + timedelta(days=1)
-        elif base_activity.recurrence_type == 'weekly':
-            next_date = current_date + timedelta(weeks=1)
-        elif base_activity.recurrence_type == 'monthly':
-            next_month = current_date.month + 1
-            next_year = current_date.year + (next_month - 1) // 12
-            next_month = ((next_month - 1) % 12) + 1
-            next_date = current_date.replace(year=next_year, month=next_month)
-        else:
-            break
-            
-        if next_date > end_date:
-            break
-            
-        activity = Activity(
-            title=base_activity.title,
-            date=next_date,
-            time=base_activity.time,
-            location=base_activity.location,
-            notes=base_activity.notes,
-            category_id=base_activity.category_id,
-            category=base_activity.category,
-            is_recurring=True,
-            recurrence_type=base_activity.recurrence_type,
-            recurrence_end_date=base_activity.recurrence_end_date
-        )
-        activities.append(activity)
-        current_date = next_date
-        
-    return activities
 
 @app.route('/api/activities')
 def get_activities():
@@ -158,10 +172,8 @@ def get_activities():
 
 @app.route('/api/activities', methods=['POST'])
 @login_required
+@activity_manager_required
 def create_activity():
-    if not current_user.is_admin:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
     data = request.json
     category = Category.query.filter_by(name=data['category']).first()
     if not category:
@@ -199,10 +211,8 @@ def create_activity():
 
 @app.route('/api/activities/<int:activity_id>', methods=['PUT'])
 @login_required
+@activity_manager_required
 def update_activity(activity_id):
-    if not current_user.is_admin:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
     activity = Activity.query.get_or_404(activity_id)
     data = request.json
     
@@ -231,10 +241,8 @@ def update_activity(activity_id):
 
 @app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
 @login_required
+@activity_manager_required
 def delete_activity(activity_id):
-    if not current_user.is_admin:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
     activity = Activity.query.get_or_404(activity_id)
     activity_title = activity.title
     activity_date = activity.date.strftime('%Y-%m-%d')
@@ -251,14 +259,13 @@ def delete_activity(activity_id):
     return jsonify({'success': True})
 
 with app.app_context():
-    db.drop_all()
     db.create_all()
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
             email='admin@example.com',
             password_hash=generate_password_hash('admin'),
-            is_admin=True
+            role='admin'
         )
         db.session.add(admin)
         db.session.commit()

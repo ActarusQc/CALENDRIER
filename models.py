@@ -8,12 +8,18 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
-    is_admin = db.Column(db.Boolean, default=False)
+    role = db.Column(db.String(20), nullable=False, default='reader')  # 'admin', 'creator', 'reader'
     share_token = db.Column(db.String(32), unique=True, index=True)
 
     def generate_share_token(self):
         self.share_token = secrets.token_hex(16)
         return self.share_token
+
+    def can_manage_activities(self):
+        return self.role in ['admin', 'creator']
+
+    def can_manage_users(self):
+        return self.role == 'admin'
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)

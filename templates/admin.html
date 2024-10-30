@@ -4,20 +4,33 @@
 <div class="row mb-4">
     <div class="col-md-8">
         <h2>{{ trans.activity_management }}</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
-            {{ trans.add_new_activity }}
-        </button>
+        <div class="btn-group">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
+                {{ trans.add_new_activity }}
+            </button>
+            {% if current_user.can_manage_users() %}
+            <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">{{ trans.manage_users }}</a>
+            {% endif %}
+            <button class="btn btn-outline-primary" id="toggleShareCard">
+                <i class="bi bi-share"></i> {{ trans.toggle_share_link }}
+            </button>
+        </div>
     </div>
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ trans.share_calendar }}</h5>
-                <p class="card-text">{{ trans.share_link }}</p>
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="shareLink" readonly>
-                    <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">{{ trans.copy }}</button>
+        <div id="shareCardContainer" class="collapse">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ trans.share_calendar }}</h5>
+                        <button type="button" class="btn-close" id="closeShareCard"></button>
+                    </div>
+                    <p class="card-text">{{ trans.share_link }}</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="shareLink" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">{{ trans.copy }}</button>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="generateNewShareLink()">{{ trans.generate_new_link }}</button>
                 </div>
-                <button class="btn btn-sm btn-outline-primary" onclick="generateNewShareLink()">{{ trans.generate_new_link }}</button>
             </div>
         </div>
     </div>
