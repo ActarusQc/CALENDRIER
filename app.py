@@ -143,7 +143,11 @@ def create_activity():
     return jsonify({'success': True})
 
 with app.app_context():
+    # Drop all existing tables
+    db.drop_all()
+    # Create all tables with the updated schema
     db.create_all()
+    # Create admin user
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
