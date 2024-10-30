@@ -57,54 +57,46 @@
                     <input type="hidden" id="activityId">
                     <div class="mb-3">
                         <label class="form-label">{{ trans.title }}</label>
-                        <input type="text" class="form-control" id="title" required
-                               data-bs-toggle="tooltip" data-bs-placement="right" 
-                               title="{{ helpers.title }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.title }}</small>
+                        <input type="text" class="form-control" id="title" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ trans.date }}</label>
-                        <input type="date" class="form-control" id="date" required
-                               data-bs-toggle="tooltip" data-bs-placement="right"
-                               title="{{ helpers.date }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.date }}</small>
+                        <input type="date" class="form-control" id="date" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ trans.time }}</label>
-                        <input type="time" class="form-control" id="time"
-                               data-bs-toggle="tooltip" data-bs-placement="right"
-                               title="{{ helpers.time }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
+                        <input type="time" class="form-control" id="time">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ trans.location }}</label>
-                        <input type="text" class="form-control" id="location"
-                               data-bs-toggle="tooltip" data-bs-placement="right"
-                               title="{{ helpers.location }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.location }}</small>
+                        <input type="text" class="form-control" id="location">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ trans.category }}</label>
-                        <input type="text" class="form-control" id="category" required
-                               data-bs-toggle="tooltip" data-bs-placement="right"
-                               title="{{ helpers.category }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.category }}</small>
+                        <input type="text" class="form-control" id="category" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ trans.notes }}</label>
-                        <textarea class="form-control" id="notes"
-                                 data-bs-toggle="tooltip" data-bs-placement="right"
-                                 title="{{ helpers.notes }}"></textarea>
+                        <small class="text-muted d-block mb-2">{{ helpers.notes }}</small>
+                        <textarea class="form-control" id="notes"></textarea>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="is_recurring"
-                                   data-bs-toggle="tooltip" data-bs-placement="right"
-                                   title="{{ helpers.recurring_activity }}">
+                            <input type="checkbox" class="form-check-input" id="is_recurring">
                             <label class="form-check-label" for="is_recurring">{{ trans.recurring_activity }}</label>
+                            <small class="text-muted d-block mt-1">{{ helpers.recurring_activity }}</small>
                         </div>
                     </div>
                     <div id="recurrenceOptions" style="display: none;">
                         <div class="mb-3">
                             <label class="form-label">{{ trans.recurrence_type }}</label>
-                            <select class="form-control" id="recurrence_type"
-                                    data-bs-toggle="tooltip" data-bs-placement="right"
-                                    title="{{ helpers.recurrence_type }}">
+                            <small class="text-muted d-block mb-2">{{ helpers.recurrence_type }}</small>
+                            <select class="form-control" id="recurrence_type">
                                 <option value="daily">{{ trans.daily }}</option>
                                 <option value="weekly">{{ trans.weekly }}</option>
                                 <option value="monthly">{{ trans.monthly }}</option>
@@ -112,9 +104,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">{{ trans.end_date }}</label>
-                            <input type="date" class="form-control" id="recurrence_end_date"
-                                   data-bs-toggle="tooltip" data-bs-placement="right"
-                                   title="{{ helpers.end_date }}">
+                            <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
+                            <input type="date" class="form-control" id="recurrence_end_date">
                         </div>
                     </div>
                 </form>
@@ -130,12 +121,4 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
 {% endblock %}

@@ -11,15 +11,13 @@
                 <form method="POST">
                     <div class="mb-3">
                         <label for="username" class="form-label">{{ trans.username }}</label>
-                        <input type="text" class="form-control" id="username" name="username" required
-                               data-bs-toggle="tooltip" data-bs-placement="right" 
-                               title="{{ helpers.username }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.username }}</small>
+                        <input type="text" class="form-control" id="username" name="username" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">{{ trans.password }}</label>
-                        <input type="password" class="form-control" id="password" name="password" required
-                               data-bs-toggle="tooltip" data-bs-placement="right"
-                               title="{{ helpers.password }}">
+                        <small class="text-muted d-block mb-2">{{ helpers.password }}</small>
+                        <input type="password" class="form-control" id="password" name="password" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">{{ trans.submit }}</button>
                 </form>
@@ -27,15 +25,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
 {% endblock %}
