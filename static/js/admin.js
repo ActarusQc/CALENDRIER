@@ -1,5 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
+    
+    // Setup recurring activity checkbox handler
+    document.getElementById('is_recurring').addEventListener('change', function(e) {
+        const recurrenceOptions = document.getElementById('recurrenceOptions');
+        recurrenceOptions.style.display = e.target.checked ? 'block' : 'none';
+    });
 });
 
 async function loadActivities() {
@@ -19,6 +25,7 @@ async function loadActivities() {
                     <td>${activity.title}</td>
                     <td>${activity.location || ''}</td>
                     <td>${activity.category}</td>
+                    <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">Delete</button>
@@ -38,7 +45,10 @@ async function saveActivity() {
         time: document.getElementById('time').value,
         location: document.getElementById('location').value,
         category: document.getElementById('category').value,
-        notes: document.getElementById('notes').value
+        notes: document.getElementById('notes').value,
+        is_recurring: document.getElementById('is_recurring').checked,
+        recurrence_type: document.getElementById('recurrence_type').value,
+        recurrence_end_date: document.getElementById('recurrence_end_date').value
     };
     
     try {

@@ -24,3 +24,8 @@ class Activity(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Recurrence fields
+    is_recurring = db.Column(db.Boolean, default=False)
+    recurrence_type = db.Column(db.String(20))  # 'daily', 'weekly', 'monthly'
+    recurrence_end_date = db.Column(db.DateTime)

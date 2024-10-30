@@ -21,6 +21,7 @@
                         <th>Title</th>
                         <th>Location</th>
                         <th>Category</th>
+                        <th>Recurrence</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -64,6 +65,26 @@
                     <div class="mb-3">
                         <label class="form-label">Notes</label>
                         <textarea class="form-control" id="notes"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="is_recurring">
+                            <label class="form-check-label" for="is_recurring">Recurring Activity</label>
+                        </div>
+                    </div>
+                    <div id="recurrenceOptions" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Recurrence Type</label>
+                            <select class="form-control" id="recurrence_type">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="recurrence_end_date">
+                        </div>
                     </div>
                 </form>
             </div>

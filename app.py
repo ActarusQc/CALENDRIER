@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import DeclarativeBase
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Base(DeclarativeBase):
     pass
@@ -56,6 +56,43 @@ def admin():
         return redirect(url_for('index'))
     return render_template('admin.html')
 
+def generate_recurring_activities(base_activity, end_date):
+    activities = []
+    current_date = base_activity.date
+    
+    while current_date <= end_date:
+        if base_activity.recurrence_type == 'daily':
+            next_date = current_date + timedelta(days=1)
+        elif base_activity.recurrence_type == 'weekly':
+            next_date = current_date + timedelta(weeks=1)
+        elif base_activity.recurrence_type == 'monthly':
+            # Add one month
+            next_month = current_date.month + 1
+            next_year = current_date.year + (next_month - 1) // 12
+            next_month = ((next_month - 1) % 12) + 1
+            next_date = current_date.replace(year=next_year, month=next_month)
+        else:
+            break
+            
+        if next_date > end_date:
+            break
+            
+        activity = Activity(
+            title=base_activity.title,
+            date=next_date,
+            time=base_activity.time,
+            location=base_activity.location,
+            notes=base_activity.notes,
+            category_id=base_activity.category_id,
+            is_recurring=True,
+            recurrence_type=base_activity.recurrence_type,
+            recurrence_end_date=base_activity.recurrence_end_date
+        )
+        activities.append(activity)
+        current_date = next_date
+        
+    return activities
+
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()
@@ -66,7 +103,10 @@ def get_activities():
         'time': a.time,
         'location': a.location,
         'category': a.category.name,
-        'notes': a.notes
+        'notes': a.notes,
+        'is_recurring': a.is_recurring,
+        'recurrence_type': a.recurrence_type,
+        'recurrence_end_date': a.recurrence_end_date.strftime('%Y-%m-%d') if a.recurrence_end_date else None
     } for a in activities])
 
 @app.route('/api/activities', methods=['POST'])
@@ -87,9 +127,18 @@ def create_activity():
         time=data['time'],
         location=data.get('location'),
         notes=data.get('notes'),
-        category=category
+        category=category,
+        is_recurring=data.get('is_recurring', False),
+        recurrence_type=data.get('recurrence_type'),
+        recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
     )
     db.session.add(activity)
+    
+    if activity.is_recurring and activity.recurrence_end_date:
+        recurring_activities = generate_recurring_activities(activity, activity.recurrence_end_date)
+        for recurring_activity in recurring_activities:
+            db.session.add(recurring_activity)
+    
     db.session.commit()
     return jsonify({'success': True})
 
