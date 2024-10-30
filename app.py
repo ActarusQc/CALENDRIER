@@ -5,6 +5,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime, timedelta
+from email_notifier import mail, EmailNotifier
 
 class Base(DeclarativeBase):
     pass
@@ -18,7 +19,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 
+# Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+
 db.init_app(app)
+mail.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -66,7 +75,6 @@ def generate_recurring_activities(base_activity, end_date):
         elif base_activity.recurrence_type == 'weekly':
             next_date = current_date + timedelta(weeks=1)
         elif base_activity.recurrence_type == 'monthly':
-            # Add one month
             next_month = current_date.month + 1
             next_year = current_date.year + (next_month - 1) // 12
             next_month = ((next_month - 1) % 12) + 1
@@ -83,8 +91,8 @@ def generate_recurring_activities(base_activity, end_date):
             time=base_activity.time,
             location=base_activity.location,
             notes=base_activity.notes,
-            category_id=base_activity.category_id,  # Make sure this is set
-            category=base_activity.category,  # Add this line
+            category_id=base_activity.category_id,
+            category=base_activity.category,
             is_recurring=True,
             recurrence_type=base_activity.recurrence_type,
             recurrence_end_date=base_activity.recurrence_end_date
@@ -121,7 +129,7 @@ def create_activity():
     if not category:
         category = Category(name=data['category'])
         db.session.add(category)
-        db.session.flush()  # Add this line to get category_id
+        db.session.flush()
     
     activity = Activity(
         title=data['title'],
@@ -136,20 +144,82 @@ def create_activity():
     )
     db.session.add(activity)
     
+    # Generate recurring activities if needed
     if activity.is_recurring and activity.recurrence_end_date:
         recurring_activities = generate_recurring_activities(activity, activity.recurrence_end_date)
         for recurring_activity in recurring_activities:
             db.session.add(recurring_activity)
     
     db.session.commit()
+
+    # Send email notification to all users about the new activity
+    try:
+        recipients = [user.email for user in User.query.all()]
+        EmailNotifier.notify_activity_created(activity, recipients)
+    except Exception as e:
+        print(f"Error sending email notification: {e}")
+        # Don't raise the error, just log it
+
+    return jsonify({'success': True})
+
+@app.route('/api/activities/<int:activity_id>', methods=['PUT'])
+@login_required
+def update_activity(activity_id):
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(activity_id)
+    data = request.json
+    
+    category = Category.query.filter_by(name=data['category']).first()
+    if not category:
+        category = Category(name=data['category'])
+        db.session.add(category)
+        db.session.flush()
+    
+    activity.title = data['title']
+    activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
+    activity.time = data['time']
+    activity.location = data.get('location')
+    activity.notes = data.get('notes')
+    activity.category = category
+    
+    db.session.commit()
+
+    # Send email notification about the updated activity
+    try:
+        recipients = [user.email for user in User.query.all()]
+        EmailNotifier.notify_activity_updated(activity, recipients)
+    except Exception as e:
+        print(f"Error sending email notification: {e}")
+
+    return jsonify({'success': True})
+
+@app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
+@login_required
+def delete_activity(activity_id):
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(activity_id)
+    activity_title = activity.title
+    activity_date = activity.date.strftime('%Y-%m-%d')
+    
+    db.session.delete(activity)
+    db.session.commit()
+
+    # Send email notification about the deleted activity
+    try:
+        recipients = [user.email for user in User.query.all()]
+        EmailNotifier.notify_activity_deleted(activity_title, activity_date, recipients)
+    except Exception as e:
+        print(f"Error sending email notification: {e}")
+
     return jsonify({'success': True})
 
 with app.app_context():
-    # Drop all existing tables
     db.drop_all()
-    # Create all tables with the updated schema
     db.create_all()
-    # Create admin user
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',

@@ -39,6 +39,7 @@ async function loadActivities() {
 }
 
 async function saveActivity() {
+    const activityId = document.getElementById('activityId').value;
     const activity = {
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
@@ -52,8 +53,11 @@ async function saveActivity() {
     };
     
     try {
-        const response = await fetch('/api/activities', {
-            method: 'POST',
+        const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
+        const method = activityId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -73,12 +77,42 @@ async function saveActivity() {
     }
 }
 
-function editActivity(id) {
-    // Implementation would go here
-    alert('Edit functionality to be implemented');
+async function editActivity(id) {
+    try {
+        const response = await fetch(`/api/activities/${id}`);
+        const activity = await response.json();
+        
+        document.getElementById('activityId').value = id;
+        document.getElementById('title').value = activity.title;
+        document.getElementById('date').value = activity.date;
+        document.getElementById('time').value = activity.time || '';
+        document.getElementById('location').value = activity.location || '';
+        document.getElementById('category').value = activity.category;
+        document.getElementById('notes').value = activity.notes || '';
+        
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading activity:', error);
+        alert('Error loading activity');
+    }
 }
 
-function deleteActivity(id) {
-    // Implementation would go here
-    alert('Delete functionality to be implemented');
+async function deleteActivity(id) {
+    if (confirm('Are you sure you want to delete this activity?')) {
+        try {
+            const response = await fetch(`/api/activities/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                loadActivities();
+            } else {
+                alert('Error deleting activity');
+            }
+        } catch (error) {
+            console.error('Error deleting activity:', error);
+            alert('Error deleting activity');
+        }
+    }
 }
