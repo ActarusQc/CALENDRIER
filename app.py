@@ -83,7 +83,8 @@ def generate_recurring_activities(base_activity, end_date):
             time=base_activity.time,
             location=base_activity.location,
             notes=base_activity.notes,
-            category_id=base_activity.category_id,
+            category_id=base_activity.category_id,  # Make sure this is set
+            category=base_activity.category,  # Add this line
             is_recurring=True,
             recurrence_type=base_activity.recurrence_type,
             recurrence_end_date=base_activity.recurrence_end_date
@@ -120,6 +121,7 @@ def create_activity():
     if not category:
         category = Category(name=data['category'])
         db.session.add(category)
+        db.session.flush()  # Add this line to get category_id
     
     activity = Activity(
         title=data['title'],
