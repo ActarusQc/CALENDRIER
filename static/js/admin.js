@@ -15,28 +15,42 @@ function setupShareCardVisibility() {
     const toggleShareCard = document.getElementById('toggleShareCard');
     const closeShareCard = document.getElementById('closeShareCard');
     
+    // Initialize Bootstrap collapse
+    const bsCollapse = new bootstrap.Collapse(shareCardContainer, {
+        toggle: false
+    });
+    
     // Load initial state from localStorage
     const isVisible = localStorage.getItem('shareCardVisible') === 'true';
     if (isVisible) {
-        shareCardContainer.classList.add('show');
+        bsCollapse.show();
     }
     
     // Toggle button click handler
     toggleShareCard.addEventListener('click', function() {
         const isCurrentlyVisible = shareCardContainer.classList.contains('show');
         if (isCurrentlyVisible) {
-            shareCardContainer.classList.remove('show');
+            bsCollapse.hide();
             localStorage.setItem('shareCardVisible', 'false');
         } else {
-            shareCardContainer.classList.add('show');
+            bsCollapse.show();
             localStorage.setItem('shareCardVisible', 'true');
         }
     });
     
     // Close button click handler
     closeShareCard.addEventListener('click', function() {
-        shareCardContainer.classList.remove('show');
+        bsCollapse.hide();
         localStorage.setItem('shareCardVisible', 'false');
+    });
+    
+    // Add transition event listeners
+    shareCardContainer.addEventListener('show.bs.collapse', function () {
+        toggleShareCard.classList.add('active');
+    });
+    
+    shareCardContainer.addEventListener('hide.bs.collapse', function () {
+        toggleShareCard.classList.remove('active');
     });
 }
 

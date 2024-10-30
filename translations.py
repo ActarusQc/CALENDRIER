@@ -1,6 +1,7 @@
 translations = {
     'en': {
         'login': 'Login',
+        'logout': 'Logout',  # Added logout translation
         'username': 'Username',
         'password': 'Password',
         'submit': 'Submit',
@@ -29,6 +30,7 @@ translations = {
         'daily': 'Daily',
         'weekly': 'Weekly',
         'monthly': 'Monthly',
+        'toggle_share_link': 'Toggle Share Link',  # Added toggle share link translation
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -41,6 +43,7 @@ translations = {
     },
     'fr': {
         'login': 'Connexion',
+        'logout': 'Déconnexion',  # Added logout translation
         'username': "Nom d'utilisateur",
         'password': 'Mot de passe',
         'submit': 'Soumettre',
@@ -69,6 +72,7 @@ translations = {
         'daily': 'Quotidien',
         'weekly': 'Hebdomadaire',
         'monthly': 'Mensuel',
+        'toggle_share_link': 'Basculer le lien de partage',  # Added toggle share link translation
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',

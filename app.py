@@ -36,24 +36,6 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.can_manage_users():
-            flash('Access denied. Admin privileges required.')
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def activity_manager_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.can_manage_activities():
-            flash('Access denied. Creator or admin privileges required.')
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -92,42 +74,11 @@ def logout():
 
 @app.route('/admin')
 @login_required
-@activity_manager_required
 def admin():
+    if not current_user.can_manage_activities():
+        return redirect(url_for('index'))
     trans, helpers = get_translations()
     return render_template('admin.html', trans=trans, helpers=helpers, user=current_user)
-
-@app.route('/users')
-@login_required
-@admin_required
-def manage_users():
-    trans, helpers = get_translations()
-    users = User.query.all()
-    return render_template('users.html', trans=trans, helpers=helpers, users=users)
-
-@app.route('/users', methods=['POST'])
-@login_required
-@admin_required
-def create_user():
-    username = request.form['username']
-    email = request.form['email']
-    password = request.form['password']
-    role = request.form['role']
-    
-    if User.query.filter_by(username=username).first():
-        flash('Username already exists')
-        return redirect(url_for('manage_users'))
-        
-    user = User(
-        username=username,
-        email=email,
-        password_hash=generate_password_hash(password),
-        role=role
-    )
-    db.session.add(user)
-    db.session.commit()
-    flash('User created successfully')
-    return redirect(url_for('manage_users'))
 
 @app.route('/calendar/<token>')
 def public_calendar(token):
@@ -137,22 +88,6 @@ def public_calendar(token):
         return redirect(url_for('index'))
     trans, helpers = get_translations()
     return render_template('public_calendar.html', trans=trans, helpers=helpers)
-
-# API routes with role-based access control
-@app.route('/api/share-link')
-@login_required
-def get_share_link():
-    if not current_user.share_token:
-        current_user.generate_share_token()
-        db.session.commit()
-    return jsonify({'share_link': current_user.share_token})
-
-@app.route('/api/share-link/generate', methods=['POST'])
-@login_required
-def generate_share_link():
-    current_user.generate_share_token()
-    db.session.commit()
-    return jsonify({'share_link': current_user.share_token})
 
 @app.route('/api/activities')
 def get_activities():
@@ -172,8 +107,10 @@ def get_activities():
 
 @app.route('/api/activities', methods=['POST'])
 @login_required
-@activity_manager_required
 def create_activity():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
     data = request.json
     category = Category.query.filter_by(name=data['category']).first()
     if not category:
@@ -211,8 +148,10 @@ def create_activity():
 
 @app.route('/api/activities/<int:activity_id>', methods=['PUT'])
 @login_required
-@activity_manager_required
 def update_activity(activity_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
     activity = Activity.query.get_or_404(activity_id)
     data = request.json
     
@@ -241,8 +180,10 @@ def update_activity(activity_id):
 
 @app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
 @login_required
-@activity_manager_required
 def delete_activity(activity_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
     activity = Activity.query.get_or_404(activity_id)
     activity_title = activity.title
     activity_date = activity.date.strftime('%Y-%m-%d')
@@ -258,8 +199,26 @@ def delete_activity(activity_id):
 
     return jsonify({'success': True})
 
+@app.route('/api/share-link')
+@login_required
+def get_share_link():
+    if not current_user.share_token:
+        current_user.generate_share_token()
+        db.session.commit()
+    return jsonify({'share_link': current_user.share_token})
+
+@app.route('/api/share-link/generate', methods=['POST'])
+@login_required
+def generate_share_link():
+    current_user.generate_share_token()
+    db.session.commit()
+    return jsonify({'share_link': current_user.share_token})
+
 with app.app_context():
-    db.create_all()
+    db.drop_all()  # Drop all tables
+    db.create_all()  # Recreate all tables with new schema
+    
+    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
