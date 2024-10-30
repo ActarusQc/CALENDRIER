@@ -72,6 +72,15 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/users')
+@login_required
+def manage_users():
+    if not current_user.can_manage_users():
+        return redirect(url_for('index'))
+    trans, helpers = get_translations()
+    users = User.query.all()
+    return render_template('users.html', users=users, trans=trans, helpers=helpers)
+
 @app.route('/admin')
 @login_required
 def admin():
@@ -215,10 +224,9 @@ def generate_share_link():
     return jsonify({'share_link': current_user.share_token})
 
 with app.app_context():
-    db.drop_all()  # Drop all tables
-    db.create_all()  # Recreate all tables with new schema
+    db.drop_all()
+    db.create_all()
     
-    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',

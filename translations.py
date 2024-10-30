@@ -1,7 +1,7 @@
 translations = {
     'en': {
         'login': 'Login',
-        'logout': 'Logout',  # Added logout translation
+        'logout': 'Logout',
         'username': 'Username',
         'password': 'Password',
         'submit': 'Submit',
@@ -30,7 +30,16 @@ translations = {
         'daily': 'Daily',
         'weekly': 'Weekly',
         'monthly': 'Monthly',
-        'toggle_share_link': 'Toggle Share Link',  # Added toggle share link translation
+        'toggle_share_link': 'Toggle Share Link',
+        'manage_users': 'Manage Users',
+        'user_management': 'User Management',
+        'add_new_user': 'Add New User',
+        'email': 'Email',
+        'role': 'Role',
+        'add_edit_user': 'Add/Edit User',
+        'reader': 'Reader',
+        'creator': 'Creator',
+        'admin': 'Admin',
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -43,7 +52,7 @@ translations = {
     },
     'fr': {
         'login': 'Connexion',
-        'logout': 'Déconnexion',  # Added logout translation
+        'logout': 'Déconnexion',
         'username': "Nom d'utilisateur",
         'password': 'Mot de passe',
         'submit': 'Soumettre',
@@ -72,7 +81,16 @@ translations = {
         'daily': 'Quotidien',
         'weekly': 'Hebdomadaire',
         'monthly': 'Mensuel',
-        'toggle_share_link': 'Basculer le lien de partage',  # Added toggle share link translation
+        'toggle_share_link': 'Basculer le lien de partage',
+        'manage_users': 'Gérer les utilisateurs',
+        'user_management': 'Gestion des utilisateurs',
+        'add_new_user': 'Ajouter un nouvel utilisateur',
+        'email': 'E-mail',
+        'role': 'Rôle',
+        'add_edit_user': 'Ajouter/Modifier un utilisateur',
+        'reader': 'Lecteur',
+        'creator': 'Créateur',
+        'admin': 'Administrateur',
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',
@@ -97,7 +115,9 @@ form_helpers = {
         'notes': 'Add any additional notes about the activity',
         'recurring_activity': 'Check this if the activity repeats regularly',
         'recurrence_type': 'Select how often the activity repeats',
-        'end_date': 'Select when the recurring activity should end'
+        'end_date': 'Select when the recurring activity should end',
+        'email': 'Enter the user email address',
+        'role': 'Select the user role (Reader can only view, Creator can manage activities, Admin can do everything)'
     },
     'fr': {
         'username': "Entrez votre nom d'utilisateur pour vous connecter",
@@ -110,6 +130,8 @@ form_helpers = {
         'notes': "Ajoutez des notes supplémentaires sur l'activité",
         'recurring_activity': "Cochez si l'activité se répète régulièrement",
         'recurrence_type': "Sélectionnez la fréquence de répétition de l'activité",
-        'end_date': "Sélectionnez quand l'activité récurrente doit se terminer"
+        'end_date': "Sélectionnez quand l'activité récurrente doit se terminer",
+        'email': "Entrez l'adresse e-mail de l'utilisateur",
+        'role': "Sélectionnez le rôle de l'utilisateur (Lecteur peut uniquement voir, Créateur peut gérer les activités, Administrateur peut tout faire)"
     }
 }
