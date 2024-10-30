@@ -16,13 +16,13 @@
 <div class="calendar-container">
     <div class="calendar-grid">
         <div class="calendar-days">
-            <div>Sunday</div>
-            <div>Monday</div>
-            <div>Tuesday</div>
-            <div>Wednesday</div>
-            <div>Thursday</div>
-            <div>Friday</div>
-            <div>Saturday</div>
+            <div>{{ trans.days_of_week.sunday }}</div>
+            <div>{{ trans.days_of_week.monday }}</div>
+            <div>{{ trans.days_of_week.tuesday }}</div>
+            <div>{{ trans.days_of_week.wednesday }}</div>
+            <div>{{ trans.days_of_week.thursday }}</div>
+            <div>{{ trans.days_of_week.friday }}</div>
+            <div>{{ trans.days_of_week.saturday }}</div>
         </div>
         <div id="calendarDates" class="calendar-dates"></div>
     </div>
@@ -30,5 +30,9 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+// Pass translations to JavaScript
+window.translations = {{ trans|tojson|safe }};
+</script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}

@@ -5,22 +5,37 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h2 class="text-center">Login</h2>
+                <h2 class="text-center">{{ trans.login }}</h2>
             </div>
             <div class="card-body">
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <label for="username" class="form-label">{{ trans.username }}</label>
+                        <input type="text" class="form-control" id="username" name="username" required
+                               data-bs-toggle="tooltip" data-bs-placement="right" 
+                               title="{{ helpers.username }}">
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="password" class="form-label">{{ trans.password }}</label>
+                        <input type="password" class="form-control" id="password" name="password" required
+                               data-bs-toggle="tooltip" data-bs-placement="right"
+                               title="{{ helpers.password }}">
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                    <button type="submit" class="btn btn-primary w-100">{{ trans.submit }}</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
 {% endblock %}

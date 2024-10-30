@@ -1,11 +1,12 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime, timedelta
 from email_notifier import mail, EmailNotifier
+from translations import translations, form_helpers
 
 class Base(DeclarativeBase):
     pass
@@ -38,19 +39,31 @@ from models import User, Category, Activity
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def get_translations():
+    lang = session.get('language', 'en')
+    return translations[lang], form_helpers[lang]
+
+@app.route('/language/<lang>')
+def set_language(lang):
+    if lang in translations:
+        session['language'] = lang
+    return redirect(request.referrer or url_for('index'))
+
 @app.route('/')
 def index():
-    return render_template('calendar.html')
+    trans, helpers = get_translations()
+    return render_template('calendar.html', trans=trans, helpers=helpers)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    trans, helpers = get_translations()
     if request.method == 'POST':
         user = User.query.filter_by(username=request.form['username']).first()
         if user and check_password_hash(user.password_hash, request.form['password']):
             login_user(user)
             return redirect(url_for('admin'))
         flash('Invalid username or password')
-    return render_template('login.html')
+    return render_template('login.html', trans=trans, helpers=helpers)
 
 @app.route('/logout')
 @login_required
@@ -63,7 +76,8 @@ def logout():
 def admin():
     if not current_user.is_admin:
         return redirect(url_for('index'))
-    return render_template('admin.html')
+    trans, helpers = get_translations()
+    return render_template('admin.html', trans=trans, helpers=helpers)
 
 @app.route('/calendar/<token>')
 def public_calendar(token):
@@ -71,7 +85,8 @@ def public_calendar(token):
     if not user:
         flash('Invalid share link')
         return redirect(url_for('index'))
-    return render_template('public_calendar.html')
+    trans, helpers = get_translations()
+    return render_template('public_calendar.html', trans=trans, helpers=helpers)
 
 @app.route('/api/share-link')
 @login_required
@@ -167,7 +182,6 @@ def create_activity():
     )
     db.session.add(activity)
     
-    # Generate recurring activities if needed
     if activity.is_recurring and activity.recurrence_end_date:
         recurring_activities = generate_recurring_activities(activity, activity.recurrence_end_date)
         for recurring_activity in recurring_activities:
@@ -175,13 +189,11 @@ def create_activity():
     
     db.session.commit()
 
-    # Send email notification to all users about the new activity
     try:
         recipients = [user.email for user in User.query.all()]
         EmailNotifier.notify_activity_created(activity, recipients)
     except Exception as e:
         print(f"Error sending email notification: {e}")
-        # Don't raise the error, just log it
 
     return jsonify({'success': True})
 
@@ -209,7 +221,6 @@ def update_activity(activity_id):
     
     db.session.commit()
 
-    # Send email notification about the updated activity
     try:
         recipients = [user.email for user in User.query.all()]
         EmailNotifier.notify_activity_updated(activity, recipients)
@@ -231,7 +242,6 @@ def delete_activity(activity_id):
     db.session.delete(activity)
     db.session.commit()
 
-    # Send email notification about the deleted activity
     try:
         recipients = [user.email for user in User.query.all()]
         EmailNotifier.notify_activity_deleted(activity_title, activity_date, recipients)

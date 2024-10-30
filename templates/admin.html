@@ -3,21 +3,21 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <h2>Activity Management</h2>
+        <h2>{{ trans.activity_management }}</h2>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
-            Add New Activity
+            {{ trans.add_new_activity }}
         </button>
     </div>
     <div class="col-md-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Share Calendar</h5>
-                <p class="card-text">Share your calendar with others using this public link:</p>
+                <h5 class="card-title">{{ trans.share_calendar }}</h5>
+                <p class="card-text">{{ trans.share_link }}</p>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" id="shareLink" readonly>
-                    <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">Copy</button>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">{{ trans.copy }}</button>
                 </div>
-                <button class="btn btn-sm btn-outline-primary" onclick="generateNewShareLink()">Generate New Link</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="generateNewShareLink()">{{ trans.generate_new_link }}</button>
             </div>
         </div>
     </div>
@@ -29,13 +29,13 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Title</th>
-                        <th>Location</th>
-                        <th>Category</th>
-                        <th>Recurrence</th>
-                        <th>Actions</th>
+                        <th>{{ trans.date }}</th>
+                        <th>{{ trans.time }}</th>
+                        <th>{{ trans.title }}</th>
+                        <th>{{ trans.location }}</th>
+                        <th>{{ trans.category }}</th>
+                        <th>{{ trans.recurrence }}</th>
+                        <th>{{ trans.actions }}</th>
                     </tr>
                 </thead>
                 <tbody id="activitiesList"></tbody>
@@ -49,61 +49,79 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add/Edit Activity</h5>
+                <h5 class="modal-title">{{ trans.add_edit_activity }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="activityForm">
                     <input type="hidden" id="activityId">
                     <div class="mb-3">
-                        <label class="form-label">Title</label>
-                        <input type="text" class="form-control" id="title" required>
+                        <label class="form-label">{{ trans.title }}</label>
+                        <input type="text" class="form-control" id="title" required
+                               data-bs-toggle="tooltip" data-bs-placement="right" 
+                               title="{{ helpers.title }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Date</label>
-                        <input type="date" class="form-control" id="date" required>
+                        <label class="form-label">{{ trans.date }}</label>
+                        <input type="date" class="form-control" id="date" required
+                               data-bs-toggle="tooltip" data-bs-placement="right"
+                               title="{{ helpers.date }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Time</label>
-                        <input type="time" class="form-control" id="time">
+                        <label class="form-label">{{ trans.time }}</label>
+                        <input type="time" class="form-control" id="time"
+                               data-bs-toggle="tooltip" data-bs-placement="right"
+                               title="{{ helpers.time }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Location</label>
-                        <input type="text" class="form-control" id="location">
+                        <label class="form-label">{{ trans.location }}</label>
+                        <input type="text" class="form-control" id="location"
+                               data-bs-toggle="tooltip" data-bs-placement="right"
+                               title="{{ helpers.location }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <input type="text" class="form-control" id="category" required>
+                        <label class="form-label">{{ trans.category }}</label>
+                        <input type="text" class="form-control" id="category" required
+                               data-bs-toggle="tooltip" data-bs-placement="right"
+                               title="{{ helpers.category }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea class="form-control" id="notes"></textarea>
+                        <label class="form-label">{{ trans.notes }}</label>
+                        <textarea class="form-control" id="notes"
+                                 data-bs-toggle="tooltip" data-bs-placement="right"
+                                 title="{{ helpers.notes }}"></textarea>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="is_recurring">
-                            <label class="form-check-label" for="is_recurring">Recurring Activity</label>
+                            <input type="checkbox" class="form-check-input" id="is_recurring"
+                                   data-bs-toggle="tooltip" data-bs-placement="right"
+                                   title="{{ helpers.recurring_activity }}">
+                            <label class="form-check-label" for="is_recurring">{{ trans.recurring_activity }}</label>
                         </div>
                     </div>
                     <div id="recurrenceOptions" style="display: none;">
                         <div class="mb-3">
-                            <label class="form-label">Recurrence Type</label>
-                            <select class="form-control" id="recurrence_type">
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
+                            <label class="form-label">{{ trans.recurrence_type }}</label>
+                            <select class="form-control" id="recurrence_type"
+                                    data-bs-toggle="tooltip" data-bs-placement="right"
+                                    title="{{ helpers.recurrence_type }}">
+                                <option value="daily">{{ trans.daily }}</option>
+                                <option value="weekly">{{ trans.weekly }}</option>
+                                <option value="monthly">{{ trans.monthly }}</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="recurrence_end_date">
+                            <label class="form-label">{{ trans.end_date }}</label>
+                            <input type="date" class="form-control" id="recurrence_end_date"
+                                   data-bs-toggle="tooltip" data-bs-placement="right"
+                                   title="{{ helpers.end_date }}">
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveActivity()">Save</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
+                <button type="button" class="btn btn-primary" onclick="saveActivity()">{{ trans.save }}</button>
             </div>
         </div>
     </div>
@@ -112,4 +130,12 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
 {% endblock %}
