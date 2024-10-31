@@ -59,7 +59,6 @@ async function loadLocationsAndCategories() {
         const locations = await locationsResponse.json();
         const categories = await categoriesResponse.json();
         
-        // Populate location dropdown
         const locationSelect = document.getElementById('location');
         locationSelect.innerHTML = `<option value="">${window.translations.select_location || 'Select location'}</option>`;
         locations.forEach(location => {
@@ -69,7 +68,6 @@ async function loadLocationsAndCategories() {
             locationSelect.appendChild(option);
         });
         
-        // Populate categories checkboxes
         const categoriesContainer = document.getElementById('categoriesContainer');
         categoriesContainer.innerHTML = '';
         categories.forEach(category => {
@@ -123,12 +121,11 @@ async function saveActivity() {
         return;
     }
     
-    // Get selected categories and ensure they are integers
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
         .map(checkbox => parseInt(checkbox.value));
 
     if (selectedCategories.length === 0) {
-        alert('Please select at least one category');
+        alert(window.translations.select_category || 'Please select at least one category');
         return;
     }
     
@@ -183,7 +180,6 @@ async function editActivity(id) {
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         
-        // Update category checkboxes after they are populated
         await loadLocationsAndCategories();
         const checkboxes = document.querySelectorAll('.category-checkbox');
         checkboxes.forEach(checkbox => {

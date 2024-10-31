@@ -21,7 +21,6 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
 }
 
-# Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -106,7 +105,6 @@ def public_calendar(token):
     trans, helpers = get_translations()
     return render_template('public_calendar.html', trans=trans, helpers=helpers)
 
-# Location Management API endpoints
 @app.route('/api/locations')
 @login_required
 def get_locations():
@@ -188,7 +186,6 @@ def delete_location(location_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# Category Management API endpoints
 @app.route('/api/categories')
 @login_required
 def get_categories():
@@ -270,7 +267,6 @@ def delete_category(category_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# Activity Management API endpoints
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()
@@ -297,6 +293,9 @@ def create_activity():
         
     data = request.json
     
+    if not data.get('category_ids') or len(data['category_ids']) == 0:
+        return jsonify({'error': 'At least one category is required'}), 400
+    
     try:
         activity = Activity(
             title=data['title'],
@@ -309,12 +308,15 @@ def create_activity():
             recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
         )
         
-        # Handle multiple categories
         categories = []
-        for category_id in data.get('category_ids', []):
+        for category_id in data['category_ids']:
             category = Category.query.get(category_id)
             if category:
                 categories.append(category)
+        
+        if not categories:
+            return jsonify({'error': 'Invalid category IDs provided'}), 400
+            
         activity.categories = categories
         
         db.session.add(activity)
@@ -350,7 +352,6 @@ def update_activity(activity_id):
         activity.recurrence_type = data.get('recurrence_type')
         activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
 
-        # Handle multiple categories
         categories = []
         for category_id in data.get('category_ids', []):
             category = Category.query.get(category_id)
@@ -414,7 +415,6 @@ def generate_share_link():
 with app.app_context():
     db.create_all()
     
-    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
@@ -425,14 +425,12 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
-        # Create some default categories
         default_categories = ['Walking Club', 'Bingo', 'Social', 'Coffee Time']
         for category_name in default_categories:
             if not Category.query.filter_by(name=category_name).first():
                 category = Category(name=category_name)
                 db.session.add(category)
         
-        # Create some default locations
         default_locations = ['Main Hall', 'Garden', 'Library', 'Dining Room']
         for location_name in default_locations:
             if not Location.query.filter_by(name=location_name).first():

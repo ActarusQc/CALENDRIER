@@ -48,9 +48,9 @@ class Activity(db.Model):
     
     # Many-to-many relationship with categories
     categories = db.relationship('Category', 
-                               secondary=activity_categories,
-                               lazy='subquery',
-                               backref=db.backref('activities', lazy=True))
+                             secondary=activity_categories,
+                             lazy='subquery',
+                             backref=db.backref('activities', lazy=True))
     
     # Recurrence fields
     is_recurring = db.Column(db.Boolean, default=False)
