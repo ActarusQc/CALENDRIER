@@ -293,6 +293,7 @@ def create_activity():
         
     data = request.json
     
+    # Validate categories
     if not data.get('category_ids') or len(data['category_ids']) == 0:
         return jsonify({'error': 'At least one category is required'}), 400
     
@@ -300,7 +301,7 @@ def create_activity():
         activity = Activity(
             title=data['title'],
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
-            time=data['time'],
+            time=data.get('time'),
             location_id=data.get('location_id'),
             notes=data.get('notes'),
             is_recurring=data.get('is_recurring', False),
@@ -308,6 +309,7 @@ def create_activity():
             recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
         )
         
+        # Handle categories
         categories = []
         for category_id in data['category_ids']:
             category = Category.query.get(category_id)
@@ -345,18 +347,23 @@ def update_activity(activity_id):
     try:
         activity.title = data['title']
         activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
-        activity.time = data['time']
+        activity.time = data.get('time')
         activity.location_id = data.get('location_id')
         activity.notes = data.get('notes')
         activity.is_recurring = data.get('is_recurring', False)
         activity.recurrence_type = data.get('recurrence_type')
         activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
 
+        # Handle categories
         categories = []
         for category_id in data.get('category_ids', []):
             category = Category.query.get(category_id)
             if category:
                 categories.append(category)
+        
+        if not categories:
+            return jsonify({'error': 'At least one valid category is required'}), 400
+            
         activity.categories = categories
         
         db.session.commit()
