@@ -42,6 +42,7 @@ translations = {
         'creator': 'Creator',
         'admin': 'Admin',
         'delete_confirmation': 'Are you sure you want to delete this activity?',
+        'error_loading_user': 'Error loading user',
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -95,6 +96,7 @@ translations = {
         'creator': 'Créateur',
         'admin': 'Administrateur',
         'delete_confirmation': 'Êtes-vous sûr de vouloir supprimer cette activité?',
+        'error_loading_user': 'Erreur lors du chargement de l\'utilisateur',
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',

@@ -65,6 +65,10 @@ async function saveUser(event) {
 async function editUser(id) {
     try {
         const response = await fetch(`/api/users/${id}`);
+        if (!response.ok) {
+            alert(window.translations.error_loading_user || 'Erreur lors du chargement de l\'utilisateur');
+            return;
+        }
         const user = await response.json();
         
         document.getElementById('userId').value = id;
@@ -77,7 +81,7 @@ async function editUser(id) {
         modal.show();
     } catch (error) {
         console.error('Error loading user:', error);
-        alert('Error loading user');
+        alert(window.translations.error_loading_user || 'Erreur lors du chargement de l\'utilisateur');
     }
 }
 

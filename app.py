@@ -132,6 +132,20 @@ def create_user():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/users/<int:user_id>', methods=['GET'])
+@login_required
+def get_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()
@@ -252,8 +266,7 @@ def generate_share_link():
     return jsonify({'share_link': current_user.share_token})
 
 with app.app_context():
-    db.drop_all()  # Drop all tables
-    db.create_all()  # Recreate all tables
+    db.create_all()
     
     # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
