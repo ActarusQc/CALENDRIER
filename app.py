@@ -293,11 +293,17 @@ def create_activity():
         
     data = request.json
     
+    # Validate required fields
+    if not data.get('title') or not data.get('date'):
+        return jsonify({'error': 'Title and date are required'}), 400
+    
     # Validate categories
-    if not data.get('category_ids') or len(data['category_ids']) == 0:
+    category_ids = data.get('category_ids', [])
+    if not category_ids:
         return jsonify({'error': 'At least one category is required'}), 400
     
     try:
+        # Create activity
         activity = Activity(
             title=data['title'],
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
@@ -309,18 +315,13 @@ def create_activity():
             recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
         )
         
-        # Handle categories
-        categories = []
-        for category_id in data['category_ids']:
-            category = Category.query.get(category_id)
-            if category:
-                categories.append(category)
-        
-        if not categories:
-            return jsonify({'error': 'Invalid category IDs provided'}), 400
-            
+        # Add categories
+        categories = Category.query.filter(Category.id.in_(category_ids)).all()
+        if len(categories) != len(category_ids):
+            return jsonify({'error': 'One or more invalid category IDs'}), 400
         activity.categories = categories
         
+        # Save to database
         db.session.add(activity)
         db.session.commit()
 
@@ -330,7 +331,7 @@ def create_activity():
         except Exception as e:
             print(f"Error sending email notification: {e}")
 
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'id': activity.id})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
