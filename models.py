@@ -23,8 +23,8 @@ class User(UserMixin, db.Model):
 
 # Association table for activity-category many-to-many relationship
 activity_categories = db.Table('activity_categories',
-    db.Column('activity_id', db.Integer, db.ForeignKey('activity.id'), primary_key=True),
-    db.Column('category_id', db.Integer, db.ForeignKey('category.id'), primary_key=True)
+    db.Column('activity_id', db.Integer, db.ForeignKey('activity.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('category_id', db.Integer, db.ForeignKey('category.id', ondelete='CASCADE'), primary_key=True)
 )
 
 class Category(db.Model):
