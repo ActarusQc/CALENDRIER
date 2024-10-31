@@ -23,8 +23,8 @@ class User(UserMixin, db.Model):
 
 # Association table for activity-category many-to-many relationship
 activity_categories = db.Table('activity_categories',
-    db.Column('activity_id', db.Integer, db.ForeignKey('activity.id', ondelete='CASCADE'), primary_key=True),
-    db.Column('category_id', db.Integer, db.ForeignKey('category.id', ondelete='CASCADE'), primary_key=True)
+    db.Column('activity_id', db.Integer, db.ForeignKey('activity.id'), primary_key=True),
+    db.Column('category_id', db.Integer, db.ForeignKey('category.id'), primary_key=True)
 )
 
 class Category(db.Model):
@@ -47,11 +47,10 @@ class Activity(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Many-to-many relationship with categories
-    categories = db.relationship('Category', 
-                             secondary=activity_categories,
-                             lazy='subquery',
-                             backref=db.backref('activities', lazy=True),
-                             cascade='all, delete')
+    categories = db.relationship('Category',
+                               secondary=activity_categories,
+                               lazy='subquery',
+                               backref=db.backref('activities', lazy=True))
     
     # Recurrence fields
     is_recurring = db.Column(db.Boolean, default=False)

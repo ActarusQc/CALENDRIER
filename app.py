@@ -293,7 +293,11 @@ def create_activity():
         
     data = request.json
     
-    # Validate categories first
+    # Validate required fields
+    if not data.get('title') or not data.get('date'):
+        return jsonify({'error': 'Title and date are required'}), 400
+
+    # Validate categories
     category_ids = data.get('category_ids', [])
     if not category_ids:
         return jsonify({'error': 'At least one category is required'}), 400
@@ -344,14 +348,13 @@ def update_activity(activity_id):
         activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
 
         # Handle categories
-        categories = []
-        for category_id in data.get('category_ids', []):
-            category = Category.query.get(category_id)
-            if category:
-                categories.append(category)
-        
-        if not categories:
-            return jsonify({'error': 'At least one valid category is required'}), 400
+        category_ids = data.get('category_ids', [])
+        if not category_ids:
+            return jsonify({'error': 'At least one category is required'}), 400
+            
+        categories = Category.query.filter(Category.id.in_(category_ids)).all()
+        if len(categories) != len(category_ids):
+            return jsonify({'error': 'One or more invalid category IDs'}), 400
             
         activity.categories = categories
         
@@ -393,8 +396,10 @@ def generate_share_link():
     return jsonify({'share_link': current_user.share_token})
 
 with app.app_context():
+    db.drop_all()
     db.create_all()
     
+    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
@@ -405,12 +410,14 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
+        # Create default categories
         default_categories = ['Walking Club', 'Bingo', 'Social', 'Coffee Time']
         for category_name in default_categories:
             if not Category.query.filter_by(name=category_name).first():
                 category = Category(name=category_name)
                 db.session.add(category)
         
+        # Create default locations
         default_locations = ['Main Hall', 'Garden', 'Library', 'Dining Room']
         for location_name in default_locations:
             if not Location.query.filter_by(name=location_name).first():
