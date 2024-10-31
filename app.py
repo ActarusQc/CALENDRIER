@@ -190,6 +190,24 @@ def update_user(user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    if user.username == 'admin':
+        return jsonify({'error': 'Cannot delete admin user'}), 400
+        
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()
