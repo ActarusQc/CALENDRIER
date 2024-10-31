@@ -39,5 +39,5 @@ class Activity(db.Model):
     
     # Recurrence fields
     is_recurring = db.Column(db.Boolean, default=False)
-    recurrence_type = db.Column(db.String(20))  # 'daily', 'weekly', 'monthly'
+    recurrence_type = db.Column(db.String(20))  # 'daily', 'weekly', 'monthly', 'annually'
     recurrence_end_date = db.Column(db.DateTime)

@@ -6,7 +6,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup recurring activity checkbox handler
     document.getElementById('is_recurring').addEventListener('change', function(e) {
         const recurrenceOptions = document.getElementById('recurrenceOptions');
+        const recurrenceEndDate = document.getElementById('recurrence_end_date');
+        
         recurrenceOptions.style.display = e.target.checked ? 'block' : 'none';
+        if (e.target.checked) {
+            recurrenceEndDate.setAttribute('required', 'required');
+        } else {
+            recurrenceEndDate.removeAttribute('required');
+        }
     });
 });
 
@@ -43,15 +50,6 @@ function setupShareCardVisibility() {
         bsCollapse.hide();
         localStorage.setItem('shareCardVisible', 'false');
     });
-    
-    // Add transition event listeners
-    shareCardContainer.addEventListener('show.bs.collapse', function () {
-        toggleShareCard.classList.add('active');
-    });
-    
-    shareCardContainer.addEventListener('hide.bs.collapse', function () {
-        toggleShareCard.classList.remove('active');
-    });
 }
 
 async function loadShareLink() {
@@ -87,6 +85,16 @@ function copyShareLink() {
     alert('Share link copied to clipboard!');
 }
 
+function getRecurrenceTypeDisplay(type) {
+    const recurrenceTypes = {
+        'daily': window.translations.daily,
+        'weekly': window.translations.weekly,
+        'monthly': window.translations.monthly,
+        'annually': window.translations.annually
+    };
+    return recurrenceTypes[type] || type;
+}
+
 async function loadActivities() {
     try {
         const response = await fetch('/api/activities');
@@ -104,7 +112,7 @@ async function loadActivities() {
                     <td>${activity.title}</td>
                     <td>${activity.location || ''}</td>
                     <td>${activity.category}</td>
-                    <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
+                    <td>${activity.is_recurring ? `${getRecurrenceTypeDisplay(activity.recurrence_type)} until ${activity.recurrence_end_date}` : 'No'}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">Delete</button>
@@ -118,6 +126,14 @@ async function loadActivities() {
 }
 
 async function saveActivity() {
+    const isRecurring = document.getElementById('is_recurring').checked;
+    const recurrenceEndDate = document.getElementById('recurrence_end_date');
+    
+    if (isRecurring && !recurrenceEndDate.value) {
+        alert('End date is required for recurring activities');
+        return;
+    }
+    
     const activityId = document.getElementById('activityId').value;
     const activity = {
         title: document.getElementById('title').value,
@@ -126,9 +142,9 @@ async function saveActivity() {
         location: document.getElementById('location').value,
         category: document.getElementById('category').value,
         notes: document.getElementById('notes').value,
-        is_recurring: document.getElementById('is_recurring').checked,
+        is_recurring: isRecurring,
         recurrence_type: document.getElementById('recurrence_type').value,
-        recurrence_end_date: document.getElementById('recurrence_end_date').value
+        recurrence_end_date: recurrenceEndDate.value
     };
     
     try {
@@ -168,6 +184,15 @@ async function editActivity(id) {
         document.getElementById('location').value = activity.location || '';
         document.getElementById('category').value = activity.category;
         document.getElementById('notes').value = activity.notes || '';
+        
+        const isRecurringCheckbox = document.getElementById('is_recurring');
+        isRecurringCheckbox.checked = activity.is_recurring;
+        isRecurringCheckbox.dispatchEvent(new Event('change'));
+        
+        if (activity.is_recurring) {
+            document.getElementById('recurrence_type').value = activity.recurrence_type;
+            document.getElementById('recurrence_end_date').value = activity.recurrence_end_date;
+        }
         
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
         modal.show();

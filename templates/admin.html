@@ -113,6 +113,7 @@
                                 <option value="daily">{{ trans.daily }}</option>
                                 <option value="weekly">{{ trans.weekly }}</option>
                                 <option value="monthly">{{ trans.monthly }}</option>
+                                <option value="annually">{{ trans.annually }}</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -133,5 +134,9 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+// Pass translations to JavaScript
+window.translations = {{ trans|tojson|safe }};
+</script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}
