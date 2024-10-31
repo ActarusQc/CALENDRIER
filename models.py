@@ -21,10 +21,15 @@ class User(UserMixin, db.Model):
     def can_manage_users(self):
         return self.role == 'admin'
 
+# Association table for activity-category many-to-many relationship
+activity_categories = db.Table('activity_categories',
+    db.Column('activity_id', db.Integer, db.ForeignKey('activity.id'), primary_key=True),
+    db.Column('category_id', db.Integer, db.ForeignKey('category.id'), primary_key=True)
+)
+
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
-    activities = db.relationship('Activity', backref='category', lazy=True)
 
 class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,9 +43,12 @@ class Activity(db.Model):
     time = db.Column(db.String(64))
     location_id = db.Column(db.Integer, db.ForeignKey('location.id'))
     notes = db.Column(db.Text)
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Many-to-many relationship with categories
+    categories = db.relationship('Category', secondary=activity_categories, lazy='subquery',
+                               backref=db.backref('activities', lazy=True))
     
     # Recurrence fields
     is_recurring = db.Column(db.Boolean, default=False)

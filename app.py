@@ -80,15 +80,6 @@ def manage_locations_categories():
     trans, helpers = get_translations()
     return render_template('manage_locations_categories.html', trans=trans, helpers=helpers)
 
-@app.route('/users')
-@login_required
-def manage_users():
-    if not current_user.can_manage_users():
-        return redirect(url_for('index'))
-    trans, helpers = get_translations()
-    users = User.query.all()
-    return render_template('users.html', users=users, trans=trans, helpers=helpers)
-
 @app.route('/admin')
 @login_required
 def admin():
@@ -106,82 +97,6 @@ def public_calendar(token):
     trans, helpers = get_translations()
     return render_template('public_calendar.html', trans=trans, helpers=helpers)
 
-# Category Management API endpoints
-@app.route('/api/categories')
-@login_required
-def get_categories():
-    categories = Category.query.all()
-    return jsonify([{
-        'id': category.id,
-        'name': category.name
-    } for category in categories])
-
-@app.route('/api/categories', methods=['POST'])
-@login_required
-def create_category():
-    if not current_user.can_manage_activities():
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    data = request.json
-    if not data.get('name'):
-        return jsonify({'error': 'Category name is required'}), 400
-        
-    if Category.query.filter_by(name=data['name']).first():
-        return jsonify({'error': 'Category already exists'}), 400
-        
-    category = Category(name=data['name'])
-    db.session.add(category)
-    
-    try:
-        db.session.commit()
-        return jsonify({'success': True, 'id': category.id})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/categories/<int:category_id>', methods=['PUT'])
-@login_required
-def update_category(category_id):
-    if not current_user.can_manage_activities():
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    category = Category.query.get_or_404(category_id)
-    data = request.json
-    
-    if not data.get('name'):
-        return jsonify({'error': 'Category name is required'}), 400
-        
-    if Category.query.filter(Category.name == data['name'], Category.id != category_id).first():
-        return jsonify({'error': 'Category name already exists'}), 400
-        
-    category.name = data['name']
-    
-    try:
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
-@login_required
-def delete_category(category_id):
-    if not current_user.can_manage_activities():
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    category = Category.query.get_or_404(category_id)
-    
-    if category.activities:
-        return jsonify({'error': 'Cannot delete category with associated activities'}), 400
-        
-    try:
-        db.session.delete(category)
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
 # Location Management API endpoints
 @app.route('/api/locations')
 @login_required
@@ -191,6 +106,12 @@ def get_locations():
         'id': location.id,
         'name': location.name
     } for location in locations])
+
+@app.route('/api/locations/<int:location_id>', methods=['GET'])
+@login_required
+def get_location(location_id):
+    location = Location.query.get_or_404(location_id)
+    return jsonify({'id': location.id, 'name': location.name})
 
 @app.route('/api/locations', methods=['POST'])
 @login_required
@@ -258,6 +179,89 @@ def delete_location(location_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# Category Management API endpoints
+@app.route('/api/categories')
+@login_required
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([{
+        'id': category.id,
+        'name': category.name
+    } for category in categories])
+
+@app.route('/api/categories/<int:category_id>', methods=['GET'])
+@login_required
+def get_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    return jsonify({'id': category.id, 'name': category.name})
+
+@app.route('/api/categories', methods=['POST'])
+@login_required
+def create_category():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json
+    if not data.get('name'):
+        return jsonify({'error': 'Category name is required'}), 400
+        
+    if Category.query.filter_by(name=data['name']).first():
+        return jsonify({'error': 'Category already exists'}), 400
+        
+    category = Category(name=data['name'])
+    db.session.add(category)
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'id': category.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/categories/<int:category_id>', methods=['PUT'])
+@login_required
+def update_category(category_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    category = Category.query.get_or_404(category_id)
+    data = request.json
+    
+    if not data.get('name'):
+        return jsonify({'error': 'Category name is required'}), 400
+        
+    if Category.query.filter(Category.name == data['name'], Category.id != category_id).first():
+        return jsonify({'error': 'Category name already exists'}), 400
+        
+    category.name = data['name']
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@login_required
+def delete_category(category_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    category = Category.query.get_or_404(category_id)
+    
+    if category.activities:
+        return jsonify({'error': 'Cannot delete category with associated activities'}), 400
+        
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Activity Management API endpoints
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()
@@ -268,8 +272,8 @@ def get_activities():
         'time': a.time,
         'location_id': a.location_id,
         'location': a.location_obj.name if a.location_obj else None,
-        'category_id': a.category_id,
-        'category': a.category.name,
+        'category_ids': [c.id for c in a.categories],
+        'categories': [c.name for c in a.categories],
         'notes': a.notes,
         'is_recurring': a.is_recurring,
         'recurrence_type': a.recurrence_type,
@@ -291,11 +295,19 @@ def create_activity():
             time=data['time'],
             location_id=data.get('location_id'),
             notes=data.get('notes'),
-            category_id=data['category_id'],
             is_recurring=data.get('is_recurring', False),
             recurrence_type=data.get('recurrence_type'),
             recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
         )
+        
+        # Handle multiple categories
+        categories = []
+        for category_id in data.get('category_ids', []):
+            category = Category.query.get(category_id)
+            if category:
+                categories.append(category)
+        activity.categories = categories
+        
         db.session.add(activity)
         db.session.commit()
 
@@ -325,10 +337,17 @@ def update_activity(activity_id):
         activity.time = data['time']
         activity.location_id = data.get('location_id')
         activity.notes = data.get('notes')
-        activity.category_id = data['category_id']
         activity.is_recurring = data.get('is_recurring', False)
         activity.recurrence_type = data.get('recurrence_type')
         activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+
+        # Handle multiple categories
+        categories = []
+        for category_id in data.get('category_ids', []):
+            category = Category.query.get(category_id)
+            if category:
+                categories.append(category)
+        activity.categories = categories
         
         db.session.commit()
 
@@ -384,7 +403,6 @@ def generate_share_link():
     return jsonify({'share_link': current_user.share_token})
 
 with app.app_context():
-    db.drop_all()  # Drop all tables to recreate with new schema
     db.create_all()
     
     # Create admin user if it doesn't exist
