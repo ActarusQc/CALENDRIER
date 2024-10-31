@@ -89,7 +89,6 @@ async function loadLocationsAndCategories() {
     }
 }
 
-// Call this function when the activity modal is shown
 document.getElementById('activityModal').addEventListener('show.bs.modal', loadLocationsAndCategories);
 
 function displayActivities(activities) {
@@ -124,10 +123,10 @@ async function saveActivity() {
         return;
     }
     
-    // Get selected categories
+    // Get selected categories and ensure they are integers
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
-        .map(checkbox => checkbox.value);
-    
+        .map(checkbox => parseInt(checkbox.value));
+
     if (selectedCategories.length === 0) {
         alert('Please select at least one category');
         return;

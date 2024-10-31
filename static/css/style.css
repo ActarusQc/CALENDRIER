@@ -110,6 +110,11 @@ body {
     margin-top: 2px;
 }
 
+/* Form styling */
+.form-check-label {
+    color: white;
+}
+
 @media print {
     .navbar,
     .btn {

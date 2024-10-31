@@ -47,7 +47,9 @@ class Activity(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Many-to-many relationship with categories
-    categories = db.relationship('Category', secondary=activity_categories, lazy='subquery',
+    categories = db.relationship('Category', 
+                               secondary=activity_categories,
+                               lazy='subquery',
                                backref=db.backref('activities', lazy=True))
     
     # Recurrence fields
