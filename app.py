@@ -258,112 +258,6 @@ def delete_location(location_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/users', methods=['GET'])
-@login_required
-def get_users():
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    users = User.query.all()
-    return jsonify([{
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'role': user.role
-    } for user in users])
-
-@app.route('/api/users', methods=['POST'])
-@login_required
-def create_user():
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    data = request.json
-    
-    if not all(key in data for key in ['username', 'email', 'password', 'role']):
-        return jsonify({'error': 'Missing required fields'}), 400
-        
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'error': 'Username already exists'}), 400
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'error': 'Email already exists'}), 400
-        
-    user = User(
-        username=data['username'],
-        email=data['email'],
-        password_hash=generate_password_hash(data['password']),
-        role=data['role']
-    )
-    
-    try:
-        db.session.add(user)
-        db.session.commit()
-        return jsonify({'success': True, 'id': user.id})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/users/<int:user_id>', methods=['GET'])
-@login_required
-def get_user(user_id):
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    user = User.query.get_or_404(user_id)
-    return jsonify({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'role': user.role
-    })
-
-@app.route('/api/users/<int:user_id>', methods=['PUT'])
-@login_required
-def update_user(user_id):
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    user = User.query.get_or_404(user_id)
-    data = request.json
-    
-    username_exists = User.query.filter(User.username == data['username'], User.id != user_id).first()
-    email_exists = User.query.filter(User.email == data['email'], User.id != user_id).first()
-    
-    if username_exists:
-        return jsonify({'error': 'Username already exists'}), 400
-    if email_exists:
-        return jsonify({'error': 'Email already exists'}), 400
-    
-    user.username = data['username']
-    user.email = data['email']
-    if data.get('password'):
-        user.password_hash = generate_password_hash(data['password'])
-    user.role = data['role']
-    
-    try:
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/users/<int:user_id>', methods=['DELETE'])
-@login_required
-def delete_user(user_id):
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    user = User.query.get_or_404(user_id)
-    if user.username == 'admin':
-        return jsonify({'error': 'Cannot delete admin user'}), 400
-        
-    try:
-        db.session.delete(user)
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()
@@ -372,7 +266,9 @@ def get_activities():
         'title': a.title,
         'date': a.date.strftime('%Y-%m-%d'),
         'time': a.time,
-        'location': a.location,
+        'location_id': a.location_id,
+        'location': a.location_obj.name if a.location_obj else None,
+        'category_id': a.category_id,
         'category': a.category.name,
         'notes': a.notes,
         'is_recurring': a.is_recurring,
@@ -387,33 +283,32 @@ def create_activity():
         return jsonify({'error': 'Unauthorized'}), 403
         
     data = request.json
-    category = Category.query.filter_by(name=data['category']).first()
-    if not category:
-        category = Category(name=data['category'])
-        db.session.add(category)
-        db.session.flush()
     
-    activity = Activity(
-        title=data['title'],
-        date=datetime.strptime(data['date'], '%Y-%m-%d'),
-        time=data['time'],
-        location=data.get('location'),
-        notes=data.get('notes'),
-        category=category,
-        is_recurring=data.get('is_recurring', False),
-        recurrence_type=data.get('recurrence_type'),
-        recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
-    )
-    db.session.add(activity)
-    db.session.commit()
-
     try:
-        recipients = [user.email for user in User.query.all()]
-        EmailNotifier.notify_activity_created(activity, recipients)
-    except Exception as e:
-        print(f"Error sending email notification: {e}")
+        activity = Activity(
+            title=data['title'],
+            date=datetime.strptime(data['date'], '%Y-%m-%d'),
+            time=data['time'],
+            location_id=data.get('location_id'),
+            notes=data.get('notes'),
+            category_id=data['category_id'],
+            is_recurring=data.get('is_recurring', False),
+            recurrence_type=data.get('recurrence_type'),
+            recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+        )
+        db.session.add(activity)
+        db.session.commit()
 
-    return jsonify({'success': True})
+        try:
+            recipients = [user.email for user in User.query.all()]
+            EmailNotifier.notify_activity_created(activity, recipients)
+        except Exception as e:
+            print(f"Error sending email notification: {e}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activities/<int:activity_id>', methods=['PUT'])
 @login_required
@@ -424,28 +319,29 @@ def update_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     data = request.json
     
-    category = Category.query.filter_by(name=data['category']).first()
-    if not category:
-        category = Category(name=data['category'])
-        db.session.add(category)
-        db.session.flush()
-    
-    activity.title = data['title']
-    activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
-    activity.time = data['time']
-    activity.location = data.get('location')
-    activity.notes = data.get('notes')
-    activity.category = category
-    
-    db.session.commit()
-
     try:
-        recipients = [user.email for user in User.query.all()]
-        EmailNotifier.notify_activity_updated(activity, recipients)
-    except Exception as e:
-        print(f"Error sending email notification: {e}")
+        activity.title = data['title']
+        activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
+        activity.time = data['time']
+        activity.location_id = data.get('location_id')
+        activity.notes = data.get('notes')
+        activity.category_id = data['category_id']
+        activity.is_recurring = data.get('is_recurring', False)
+        activity.recurrence_type = data.get('recurrence_type')
+        activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+        
+        db.session.commit()
 
-    return jsonify({'success': True})
+        try:
+            recipients = [user.email for user in User.query.all()]
+            EmailNotifier.notify_activity_updated(activity, recipients)
+        except Exception as e:
+            print(f"Error sending email notification: {e}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
 @login_required
@@ -457,16 +353,20 @@ def delete_activity(activity_id):
     activity_title = activity.title
     activity_date = activity.date.strftime('%Y-%m-%d')
     
-    db.session.delete(activity)
-    db.session.commit()
-
     try:
-        recipients = [user.email for user in User.query.all()]
-        EmailNotifier.notify_activity_deleted(activity_title, activity_date, recipients)
-    except Exception as e:
-        print(f"Error sending email notification: {e}")
+        db.session.delete(activity)
+        db.session.commit()
 
-    return jsonify({'success': True})
+        try:
+            recipients = [user.email for user in User.query.all()]
+            EmailNotifier.notify_activity_deleted(activity_title, activity_date, recipients)
+        except Exception as e:
+            print(f"Error sending email notification: {e}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/share-link')
 @login_required
@@ -484,8 +384,10 @@ def generate_share_link():
     return jsonify({'share_link': current_user.share_token})
 
 with app.app_context():
+    db.drop_all()  # Drop all tables to recreate with new schema
     db.create_all()
     
+    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
@@ -494,4 +396,20 @@ with app.app_context():
             role='admin'
         )
         db.session.add(admin)
+        db.session.commit()
+
+        # Create some default categories
+        default_categories = ['Walking Club', 'Bingo', 'Social', 'Coffee Time']
+        for category_name in default_categories:
+            if not Category.query.filter_by(name=category_name).first():
+                category = Category(name=category_name)
+                db.session.add(category)
+        
+        # Create some default locations
+        default_locations = ['Main Hall', 'Garden', 'Library', 'Dining Room']
+        for location_name in default_locations:
+            if not Location.query.filter_by(name=location_name).first():
+                location = Location(name=location_name)
+                db.session.add(location)
+        
         db.session.commit()

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
     loadShareLink();
     setupShareCardVisibility();
+    loadLocationsAndCategories();
     
     // Setup recurring activity checkbox handler
     document.getElementById('is_recurring').addEventListener('change', function(e) {
@@ -16,6 +17,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+async function loadLocationsAndCategories() {
+    try {
+        const [locationsResponse, categoriesResponse] = await Promise.all([
+            fetch('/api/locations'),
+            fetch('/api/categories')
+        ]);
+        
+        const locations = await locationsResponse.json();
+        const categories = await categoriesResponse.json();
+        
+        const locationSelect = document.getElementById('location');
+        const categorySelect = document.getElementById('category');
+        
+        // Clear existing options except the first one
+        locationSelect.innerHTML = `<option value="">${window.translations.select_location || 'Select location'}</option>`;
+        categorySelect.innerHTML = `<option value="">${window.translations.select_category || 'Select category'}</option>`;
+        
+        locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location.id;
+            option.textContent = location.name;
+            locationSelect.appendChild(option);
+        });
+        
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading locations and categories:', error);
+        showErrorAlert('Error loading locations and categories');
+    }
+}
 
 function setupShareCardVisibility() {
     const shareCardContainer = document.getElementById('shareCardContainer');
@@ -61,6 +98,7 @@ async function loadShareLink() {
         }
     } catch (error) {
         console.error('Error loading share link:', error);
+        showErrorAlert('Error loading share link');
     }
 }
 
@@ -75,6 +113,7 @@ async function generateNewShareLink() {
         }
     } catch (error) {
         console.error('Error generating share link:', error);
+        showErrorAlert('Error generating share link');
     }
 }
 
@@ -82,7 +121,7 @@ function copyShareLink() {
     const shareLink = document.getElementById('shareLink');
     shareLink.select();
     document.execCommand('copy');
-    alert('Share link copied to clipboard!');
+    showSuccessAlert('Share link copied to clipboard!');
 }
 
 function getRecurrenceTypeDisplay(type) {
@@ -122,6 +161,7 @@ async function loadActivities() {
             });
     } catch (error) {
         console.error('Error loading activities:', error);
+        showErrorAlert('Error loading activities');
     }
 }
 
@@ -130,7 +170,7 @@ async function saveActivity() {
     const recurrenceEndDate = document.getElementById('recurrence_end_date');
     
     if (isRecurring && !recurrenceEndDate.value) {
-        alert(window.translations.end_date);
+        showErrorAlert(window.translations.end_date);
         return;
     }
     
@@ -139,8 +179,8 @@ async function saveActivity() {
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
         time: document.getElementById('time').value,
-        location: document.getElementById('location').value,
-        category: document.getElementById('category').value,
+        location_id: document.getElementById('location').value,
+        category_id: document.getElementById('category').value,
         notes: document.getElementById('notes').value,
         is_recurring: isRecurring,
         recurrence_type: document.getElementById('recurrence_type').value,
@@ -163,12 +203,14 @@ async function saveActivity() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
             modal.hide();
             loadActivities();
+            showSuccessAlert('Activity saved successfully');
         } else {
-            alert('Error saving activity');
+            const data = await response.json();
+            showErrorAlert(data.error || 'Error saving activity');
         }
     } catch (error) {
         console.error('Error saving activity:', error);
-        alert('Error saving activity');
+        showErrorAlert('Error saving activity');
     }
 }
 
@@ -181,8 +223,8 @@ async function editActivity(id) {
         document.getElementById('title').value = activity.title;
         document.getElementById('date').value = activity.date;
         document.getElementById('time').value = activity.time || '';
-        document.getElementById('location').value = activity.location || '';
-        document.getElementById('category').value = activity.category;
+        document.getElementById('location').value = activity.location_id || '';
+        document.getElementById('category').value = activity.category_id;
         document.getElementById('notes').value = activity.notes || '';
         
         const isRecurringCheckbox = document.getElementById('is_recurring');
@@ -198,12 +240,12 @@ async function editActivity(id) {
         modal.show();
     } catch (error) {
         console.error('Error loading activity:', error);
-        alert('Error loading activity');
+        showErrorAlert('Error loading activity');
     }
 }
 
 async function deleteActivity(id) {
-    if (confirm(window.translations.delete_confirmation || 'Êtes-vous sûr de vouloir supprimer cette activité?')) {
+    if (confirm(window.translations.delete_confirmation)) {
         try {
             const response = await fetch(`/api/activities/${id}`, {
                 method: 'DELETE'
@@ -211,12 +253,36 @@ async function deleteActivity(id) {
             
             if (response.ok) {
                 loadActivities();
+                showSuccessAlert('Activity deleted successfully');
             } else {
-                alert('Error deleting activity');
+                const data = await response.json();
+                showErrorAlert(data.error || 'Error deleting activity');
             }
         } catch (error) {
             console.error('Error deleting activity:', error);
-            alert('Error deleting activity');
+            showErrorAlert('Error deleting activity');
         }
     }
+}
+
+function showErrorAlert(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.container').insertAdjacentElement('afterbegin', alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+function showSuccessAlert(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.container').insertAdjacentElement('afterbegin', alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
 }
