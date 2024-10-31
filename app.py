@@ -34,7 +34,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-from models import User, Category, Activity
+from models import User, Category, Activity, Location
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -72,6 +72,14 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/manage-locations-categories')
+@login_required
+def manage_locations_categories():
+    if not current_user.can_manage_activities():
+        return redirect(url_for('index'))
+    trans, helpers = get_translations()
+    return render_template('manage_locations_categories.html', trans=trans, helpers=helpers)
+
 @app.route('/users')
 @login_required
 def manage_users():
@@ -98,6 +106,158 @@ def public_calendar(token):
     trans, helpers = get_translations()
     return render_template('public_calendar.html', trans=trans, helpers=helpers)
 
+# Category Management API endpoints
+@app.route('/api/categories')
+@login_required
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([{
+        'id': category.id,
+        'name': category.name
+    } for category in categories])
+
+@app.route('/api/categories', methods=['POST'])
+@login_required
+def create_category():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json
+    if not data.get('name'):
+        return jsonify({'error': 'Category name is required'}), 400
+        
+    if Category.query.filter_by(name=data['name']).first():
+        return jsonify({'error': 'Category already exists'}), 400
+        
+    category = Category(name=data['name'])
+    db.session.add(category)
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'id': category.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/categories/<int:category_id>', methods=['PUT'])
+@login_required
+def update_category(category_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    category = Category.query.get_or_404(category_id)
+    data = request.json
+    
+    if not data.get('name'):
+        return jsonify({'error': 'Category name is required'}), 400
+        
+    if Category.query.filter(Category.name == data['name'], Category.id != category_id).first():
+        return jsonify({'error': 'Category name already exists'}), 400
+        
+    category.name = data['name']
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@login_required
+def delete_category(category_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    category = Category.query.get_or_404(category_id)
+    
+    if category.activities:
+        return jsonify({'error': 'Cannot delete category with associated activities'}), 400
+        
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Location Management API endpoints
+@app.route('/api/locations')
+@login_required
+def get_locations():
+    locations = Location.query.all()
+    return jsonify([{
+        'id': location.id,
+        'name': location.name
+    } for location in locations])
+
+@app.route('/api/locations', methods=['POST'])
+@login_required
+def create_location():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json
+    if not data.get('name'):
+        return jsonify({'error': 'Location name is required'}), 400
+        
+    if Location.query.filter_by(name=data['name']).first():
+        return jsonify({'error': 'Location already exists'}), 400
+        
+    location = Location(name=data['name'])
+    db.session.add(location)
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'id': location.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/locations/<int:location_id>', methods=['PUT'])
+@login_required
+def update_location(location_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    location = Location.query.get_or_404(location_id)
+    data = request.json
+    
+    if not data.get('name'):
+        return jsonify({'error': 'Location name is required'}), 400
+        
+    if Location.query.filter(Location.name == data['name'], Location.id != location_id).first():
+        return jsonify({'error': 'Location name already exists'}), 400
+        
+    location.name = data['name']
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/locations/<int:location_id>', methods=['DELETE'])
+@login_required
+def delete_location(location_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    location = Location.query.get_or_404(location_id)
+    
+    if location.activities:
+        return jsonify({'error': 'Cannot delete location with associated activities'}), 400
+        
+    try:
+        db.session.delete(location)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/users', methods=['GET'])
 @login_required
 def get_users():
@@ -119,17 +279,14 @@ def create_user():
         
     data = request.json
     
-    # Validate required fields
     if not all(key in data for key in ['username', 'email', 'password', 'role']):
         return jsonify({'error': 'Missing required fields'}), 400
         
-    # Check if username or email already exists
     if User.query.filter_by(username=data['username']).first():
         return jsonify({'error': 'Username already exists'}), 400
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email already exists'}), 400
         
-    # Create new user
     user = User(
         username=data['username'],
         email=data['email'],
@@ -168,7 +325,6 @@ def update_user(user_id):
     user = User.query.get_or_404(user_id)
     data = request.json
     
-    # Check if username or email already exists for other users
     username_exists = User.query.filter(User.username == data['username'], User.id != user_id).first()
     email_exists = User.query.filter(User.email == data['email'], User.id != user_id).first()
     
@@ -330,7 +486,6 @@ def generate_share_link():
 with app.app_context():
     db.create_all()
     
-    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',

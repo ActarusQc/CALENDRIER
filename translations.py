@@ -33,6 +33,7 @@ translations = {
         'annually': 'Annually',
         'toggle_share_link': 'Toggle Share Link',
         'manage_users': 'Manage Users',
+        'manage_locations_categories': 'Manage Locations & Categories',
         'user_management': 'User Management',
         'add_new_user': 'Add New User',
         'email': 'Email',
@@ -47,6 +48,13 @@ translations = {
         'error_deleting_user': 'Error deleting user',
         'error_loading_users': 'Error loading users',
         'leave_empty_if_no_change': 'Leave empty if you don\'t want to change the password',
+        'categories': 'Categories',
+        'locations': 'Locations',
+        'add_category': 'Add Category',
+        'add_location': 'Add Location',
+        'name': 'Name',
+        'add_edit_category': 'Add/Edit Category',
+        'add_edit_location': 'Add/Edit Location',
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -91,6 +99,7 @@ translations = {
         'annually': 'Annuel',
         'toggle_share_link': 'Basculer le lien de partage',
         'manage_users': 'Gérer les utilisateurs',
+        'manage_locations_categories': 'Gérer les lieux et catégories',
         'user_management': 'Gestion des utilisateurs',
         'add_new_user': 'Ajouter un nouvel utilisateur',
         'email': 'E-mail',
@@ -105,6 +114,13 @@ translations = {
         'error_deleting_user': 'Erreur lors de la suppression de l\'utilisateur',
         'error_loading_users': 'Erreur lors du chargement des utilisateurs',
         'leave_empty_if_no_change': 'Laissez vide si vous ne voulez pas changer le mot de passe',
+        'categories': 'Catégories',
+        'locations': 'Lieux',
+        'add_category': 'Ajouter une catégorie',
+        'add_location': 'Ajouter un lieu',
+        'name': 'Nom',
+        'add_edit_category': 'Ajouter/Modifier une catégorie',
+        'add_edit_location': 'Ajouter/Modifier un lieu',
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',
@@ -131,7 +147,9 @@ form_helpers = {
         'recurrence_type': 'Select how often the activity repeats',
         'end_date': 'Select when the recurring activity should end (Required)',
         'email': 'Enter the user email address',
-        'role': 'Select the user role (Reader can only view, Creator can manage activities, Admin can do everything)'
+        'role': 'Select the user role (Reader can only view, Creator can manage activities, Admin can do everything)',
+        'category_name': 'Enter a name for the category',
+        'location_name': 'Enter a name for the location'
     },
     'fr': {
         'username': "Entrez votre nom d'utilisateur pour vous connecter",
@@ -146,6 +164,8 @@ form_helpers = {
         'recurrence_type': "Sélectionnez la fréquence de répétition de l'activité",
         'end_date': "Sélectionnez quand l'activité récurrente doit se terminer (Obligatoire)",
         'email': "Entrez l'adresse e-mail de l'utilisateur",
-        'role': "Sélectionnez le rôle de l'utilisateur (Lecteur peut uniquement voir, Créateur peut gérer les activités, Administrateur peut tout faire)"
+        'role': "Sélectionnez le rôle de l'utilisateur (Lecteur peut uniquement voir, Créateur peut gérer les activités, Administrateur peut tout faire)",
+        'category_name': 'Entrez un nom pour la catégorie',
+        'location_name': 'Entrez un nom pour le lieu'
     }
 }

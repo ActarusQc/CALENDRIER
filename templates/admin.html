@@ -11,6 +11,9 @@
             {% if current_user.can_manage_users() %}
             <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">{{ trans.manage_users }}</a>
             {% endif %}
+            <a href="{{ url_for('manage_locations_categories') }}" class="btn btn-secondary">
+                {{ trans.manage_locations_categories }}
+            </a>
             <button class="btn btn-outline-primary" id="toggleShareCard">
                 <i class="bi bi-share"></i> {{ trans.toggle_share_link }}
             </button>
@@ -135,7 +138,6 @@
 
 {% block scripts %}
 <script>
-// Pass translations to JavaScript
 window.translations = {{ trans|tojson|safe }};
 </script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>

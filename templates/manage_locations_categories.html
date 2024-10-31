@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ trans.categories }}</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                        {{ trans.add_category }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ trans.name }}</th>
+                                    <th>{{ trans.actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesList">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ trans.locations }}</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#locationModal">
+                        {{ trans.add_location }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ trans.name }}</th>
+                                    <th>{{ trans.actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="locationsList">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ trans.add_edit_category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
+                    <div class="mb-3">
+                        <label class="form-label">{{ trans.name }}</label>
+                        <small class="text-muted d-block mb-2">{{ helpers.category_name }}</small>
+                        <input type="text" class="form-control" id="categoryName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">{{ trans.save }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ trans.add_edit_location }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm">
+                    <input type="hidden" id="locationId">
+                    <div class="mb-3">
+                        <label class="form-label">{{ trans.name }}</label>
+                        <small class="text-muted d-block mb-2">{{ helpers.location_name }}</small>
+                        <input type="text" class="form-control" id="locationName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
+                <button type="button" class="btn btn-primary" onclick="saveLocation()">{{ trans.save }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pass translations to JavaScript
+window.translations = {{ trans|tojson|safe }};
+</script>
+<script src="{{ url_for('static', filename='js/manage_locations_categories.js') }}"></script>
+{% endblock %}
