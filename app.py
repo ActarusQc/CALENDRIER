@@ -72,6 +72,15 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/users')
+@login_required
+def manage_users():
+    if not current_user.can_manage_users():
+        return redirect(url_for('index'))
+    trans, helpers = get_translations()
+    users = User.query.all()
+    return render_template('users.html', users=users, trans=trans, helpers=helpers)
+
 @app.route('/manage-locations-categories')
 @login_required
 def manage_locations_categories():
