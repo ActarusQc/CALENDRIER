@@ -1,6 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadCategories();
     loadLocations();
+
+    // Add event listeners for modal show
+    document.querySelector('[data-bs-target="#categoryModal"]').addEventListener('click', function() {
+        document.getElementById('categoryId').value = '';
+        document.getElementById('categoryName').value = '';
+    });
+
+    document.querySelector('[data-bs-target="#locationModal"]').addEventListener('click', function() {
+        document.getElementById('locationId').value = '';
+        document.getElementById('locationName').value = '';
+    });
 });
 
 // Category Management

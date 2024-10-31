@@ -1,4 +1,53 @@
-// Previous code remains the same until loadLocationsAndCategories function
+document.addEventListener('DOMContentLoaded', function() {
+    loadActivities();
+    setupShareLinkHandlers();
+    setupRecurringActivityToggle();
+});
+
+function setupShareLinkHandlers() {
+    const toggleBtn = document.getElementById('toggleShareCard');
+    const closeBtn = document.getElementById('closeShareCard');
+    const container = document.getElementById('shareCardContainer');
+    
+    if (toggleBtn && container) {
+        toggleBtn.addEventListener('click', function() {
+            const bsCollapse = new bootstrap.Collapse(container);
+            bsCollapse.toggle();
+            
+            if (!container.classList.contains('show')) {
+                fetchShareLink();
+            }
+        });
+    }
+    
+    if (closeBtn && container) {
+        closeBtn.addEventListener('click', function() {
+            const bsCollapse = bootstrap.Collapse.getInstance(container);
+            bsCollapse.hide();
+        });
+    }
+}
+
+function setupRecurringActivityToggle() {
+    const recurringCheckbox = document.getElementById('is_recurring');
+    const recurrenceOptions = document.getElementById('recurrenceOptions');
+    
+    if (recurringCheckbox && recurrenceOptions) {
+        recurringCheckbox.addEventListener('change', function() {
+            recurrenceOptions.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+}
+
+async function loadActivities() {
+    try {
+        const response = await fetch('/api/activities');
+        const activities = await response.json();
+        displayActivities(activities);
+    } catch (error) {
+        console.error('Error loading activities:', error);
+    }
+}
 
 async function loadLocationsAndCategories() {
     try {
@@ -10,15 +59,9 @@ async function loadLocationsAndCategories() {
         const locations = await locationsResponse.json();
         const categories = await categoriesResponse.json();
         
+        // Populate location dropdown
         const locationSelect = document.getElementById('location');
-        const categoriesContainer = document.getElementById('categoriesContainer');
-        
-        // Clear existing options except the first one for locations
         locationSelect.innerHTML = `<option value="">${window.translations.select_location || 'Select location'}</option>`;
-        
-        // Clear categories container
-        categoriesContainer.innerHTML = '';
-        
         locations.forEach(location => {
             const option = document.createElement('option');
             option.value = location.id;
@@ -26,12 +69,15 @@ async function loadLocationsAndCategories() {
             locationSelect.appendChild(option);
         });
         
+        // Populate categories checkboxes
+        const categoriesContainer = document.getElementById('categoriesContainer');
+        categoriesContainer.innerHTML = '';
         categories.forEach(category => {
             const div = document.createElement('div');
             div.className = 'form-check';
             div.innerHTML = `
                 <input class="form-check-input category-checkbox" type="checkbox" 
-                       value="${category.id}" id="category${category.id}">
+                    value="${category.id}" id="category${category.id}">
                 <label class="form-check-label" for="category${category.id}">
                     ${category.name}
                 </label>
@@ -40,11 +86,12 @@ async function loadLocationsAndCategories() {
         });
     } catch (error) {
         console.error('Error loading locations and categories:', error);
-        showErrorAlert('Error loading locations and categories');
     }
 }
 
-// Update activity list display to show multiple categories
+// Call this function when the activity modal is shown
+document.getElementById('activityModal').addEventListener('show.bs.modal', loadLocationsAndCategories);
+
 function displayActivities(activities) {
     const tbody = document.getElementById('activitiesList');
     tbody.innerHTML = '';
@@ -58,7 +105,7 @@ function displayActivities(activities) {
                 <td>${activity.title}</td>
                 <td>${activity.location || ''}</td>
                 <td>${activity.categories.join(', ')}</td>
-                <td>${activity.is_recurring ? `${getRecurrenceTypeDisplay(activity.recurrence_type)} until ${activity.recurrence_end_date}` : 'No'}</td>
+                <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
                 <td>
                     <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>
@@ -73,7 +120,7 @@ async function saveActivity() {
     const recurrenceEndDate = document.getElementById('recurrence_end_date');
     
     if (isRecurring && !recurrenceEndDate.value) {
-        showErrorAlert(window.translations.end_date);
+        alert(window.translations.end_date);
         return;
     }
     
@@ -82,7 +129,7 @@ async function saveActivity() {
         .map(checkbox => checkbox.value);
     
     if (selectedCategories.length === 0) {
-        showErrorAlert('Please select at least one category');
+        alert('Please select at least one category');
         return;
     }
     
@@ -115,14 +162,13 @@ async function saveActivity() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
             modal.hide();
             loadActivities();
-            showSuccessAlert('Activity saved successfully');
         } else {
             const data = await response.json();
-            showErrorAlert(data.error || 'Error saving activity');
+            alert(data.error || 'Error saving activity');
         }
     } catch (error) {
         console.error('Error saving activity:', error);
-        showErrorAlert('Error saving activity');
+        alert('Error saving activity');
     }
 }
 
@@ -138,7 +184,8 @@ async function editActivity(id) {
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         
-        // Update category checkboxes
+        // Update category checkboxes after they are populated
+        await loadLocationsAndCategories();
         const checkboxes = document.querySelectorAll('.category-checkbox');
         checkboxes.forEach(checkbox => {
             checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
@@ -157,8 +204,51 @@ async function editActivity(id) {
         modal.show();
     } catch (error) {
         console.error('Error loading activity:', error);
-        showErrorAlert('Error loading activity');
+        alert('Error loading activity');
     }
 }
 
-// Rest of the code remains the same
+async function deleteActivity(id) {
+    if (confirm(window.translations.delete_confirmation)) {
+        try {
+            const response = await fetch(`/api/activities/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                loadActivities();
+            } else {
+                alert('Error deleting activity');
+            }
+        } catch (error) {
+            console.error('Error deleting activity:', error);
+            alert('Error deleting activity');
+        }
+    }
+}
+
+async function fetchShareLink() {
+    try {
+        const response = await fetch('/api/share-link');
+        const data = await response.json();
+        document.getElementById('shareLink').value = window.location.origin + '/calendar/' + data.share_link;
+    } catch (error) {
+        console.error('Error fetching share link:', error);
+    }
+}
+
+async function generateNewShareLink() {
+    try {
+        const response = await fetch('/api/share-link/generate', { method: 'POST' });
+        const data = await response.json();
+        document.getElementById('shareLink').value = window.location.origin + '/calendar/' + data.share_link;
+    } catch (error) {
+        console.error('Error generating new share link:', error);
+    }
+}
+
+function copyShareLink() {
+    const shareLink = document.getElementById('shareLink');
+    shareLink.select();
+    document.execCommand('copy');
+}
