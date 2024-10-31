@@ -139,12 +139,6 @@ def create_activity():
         recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
     )
     db.session.add(activity)
-    
-    if activity.is_recurring and activity.recurrence_end_date:
-        recurring_activities = generate_recurring_activities(activity, activity.recurrence_end_date)
-        for recurring_activity in recurring_activities:
-            db.session.add(recurring_activity)
-    
     db.session.commit()
 
     try:
@@ -224,9 +218,10 @@ def generate_share_link():
     return jsonify({'share_link': current_user.share_token})
 
 with app.app_context():
-    db.drop_all()
-    db.create_all()
+    db.drop_all()  # Drop all tables
+    db.create_all()  # Recreate all tables
     
+    # Create admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(
             username='admin',
