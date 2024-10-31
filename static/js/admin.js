@@ -114,8 +114,8 @@ async function loadActivities() {
                     <td>${activity.category}</td>
                     <td>${activity.is_recurring ? `${getRecurrenceTypeDisplay(activity.recurrence_type)} until ${activity.recurrence_end_date}` : 'No'}</td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">Delete</button>
+                        <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -130,7 +130,7 @@ async function saveActivity() {
     const recurrenceEndDate = document.getElementById('recurrence_end_date');
     
     if (isRecurring && !recurrenceEndDate.value) {
-        alert('End date is required for recurring activities');
+        alert(window.translations.end_date);
         return;
     }
     
@@ -203,7 +203,7 @@ async function editActivity(id) {
 }
 
 async function deleteActivity(id) {
-    if (confirm('Are you sure you want to delete this activity?')) {
+    if (confirm(window.translations.delete_confirmation || 'Êtes-vous sûr de vouloir supprimer cette activité?')) {
         try {
             const response = await fetch(`/api/activities/${id}`, {
                 method: 'DELETE'

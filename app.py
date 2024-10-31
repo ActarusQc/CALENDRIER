@@ -98,6 +98,40 @@ def public_calendar(token):
     trans, helpers = get_translations()
     return render_template('public_calendar.html', trans=trans, helpers=helpers)
 
+@app.route('/api/users', methods=['POST'])
+@login_required
+def create_user():
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json
+    
+    # Validate required fields
+    if not all(key in data for key in ['username', 'email', 'password', 'role']):
+        return jsonify({'error': 'Missing required fields'}), 400
+        
+    # Check if username or email already exists
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+        
+    # Create new user
+    user = User(
+        username=data['username'],
+        email=data['email'],
+        password_hash=generate_password_hash(data['password']),
+        role=data['role']
+    )
+    
+    try:
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'success': True, 'id': user.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/activities')
 def get_activities():
     activities = Activity.query.all()

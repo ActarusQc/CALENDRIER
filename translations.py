@@ -41,6 +41,7 @@ translations = {
         'reader': 'Reader',
         'creator': 'Creator',
         'admin': 'Admin',
+        'delete_confirmation': 'Are you sure you want to delete this activity?',
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -93,6 +94,7 @@ translations = {
         'reader': 'Lecteur',
         'creator': 'Créateur',
         'admin': 'Administrateur',
+        'delete_confirmation': 'Êtes-vous sûr de vouloir supprimer cette activité?',
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',
