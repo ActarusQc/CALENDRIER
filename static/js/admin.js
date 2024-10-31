@@ -45,7 +45,12 @@ async function loadLocationsAndCategories() {
 }
 
 // Call loadLocationsAndCategories when the activity modal is shown
-document.getElementById('activityModal').addEventListener('show.bs.modal', loadLocationsAndCategories);
+document.getElementById('activityModal').addEventListener('show.bs.modal', function() {
+    // Only load locations and categories if this is a new activity (no activityId)
+    if (!document.getElementById('activityId').value) {
+        loadLocationsAndCategories();
+    }
+});
 
 function setupShareLinkHandlers() {
     const toggleBtn = document.getElementById('toggleShareCard');
@@ -179,6 +184,7 @@ async function saveActivity() {
 
 async function editActivity(id) {
     try {
+        // First load the activity data
         const response = await fetch(`/api/activities/${id}`);
         if (!response.ok) {
             const errorData = await response.json();
@@ -187,6 +193,10 @@ async function editActivity(id) {
         }
         const activity = await response.json();
         
+        // Wait for locations and categories to load
+        await loadLocationsAndCategories();
+        
+        // Set form values
         document.getElementById('activityId').value = id;
         document.getElementById('title').value = activity.title;
         document.getElementById('date').value = activity.date;
@@ -194,12 +204,13 @@ async function editActivity(id) {
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         
-        await loadLocationsAndCategories();
+        // Set categories
         const checkboxes = document.querySelectorAll('.category-checkbox');
         checkboxes.forEach(checkbox => {
             checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
         });
         
+        // Set recurring options
         const isRecurringCheckbox = document.getElementById('is_recurring');
         isRecurringCheckbox.checked = activity.is_recurring;
         isRecurringCheckbox.dispatchEvent(new Event('change'));
@@ -209,6 +220,7 @@ async function editActivity(id) {
             document.getElementById('recurrence_end_date').value = activity.recurrence_end_date;
         }
         
+        // Show modal after everything is set
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
         modal.show();
     } catch (error) {
