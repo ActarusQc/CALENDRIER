@@ -27,14 +27,24 @@ async function loadUsers() {
         });
     } catch (error) {
         console.error('Error loading users:', error);
+        showError(window.translations.error_loading_users || 'Error loading users');
     }
 }
 
 async function saveUser(event) {
     event.preventDefault();
-    const form = document.getElementById('userForm');
+    const form = event.target;
     const formData = new FormData(form);
     const userId = formData.get('userId');
+    
+    // Convert FormData to JSON object
+    const data = {};
+    formData.forEach((value, key) => {
+        // Only include password if it's not empty
+        if (key !== 'password' || value) {
+            data[key] = value;
+        }
+    });
     
     try {
         const url = userId ? `/api/users/${userId}` : '/api/users';
@@ -45,20 +55,21 @@ async function saveUser(event) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(Object.fromEntries(formData))
+            body: JSON.stringify(data)
         });
         
         if (response.ok) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
             modal.hide();
-            loadUsers();
+            await loadUsers();
+            hideError();
         } else {
-            const data = await response.json();
-            alert(data.error || 'Error saving user');
+            const errorData = await response.json();
+            showError(errorData.error || 'Error saving user');
         }
     } catch (error) {
         console.error('Error saving user:', error);
-        alert('Error saving user');
+        showError(window.translations.error_saving_user || 'Error saving user');
     }
 }
 
@@ -66,7 +77,7 @@ async function editUser(id) {
     try {
         const response = await fetch(`/api/users/${id}`);
         if (!response.ok) {
-            alert(window.translations.error_loading_user || 'Erreur lors du chargement de l\'utilisateur');
+            showError(window.translations.error_loading_user || 'Error loading user');
             return;
         }
         const user = await response.json();
@@ -77,11 +88,12 @@ async function editUser(id) {
         document.getElementById('role').value = user.role;
         document.getElementById('password').value = '';
         
+        hideError();
         const modal = new bootstrap.Modal(document.getElementById('userModal'));
         modal.show();
     } catch (error) {
         console.error('Error loading user:', error);
-        alert(window.translations.error_loading_user || 'Erreur lors du chargement de l\'utilisateur');
+        showError(window.translations.error_loading_user || 'Error loading user');
     }
 }
 
@@ -93,15 +105,34 @@ async function deleteUser(id) {
             });
             
             if (response.ok) {
-                loadUsers();
+                await loadUsers();
             } else {
-                alert('Error deleting user');
+                const errorData = await response.json();
+                showError(errorData.error || window.translations.error_deleting_user || 'Error deleting user');
             }
         } catch (error) {
             console.error('Error deleting user:', error);
-            alert('Error deleting user');
+            showError(window.translations.error_deleting_user || 'Error deleting user');
         }
     }
+}
+
+function resetUserForm() {
+    const form = document.getElementById('userForm');
+    form.reset();
+    document.getElementById('userId').value = '';
+    hideError();
+}
+
+function showError(message) {
+    const errorAlert = document.getElementById('errorAlert');
+    errorAlert.textContent = message;
+    errorAlert.classList.remove('d-none');
+}
+
+function hideError() {
+    const errorAlert = document.getElementById('errorAlert');
+    errorAlert.classList.add('d-none');
 }
 
 // Add form submit handler

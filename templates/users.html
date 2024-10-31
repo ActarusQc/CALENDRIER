@@ -4,7 +4,7 @@
 <div class="row mb-4">
     <div class="col-md-12">
         <h2>{{ trans.user_management }}</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
             {{ trans.add_new_user }}
         </button>
     </div>
@@ -51,25 +51,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="userForm" method="POST" action="{{ url_for('create_user') }}">
+                <div id="errorAlert" class="alert alert-danger d-none"></div>
+                <form id="userForm">
                     <input type="hidden" id="userId" name="userId">
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.username }}</label>
+                        <label for="username" class="form-label">{{ trans.username }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.username }}</small>
                         <input type="text" class="form-control" id="username" name="username" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.email }}</label>
+                        <label for="email" class="form-label">{{ trans.email }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.email }}</small>
                         <input type="email" class="form-control" id="email" name="email" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.password }}</label>
+                        <label for="password" class="form-label">{{ trans.password }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.password }}</small>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control" id="password" name="password">
+                        <small class="text-muted">{{ trans.leave_empty_if_no_change }}</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.role }}</label>
+                        <label for="role" class="form-label">{{ trans.role }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.role }}</small>
                         <select class="form-control" id="role" name="role" required>
                             <option value="reader">{{ trans.reader }}</option>
@@ -89,5 +91,9 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+// Pass translations to JavaScript
+window.translations = {{ trans|tojson|safe }};
+</script>
 <script src="{{ url_for('static', filename='js/users.js') }}"></script>
 {% endblock %}
