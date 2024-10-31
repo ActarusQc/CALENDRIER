@@ -293,17 +293,17 @@ def create_activity():
         
     data = request.json
     
-    # Validate required fields
-    if not data.get('title') or not data.get('date'):
-        return jsonify({'error': 'Title and date are required'}), 400
-    
-    # Validate categories
+    # Validate categories first
     category_ids = data.get('category_ids', [])
     if not category_ids:
         return jsonify({'error': 'At least one category is required'}), 400
+        
+    # Get categories before creating activity
+    categories = Category.query.filter(Category.id.in_(category_ids)).all()
+    if len(categories) != len(category_ids):
+        return jsonify({'error': 'One or more invalid category IDs'}), 400
     
     try:
-        # Create activity
         activity = Activity(
             title=data['title'],
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
@@ -312,28 +312,16 @@ def create_activity():
             notes=data.get('notes'),
             is_recurring=data.get('is_recurring', False),
             recurrence_type=data.get('recurrence_type'),
-            recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+            recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None,
+            categories=categories  # Assign categories immediately
         )
         
-        # Add categories
-        categories = Category.query.filter(Category.id.in_(category_ids)).all()
-        if len(categories) != len(category_ids):
-            return jsonify({'error': 'One or more invalid category IDs'}), 400
-        activity.categories = categories
-        
-        # Save to database
         db.session.add(activity)
         db.session.commit()
-
-        try:
-            recipients = [user.email for user in User.query.all()]
-            EmailNotifier.notify_activity_created(activity, recipients)
-        except Exception as e:
-            print(f"Error sending email notification: {e}")
-
         return jsonify({'success': True, 'id': activity.id})
     except Exception as e:
         db.session.rollback()
+        print(f'Error creating activity: {str(e)}')  # Add logging
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activities/<int:activity_id>', methods=['PUT'])
@@ -368,13 +356,6 @@ def update_activity(activity_id):
         activity.categories = categories
         
         db.session.commit()
-
-        try:
-            recipients = [user.email for user in User.query.all()]
-            EmailNotifier.notify_activity_updated(activity, recipients)
-        except Exception as e:
-            print(f"Error sending email notification: {e}")
-
         return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()
@@ -387,19 +368,10 @@ def delete_activity(activity_id):
         return jsonify({'error': 'Unauthorized'}), 403
         
     activity = Activity.query.get_or_404(activity_id)
-    activity_title = activity.title
-    activity_date = activity.date.strftime('%Y-%m-%d')
     
     try:
         db.session.delete(activity)
         db.session.commit()
-
-        try:
-            recipients = [user.email for user in User.query.all()]
-            EmailNotifier.notify_activity_deleted(activity_title, activity_date, recipients)
-        except Exception as e:
-            print(f"Error sending email notification: {e}")
-
         return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()

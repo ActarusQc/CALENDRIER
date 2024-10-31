@@ -128,21 +128,21 @@ async function saveActivity() {
         alert(window.translations.select_category || 'Please select at least one category');
         return;
     }
-    
-    const activityId = document.getElementById('activityId').value;
+
     const activity = {
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
         time: document.getElementById('time').value,
-        location_id: document.getElementById('location').value,
-        category_ids: selectedCategories,
+        location_id: document.getElementById('location').value || null,
+        category_ids: selectedCategories,  // This will be an array of integers
         notes: document.getElementById('notes').value,
-        is_recurring: isRecurring,
+        is_recurring: document.getElementById('is_recurring').checked,
         recurrence_type: document.getElementById('recurrence_type').value,
-        recurrence_end_date: recurrenceEndDate.value
+        recurrence_end_date: document.getElementById('recurrence_end_date').value
     };
     
     try {
+        const activityId = document.getElementById('activityId').value;
         const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
         const method = activityId ? 'PUT' : 'POST';
         
