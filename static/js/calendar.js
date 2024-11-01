@@ -80,10 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
             modalDiv.className = 'modal fade';
             modalDiv.innerHTML = `
                 <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
+                    <div class="modal-content bg-dark text-white">
+                        <div class="modal-header border-secondary">
                             <h5 class="modal-title">${activity.title}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                             <p><strong>Date:</strong> ${activity.date}</p>

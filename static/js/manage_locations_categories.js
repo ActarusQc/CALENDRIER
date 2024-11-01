@@ -89,7 +89,7 @@ async function editCategory(id) {
 }
 
 async function deleteCategory(id) {
-    if (confirm(window.translations.delete_confirmation)) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
         try {
             const response = await fetch(`/api/categories/${id}`, {
                 method: 'DELETE'
@@ -183,7 +183,7 @@ async function editLocation(id) {
 }
 
 async function deleteLocation(id) {
-    if (confirm(window.translations.delete_confirmation)) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
         try {
             const response = await fetch(`/api/locations/${id}`, {
                 method: 'DELETE'
