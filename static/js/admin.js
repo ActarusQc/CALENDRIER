@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
-    setupAllDayToggle();
     loadLocationsAndCategories();
+    setupAllDayToggle();
 });
 
 function setupAllDayToggle() {
@@ -9,7 +9,6 @@ function setupAllDayToggle() {
     const timeField = document.getElementById('timeField');
     
     if (allDayCheckbox && timeField) {
-        // Set initial state
         timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
         
         allDayCheckbox.addEventListener('change', function() {
@@ -114,9 +113,9 @@ async function saveActivity() {
         const activity = {
             title: document.getElementById('title').value.trim(),
             date: document.getElementById('date').value,
-            is_all_day: document.getElementById('is_all_day')?.checked || false,
-            time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('time').value,
-            color: document.getElementById('color').value || '#6f42c1',
+            is_all_day: document.getElementById('is_all_day').checked,
+            time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
+            color: document.getElementById('color').value,
             location_id: document.getElementById('location').value || null,
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
             notes: document.getElementById('notes').value.trim()
@@ -175,7 +174,6 @@ async function loadActivities() {
                     </td>
                     <td>${activity.location || ''}</td>
                     <td>${activity.categories.join(', ')}</td>
-                    <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>
