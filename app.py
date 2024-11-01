@@ -113,8 +113,28 @@ def get_activities():
         'notes': activity.notes,
         'is_recurring': activity.is_recurring,
         'recurrence_type': activity.recurrence_type,
-        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
+        'is_all_day': activity.is_all_day,
+        'color': activity.color
     } for activity in activities])
+
+@app.route('/api/activities/<int:activity_id>', methods=['GET'])
+def get_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    return jsonify({
+        'id': activity.id,
+        'title': activity.title,
+        'date': activity.date.strftime('%Y-%m-%d'),
+        'time': activity.time,
+        'location_id': activity.location_id,
+        'category_ids': [c.id for c in activity.categories],
+        'notes': activity.notes,
+        'is_all_day': activity.is_all_day,
+        'color': activity.color,
+        'is_recurring': activity.is_recurring,
+        'recurrence_type': activity.recurrence_type,
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
+    })
 
 # API Endpoints for Categories
 @app.route('/api/categories', methods=['GET'])

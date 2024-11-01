@@ -91,10 +91,8 @@ body {
     margin-bottom: 8px;
     padding: 6px 8px;
     border-radius: 4px;
-    border-left: 4px solid;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    background-color: white;
 }
 
 .activity:hover {
@@ -129,7 +127,7 @@ body {
 /* Modal styling */
 .modal-content {
     background-color: #343a40;
-    color: #fff;
+    color: white;
 }
 
 .modal-header {
@@ -152,9 +150,45 @@ body {
     color: #adb5bd !important;
 }
 
+.modal-body .form-control,
+.modal-body .form-select {
+    background-color: #495057;
+    border-color: #6c757d;
+    color: white;
+}
+
+.modal-body .form-check-label {
+    color: white;
+}
+
 /* Form styling */
 .form-check-label {
     color: #fff;
+}
+
+/* Color picker styling */
+.color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.color-picker-group .form-control-color {
+    width: 60px;
+    height: 38px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+}
+
+.color-picker-group .form-control-color::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker-group .form-control-color::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
 }
 
 @media print {
@@ -181,28 +215,4 @@ body {
         break-inside: avoid;
         color: black !important;
     }
-}
-
-/* Color picker input styling */
-.color-picker-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.color-picker-group .form-control-color {
-    width: 60px;
-    height: 38px;
-    padding: 0;
-    border: none;
-    cursor: pointer;
-}
-
-.color-picker-group .form-control-color::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.color-picker-group .form-control-color::-webkit-color-swatch {
-    border: none;
-    border-radius: 4px;
 }
