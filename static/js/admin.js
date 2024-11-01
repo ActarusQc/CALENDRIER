@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
-    setupShareLinkHandlers();
-    setupRecurringActivityToggle();
     setupAllDayToggle();
+    loadLocationsAndCategories();
 });
 
 function setupAllDayToggle() {
@@ -10,11 +9,13 @@ function setupAllDayToggle() {
     const timeField = document.getElementById('timeField');
     
     if (allDayCheckbox && timeField) {
+        // Set initial state
+        timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
+        
         allDayCheckbox.addEventListener('change', function() {
             timeField.style.display = this.checked ? 'none' : 'block';
-            const timeInput = document.getElementById('time');
             if (this.checked) {
-                timeInput.value = '';
+                document.getElementById('time').value = '';
             }
         });
     }
@@ -99,43 +100,40 @@ async function editActivity(id) {
             checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
         });
         
-        // Set recurring options if present
-        if (activity.is_recurring) {
-            document.getElementById('is_recurring').checked = true;
-            document.getElementById('recurrence_type').value = activity.recurrence_type;
-            document.getElementById('recurrence_end_date').value = activity.recurrence_end_date;
-            document.getElementById('recurrenceOptions').style.display = 'block';
-        }
-        
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
         modal.show();
     } catch (error) {
         console.error('Error loading activity:', error);
-        alert('Erreur lors du chargement de l'activité');
+        alert('Error loading activity: ' + error.message);
     }
 }
 
 async function saveActivity() {
-    const activity = {
-        title: document.getElementById('title').value,
-        date: document.getElementById('date').value,
-        is_all_day: document.getElementById('is_all_day').checked,
-        time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
-        color: document.getElementById('color').value,
-        location_id: document.getElementById('location').value || null,
-        category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
-        notes: document.getElementById('notes').value,
-        is_recurring: document.getElementById('is_recurring').checked,
-        recurrence_type: document.getElementById('recurrence_type').value,
-        recurrence_end_date: document.getElementById('recurrence_end_date').value
-    };
-    
     try {
+        // Get form values
+        const activity = {
+            title: document.getElementById('title').value,
+            date: document.getElementById('date').value,
+            is_all_day: document.getElementById('is_all_day').checked,
+            time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
+            color: document.getElementById('color').value,
+            location_id: document.getElementById('location').value || null,
+            category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
+            notes: document.getElementById('notes').value
+        };
+
+        // Validate required fields
+        if (!activity.title || !activity.date) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
         const activityId = document.getElementById('activityId').value;
         const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
         const method = activityId ? 'PUT' : 'POST';
-        
+
+        console.log('Saving activity:', activity);
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -143,28 +141,19 @@ async function saveActivity() {
             },
             body: JSON.stringify(activity)
         });
-        
+
         if (!response.ok) {
-            throw new Error('Failed to save activity');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save activity');
         }
-        
+
+        // Close modal and reload activities
         const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
         modal.hide();
-        loadActivities();
+        await loadActivities();
     } catch (error) {
         console.error('Error saving activity:', error);
-        alert('Erreur lors de l'enregistrement de l'activité');
-    }
-}
-
-function setupRecurringActivityToggle() {
-    const recurringCheckbox = document.getElementById('is_recurring');
-    const recurrenceOptions = document.getElementById('recurrenceOptions');
-    
-    if (recurringCheckbox && recurrenceOptions) {
-        recurringCheckbox.addEventListener('change', function() {
-            recurrenceOptions.style.display = this.checked ? 'block' : 'none';
-        });
+        alert('Error saving activity: ' + error.message);
     }
 }
 
@@ -200,6 +189,7 @@ async function loadActivities() {
             });
     } catch (error) {
         console.error('Error loading activities:', error);
+        alert('Error loading activities: ' + error.message);
     }
 }
 
@@ -210,15 +200,15 @@ async function deleteActivity(id) {
                 method: 'DELETE'
             });
             
-            if (response.ok) {
-                loadActivities();
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Error deleting activity');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to delete activity');
             }
+            
+            await loadActivities();
         } catch (error) {
             console.error('Error deleting activity:', error);
-            alert('Error deleting activity');
+            alert('Error deleting activity: ' + error.message);
         }
     }
 }
