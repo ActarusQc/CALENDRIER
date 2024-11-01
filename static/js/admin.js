@@ -65,95 +65,66 @@ async function loadLocationsAndCategories() {
     }
 }
 
-// Call loadLocationsAndCategories when the activity modal is shown
-document.getElementById('activityModal').addEventListener('show.bs.modal', function() {
-    // Only load locations and categories if this is a new activity (no activityId)
-    if (!document.getElementById('activityId').value) {
-        loadLocationsAndCategories();
-    }
-});
-
-function setupRecurringActivityToggle() {
-    const recurringCheckbox = document.getElementById('is_recurring');
-    const recurrenceOptions = document.getElementById('recurrenceOptions');
-    
-    if (recurringCheckbox && recurrenceOptions) {
-        recurringCheckbox.addEventListener('change', function() {
-            recurrenceOptions.style.display = this.checked ? 'block' : 'none';
-        });
-    }
-}
-
-function resetForm() {
-    document.getElementById('activityForm').reset();
-    document.getElementById('activityId').value = '';
-    document.getElementById('color').value = '#6f42c1';
-    loadLocationsAndCategories();
-}
-
-async function loadActivities() {
+async function editActivity(id) {
     try {
-        const response = await fetch('/api/activities');
-        const activities = await response.json();
-        displayActivities(activities);
-    } catch (error) {
-        console.error('Error loading activities:', error);
-    }
-}
-
-function displayActivities(activities) {
-    const tbody = document.getElementById('activitiesList');
-    tbody.innerHTML = '';
-    
-    activities.sort((a, b) => new Date(a.date) - new Date(b.date))
-        .forEach(activity => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${activity.date}</td>
-                <td>${activity.is_all_day ? 'All day' : (activity.time || '')}</td>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="color-dot" style="background-color: ${activity.color}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
-                        ${activity.title}
-                    </div>
-                </td>
-                <td>${activity.location || ''}</td>
-                <td>${activity.categories.join(', ')}</td>
-                <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+        const response = await fetch(`/api/activities/${id}`);
+        if (!response.ok) {
+            throw new Error('Failed to load activity');
+        }
+        const activity = await response.json();
+        
+        // Load locations and categories first
+        await loadLocationsAndCategories();
+        
+        // Set form values
+        document.getElementById('activityId').value = id;
+        document.getElementById('title').value = activity.title;
+        document.getElementById('date').value = activity.date;
+        
+        // Set all-day checkbox and time field
+        const allDayCheckbox = document.getElementById('is_all_day');
+        const timeField = document.getElementById('timeField');
+        allDayCheckbox.checked = activity.is_all_day;
+        document.getElementById('time').value = activity.time || '';
+        timeField.style.display = activity.is_all_day ? 'none' : 'block';
+        
+        // Set color
+        document.getElementById('color').value = activity.color || '#6f42c1';
+        document.getElementById('location').value = activity.location_id || '';
+        document.getElementById('notes').value = activity.notes || '';
+        
+        // Set categories
+        const checkboxes = document.querySelectorAll('.category-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
         });
+        
+        // Set recurring options if present
+        if (activity.is_recurring) {
+            document.getElementById('is_recurring').checked = true;
+            document.getElementById('recurrence_type').value = activity.recurrence_type;
+            document.getElementById('recurrence_end_date').value = activity.recurrence_end_date;
+            document.getElementById('recurrenceOptions').style.display = 'block';
+        }
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading activity:', error);
+        alert('Erreur lors du chargement de l'activité');
+    }
 }
 
 async function saveActivity() {
-    const isRecurring = document.getElementById('is_recurring').checked;
-    const recurrenceEndDate = document.getElementById('recurrence_end_date');
-    
-    if (isRecurring && !recurrenceEndDate.value) {
-        alert(window.translations.end_date);
-        return;
-    }
-    
-    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
-        .map(checkbox => parseInt(checkbox.value));
-
-    if (selectedCategories.length === 0) {
-        alert(window.translations.select_category || 'Please select at least one category');
-        return;
-    }
-
     const activity = {
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
-        time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
         is_all_day: document.getElementById('is_all_day').checked,
+        time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
         color: document.getElementById('color').value,
         location_id: document.getElementById('location').value || null,
-        category_ids: selectedCategories,
+        category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
         notes: document.getElementById('notes').value,
         is_recurring: document.getElementById('is_recurring').checked,
         recurrence_type: document.getElementById('recurrence_type').value,
@@ -173,67 +144,62 @@ async function saveActivity() {
             body: JSON.stringify(activity)
         });
         
-        if (response.ok) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
-            modal.hide();
-            loadActivities();
-        } else {
-            const data = await response.json();
-            alert(data.error || 'Error saving activity');
+        if (!response.ok) {
+            throw new Error('Failed to save activity');
         }
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
+        modal.hide();
+        loadActivities();
     } catch (error) {
         console.error('Error saving activity:', error);
-        alert('Error saving activity');
+        alert('Erreur lors de l'enregistrement de l'activité');
     }
 }
 
-async function editActivity(id) {
-    try {
-        // First load the activity data
-        const response = await fetch(`/api/activities/${id}`);
-        if (!response.ok) {
-            const errorData = await response.json();
-            alert(errorData.error || 'Error loading activity');
-            return;
-        }
-        const activity = await response.json();
-        
-        // Wait for locations and categories to load
-        await loadLocationsAndCategories();
-        
-        // Set form values
-        document.getElementById('activityId').value = id;
-        document.getElementById('title').value = activity.title;
-        document.getElementById('date').value = activity.date;
-        document.getElementById('is_all_day').checked = activity.is_all_day;
-        document.getElementById('time').value = activity.time || '';
-        document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
-        document.getElementById('color').value = activity.color || '#6f42c1';
-        document.getElementById('location').value = activity.location_id || '';
-        document.getElementById('notes').value = activity.notes || '';
-        
-        // Set categories
-        const checkboxes = document.querySelectorAll('.category-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
+function setupRecurringActivityToggle() {
+    const recurringCheckbox = document.getElementById('is_recurring');
+    const recurrenceOptions = document.getElementById('recurrenceOptions');
+    
+    if (recurringCheckbox && recurrenceOptions) {
+        recurringCheckbox.addEventListener('change', function() {
+            recurrenceOptions.style.display = this.checked ? 'block' : 'none';
         });
+    }
+}
+
+async function loadActivities() {
+    try {
+        const response = await fetch('/api/activities');
+        const activities = await response.json();
         
-        // Set recurring options
-        const isRecurringCheckbox = document.getElementById('is_recurring');
-        isRecurringCheckbox.checked = activity.is_recurring;
-        isRecurringCheckbox.dispatchEvent(new Event('change'));
+        const tbody = document.getElementById('activitiesList');
+        tbody.innerHTML = '';
         
-        if (activity.is_recurring) {
-            document.getElementById('recurrence_type').value = activity.recurrence_type;
-            document.getElementById('recurrence_end_date').value = activity.recurrence_end_date;
-        }
-        
-        // Show modal after everything is set
-        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
-        modal.show();
+        activities.sort((a, b) => new Date(a.date) - new Date(b.date))
+            .forEach(activity => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${activity.date}</td>
+                    <td>${activity.is_all_day ? 'All day' : (activity.time || '')}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="color-dot" style="background-color: ${activity.color}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
+                            ${activity.title}
+                        </div>
+                    </td>
+                    <td>${activity.location || ''}</td>
+                    <td>${activity.categories.join(', ')}</td>
+                    <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
     } catch (error) {
-        console.error('Error loading activity:', error);
-        alert('Error loading activity');
+        console.error('Error loading activities:', error);
     }
 }
 
@@ -255,30 +221,4 @@ async function deleteActivity(id) {
             alert('Error deleting activity');
         }
     }
-}
-
-async function fetchShareLink() {
-    try {
-        const response = await fetch('/api/share-link');
-        const data = await response.json();
-        document.getElementById('shareLink').value = window.location.origin + '/calendar/' + data.share_link;
-    } catch (error) {
-        console.error('Error fetching share link:', error);
-    }
-}
-
-async function generateNewShareLink() {
-    try {
-        const response = await fetch('/api/share-link/generate', { method: 'POST' });
-        const data = await response.json();
-        document.getElementById('shareLink').value = window.location.origin + '/calendar/' + data.share_link;
-    } catch (error) {
-        console.error('Error generating new share link:', error);
-    }
-}
-
-function copyShareLink() {
-    const shareLink = document.getElementById('shareLink');
-    shareLink.select();
-    document.execCommand('copy');
 }

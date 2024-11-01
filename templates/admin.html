@@ -85,21 +85,18 @@
                         <input type="date" class="form-control bg-dark text-white" id="date" required>
                     </div>
                     <div class="mb-3">
-                        <div class="form-check">
+                        <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="is_all_day">
                             <label class="form-check-label text-white" for="is_all_day">{{ trans.all_day_event }}</label>
                         </div>
-                        <div id="timeField" class="mt-2">
+                        <div id="timeField">
                             <label class="form-label text-white">{{ trans.time }}</label>
-                            <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
                             <input type="time" class="form-control bg-dark text-white" id="time">
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-white">{{ trans.color }}</label>
-                        <div class="color-picker-group">
-                            <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
-                        </div>
+                        <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-white">{{ trans.location }}</label>

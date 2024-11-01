@@ -166,13 +166,6 @@ body {
 }
 
 /* Color picker styling */
-.color-picker-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1rem;
-}
-
 .form-control-color {
     width: 60px !important;
     height: 38px !important;
@@ -181,17 +174,17 @@ body {
     background-color: transparent !important;
 }
 
-.color-picker-group .form-control-color::-webkit-color-swatch-wrapper {
-    padding: 0;
+.color-picker-group {
+    margin-top: 5px;
 }
 
-.color-picker-group .form-control-color::-webkit-color-swatch {
-    border: none;
+/* Activity display styling */
+.activity {
+    margin-bottom: 5px;
+    padding: 5px;
     border-radius: 4px;
-}
-
-.form-check-label {
     color: white !important;
+    cursor: pointer;
 }
 
 @media print {
