@@ -8,6 +8,9 @@
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
                 {{ trans.add_new_activity }}
             </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                {{ trans.view_calendar }}
+            </a>
             {% if current_user.can_manage_users() %}
             <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">{{ trans.manage_users }}</a>
             {% endif %}

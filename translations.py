@@ -56,6 +56,7 @@ translations = {
         'name': 'Name',
         'add_edit_category': 'Add/Edit Category',
         'add_edit_location': 'Add/Edit Location',
+        'view_calendar': 'View Calendar',
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -123,6 +124,7 @@ translations = {
         'name': 'Nom',
         'add_edit_category': 'Ajouter/Modifier une catégorie',
         'add_edit_location': 'Ajouter/Modifier un lieu',
+        'view_calendar': 'Voir calendrier',
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',
