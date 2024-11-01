@@ -11,6 +11,7 @@ body {
 .navbar-logo {
     height: 40px;
     width: auto;
+    object-fit: contain;
 }
 
 .calendar-container {
