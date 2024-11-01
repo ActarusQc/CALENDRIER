@@ -96,8 +96,27 @@ def manage_users():
     users = User.query.all()
     return render_template('users.html', users=users, trans=trans, helpers=helpers)
 
+# API Endpoints for Activities
+@app.route('/api/activities', methods=['GET'])
+def get_activities():
+    activities = Activity.query.all()
+    return jsonify([{
+        'id': activity.id,
+        'title': activity.title,
+        'date': activity.date.strftime('%Y-%m-%d'),
+        'time': activity.time,
+        'location': activity.location_obj.name if activity.location_obj else None,
+        'location_id': activity.location_id,
+        'categories': [category.name for category in activity.categories],
+        'category_ids': [category.id for category in activity.categories],
+        'notes': activity.notes,
+        'is_recurring': activity.is_recurring,
+        'recurrence_type': activity.recurrence_type,
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
+    } for activity in activities])
+
 # API Endpoints for Categories
-@app.route('/api/categories')
+@app.route('/api/categories', methods=['GET'])
 @login_required
 def get_categories():
     categories = Category.query.all()
@@ -184,7 +203,7 @@ def delete_category(category_id):
         return jsonify({'error': str(e)}), 500
 
 # API Endpoints for Locations
-@app.route('/api/locations')
+@app.route('/api/locations', methods=['GET'])
 @login_required
 def get_locations():
     locations = Location.query.all()
@@ -280,14 +299,14 @@ if __name__ == '__main__':
             db.session.add(admin)
             
             # Create default categories
-            default_categories = ['Walking Club', 'Bingo', 'Social', 'Coffee Time']
+            default_categories = ['Cours de langue', 'Activités sociales', 'Activités physiques', 'Ateliers']
             for category_name in default_categories:
                 if not Category.query.filter_by(name=category_name).first():
                     category = Category(name=category_name)
                     db.session.add(category)
             
             # Create default locations
-            default_locations = ['Main Hall', 'Garden', 'Library', 'Dining Room']
+            default_locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
             for location_name in default_locations:
                 if not Location.query.filter_by(name=location_name).first():
                     location = Location(name=location_name)
