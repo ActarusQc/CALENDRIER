@@ -115,10 +115,11 @@ def get_activities():
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
         'is_all_day': activity.is_all_day,
-        'color': activity.color
+        'color': activity.color or '#6f42c1'
     } for activity in activities])
 
 @app.route('/api/activities/<int:activity_id>', methods=['GET'])
+@login_required
 def get_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     return jsonify({
@@ -130,7 +131,7 @@ def get_activity(activity_id):
         'category_ids': [c.id for c in activity.categories],
         'notes': activity.notes,
         'is_all_day': activity.is_all_day,
-        'color': activity.color,
+        'color': activity.color or '#6f42c1',
         'is_recurring': activity.is_recurring,
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
@@ -212,7 +213,7 @@ def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
     
     if category.activities:
-        return jsonify({'error': 'Impossible de supprimer une catégorie associée à des activités'}), 400
+        return jsonify({'error': 'Cannot delete a category that has associated activities'}), 400
     
     try:
         db.session.delete(category)
@@ -294,7 +295,7 @@ def delete_location(location_id):
     location = Location.query.get_or_404(location_id)
     
     if location.activities:
-        return jsonify({'error': 'Impossible de supprimer un lieu associé à des activités'}), 400
+        return jsonify({'error': 'Cannot delete a location that has associated activities'}), 400
     
     try:
         db.session.delete(location)

@@ -143,6 +143,16 @@ body {
     color: white !important;
 }
 
+.form-check-input {
+    background-color: #495057 !important;
+    border-color: #6c757d !important;
+}
+
+.form-check-input:checked {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+}
+
 .modal-body .form-check-label {
     color: white !important;
 }
@@ -157,14 +167,18 @@ body {
 
 /* Color picker styling */
 .color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 1rem;
 }
 
 .form-control-color {
-    width: 60px;
-    height: 38px;
-    padding: 0;
-    border: none;
+    width: 60px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
 }
 
 .color-picker-group .form-control-color::-webkit-color-swatch-wrapper {
@@ -174,6 +188,10 @@ body {
 .color-picker-group .form-control-color::-webkit-color-swatch {
     border: none;
     border-radius: 4px;
+}
+
+.form-check-label {
+    color: white !important;
 }
 
 @media print {

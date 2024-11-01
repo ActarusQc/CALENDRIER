@@ -27,6 +27,10 @@ async function loadLocationsAndCategories() {
             fetch('/api/categories')
         ]);
         
+        if (!locationsResponse.ok || !categoriesResponse.ok) {
+            throw new Error('Failed to load data');
+        }
+        
         const locations = await locationsResponse.json();
         const categories = await categoriesResponse.json();
         
@@ -49,7 +53,7 @@ async function loadLocationsAndCategories() {
             div.innerHTML = `
                 <input class="form-check-input category-checkbox" type="checkbox" 
                     value="${category.id}" id="category${category.id}">
-                <label class="form-check-label" for="category${category.id}">
+                <label class="form-check-label text-white" for="category${category.id}">
                     ${category.name}
                 </label>
             `;
@@ -57,6 +61,7 @@ async function loadLocationsAndCategories() {
         });
     } catch (error) {
         console.error('Error loading locations and categories:', error);
+        alert('Error loading data');
     }
 }
 
@@ -67,30 +72,6 @@ document.getElementById('activityModal').addEventListener('show.bs.modal', funct
         loadLocationsAndCategories();
     }
 });
-
-function setupShareLinkHandlers() {
-    const toggleBtn = document.getElementById('toggleShareCard');
-    const closeBtn = document.getElementById('closeShareCard');
-    const container = document.getElementById('shareCardContainer');
-    
-    if (toggleBtn && container) {
-        toggleBtn.addEventListener('click', function() {
-            const bsCollapse = new bootstrap.Collapse(container);
-            bsCollapse.toggle();
-            
-            if (!container.classList.contains('show')) {
-                fetchShareLink();
-            }
-        });
-    }
-    
-    if (closeBtn && container) {
-        closeBtn.addEventListener('click', function() {
-            const bsCollapse = bootstrap.Collapse.getInstance(container);
-            bsCollapse.hide();
-        });
-    }
-}
 
 function setupRecurringActivityToggle() {
     const recurringCheckbox = document.getElementById('is_recurring');
