@@ -1,3 +1,4 @@
+# Update the error message in the delete_location function
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
@@ -166,7 +167,6 @@ def update_category(category_id):
     if not data.get('name'):
         return jsonify({'error': 'Category name is required'}), 400
     
-    # Check if name exists but exclude current category
     existing = Category.query.filter(
         Category.name == data['name'],
         Category.id != category_id
@@ -192,7 +192,7 @@ def delete_category(category_id):
     category = Category.query.get_or_404(category_id)
     
     if category.activities:
-        return jsonify({'error': 'Cannot delete category with associated activities'}), 400
+        return jsonify({'error': 'Impossible de supprimer une catégorie associée à des activités'}), 400
     
     try:
         db.session.delete(category)
@@ -274,7 +274,7 @@ def delete_location(location_id):
     location = Location.query.get_or_404(location_id)
     
     if location.activities:
-        return jsonify({'error': 'Cannot delete location with associated activities'}), 400
+        return jsonify({'error': 'Impossible de supprimer un lieu associé à des activités'}), 400
     
     try:
         db.session.delete(location)

@@ -12,6 +12,7 @@ body {
     height: 40px;
     width: auto;
     object-fit: contain;
+    margin-right: 10px;
 }
 
 .calendar-container {
@@ -78,6 +79,12 @@ body {
     padding: 4px 8px;
     border-radius: 4px;
     border-left: 4px solid;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.activity:hover {
+    transform: translateY(-2px);
 }
 
 .activity.walking-club {
@@ -113,7 +120,7 @@ body {
 
 /* Form styling */
 .form-check-label {
-    color: white;
+    color: #333;
 }
 
 @media print {

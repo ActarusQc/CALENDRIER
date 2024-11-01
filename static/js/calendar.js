@@ -45,6 +45,66 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cell;
     }
+
+    function createActivityElement(activity) {
+        const activityDiv = document.createElement('div');
+        activityDiv.className = 'activity';
+        activityDiv.style.cursor = 'pointer';
+        
+        // Add category classes
+        if (activity.categories && activity.categories.length > 0) {
+            activity.categories.forEach(category => {
+                activityDiv.classList.add(getActivityClass(category));
+            });
+        }
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'time';
+        timeSpan.textContent = activity.time || '';
+        activityDiv.appendChild(timeSpan);
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = activity.title;
+        activityDiv.appendChild(titleSpan);
+        
+        if (activity.location) {
+            const locationSpan = document.createElement('div');
+            locationSpan.className = 'location';
+            locationSpan.textContent = activity.location;
+            activityDiv.appendChild(locationSpan);
+        }
+        
+        // Add click handler
+        activityDiv.addEventListener('click', () => {
+            const modalDiv = document.createElement('div');
+            modalDiv.className = 'modal fade';
+            modalDiv.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${activity.title}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Date:</strong> ${activity.date}</p>
+                            <p><strong>Heure:</strong> ${activity.time || 'Non spécifié'}</p>
+                            <p><strong>Lieu:</strong> ${activity.location || 'Non spécifié'}</p>
+                            <p><strong>Catégories:</strong> ${activity.categories.join(', ')}</p>
+                            <p><strong>Notes:</strong> ${activity.notes || 'Aucune note'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalDiv);
+            const modal = new bootstrap.Modal(modalDiv);
+            modal.show();
+            modalDiv.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modalDiv);
+            });
+        });
+        
+        return activityDiv;
+    }
     
     async function fetchActivities(year, month) {
         try {
@@ -61,33 +121,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const dateCell = document.querySelector(`div.activities[data-date="${dateStr}"]`);
                     if (dateCell) {
                         console.log('Found date cell:', dateCell, 'for date:', dateStr);
-                        const activityDiv = document.createElement('div');
-                        activityDiv.className = 'activity';
-                        
-                        // Add category classes
-                        if (activity.categories && activity.categories.length > 0) {
-                            activity.categories.forEach(category => {
-                                activityDiv.classList.add(getActivityClass(category));
-                            });
-                        }
-                        
-                        const timeSpan = document.createElement('span');
-                        timeSpan.className = 'time';
-                        timeSpan.textContent = activity.time || '';
-                        activityDiv.appendChild(timeSpan);
-                        
-                        const titleSpan = document.createElement('span');
-                        titleSpan.textContent = activity.title;
-                        activityDiv.appendChild(titleSpan);
-                        
-                        if (activity.location) {
-                            const locationSpan = document.createElement('div');
-                            locationSpan.className = 'location';
-                            locationSpan.textContent = activity.location;
-                            activityDiv.appendChild(locationSpan);
-                        }
-                        
-                        dateCell.appendChild(activityDiv);
+                        const activityElement = createActivityElement(activity);
+                        dateCell.appendChild(activityElement);
                     } else {
                         console.log('No date cell found for:', dateStr);
                     }
