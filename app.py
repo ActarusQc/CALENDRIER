@@ -131,11 +131,81 @@ def get_activity(activity_id):
         'category_ids': [c.id for c in activity.categories],
         'notes': activity.notes,
         'is_all_day': activity.is_all_day,
-        'color': activity.color or '#6f42c1',
-        'is_recurring': activity.is_recurring,
-        'recurrence_type': activity.recurrence_type,
-        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
+        'color': activity.color or '#6f42c1'
     })
+
+@app.route('/api/activities', methods=['POST'])
+@login_required
+def create_activity():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    try:
+        activity = Activity(
+            title=data['title'],
+            date=datetime.strptime(data['date'], '%Y-%m-%d'),
+            time=None if data.get('is_all_day') else data.get('time'),
+            is_all_day=data.get('is_all_day', False),
+            color=data.get('color', '#6f42c1'),
+            location_id=data.get('location_id'),
+            notes=data.get('notes', '')
+        )
+        
+        if data.get('category_ids'):
+            categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+            activity.categories = categories
+        
+        db.session.add(activity)
+        db.session.commit()
+        return jsonify({'success': True, 'id': activity.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activities/<int:activity_id>', methods=['PUT'])
+@login_required
+def update_activity(activity_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(activity_id)
+    data = request.json
+    
+    try:
+        activity.title = data['title']
+        activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
+        activity.is_all_day = data.get('is_all_day', False)
+        activity.time = None if data.get('is_all_day') else data.get('time')
+        activity.color = data.get('color', '#6f42c1')
+        activity.location_id = data.get('location_id')
+        activity.notes = data.get('notes', '')
+        
+        if data.get('category_ids'):
+            categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+            activity.categories = categories
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
+@login_required
+def delete_activity(activity_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(activity_id)
+    
+    try:
+        db.session.delete(activity)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 # API Endpoints for Categories
 @app.route('/api/categories', methods=['GET'])

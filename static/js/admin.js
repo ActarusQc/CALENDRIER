@@ -1,16 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
     loadLocationsAndCategories();
-    setupAllDayToggle();
+    setupForm();
 });
 
-function setupAllDayToggle() {
+function setupForm() {
     const allDayCheckbox = document.getElementById('is_all_day');
     const timeField = document.getElementById('timeField');
     
     if (allDayCheckbox && timeField) {
-        timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
-        
         allDayCheckbox.addEventListener('change', function() {
             timeField.style.display = this.checked ? 'none' : 'block';
             if (this.checked) {
@@ -120,6 +118,8 @@ async function saveActivity() {
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
             notes: document.getElementById('notes').value.trim()
         };
+        
+        console.log('Saving activity:', activity); // Debug log
 
         if (!activity.title || !activity.date) {
             alert('Please fill in all required fields');
