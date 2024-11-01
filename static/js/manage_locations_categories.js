@@ -42,7 +42,7 @@ async function loadCategories() {
 async function saveCategory() {
     const categoryId = document.getElementById('categoryId').value;
     const category = {
-        name: document.getElementById('categoryName').value
+        name: document.getElementById('categoryName').value.trim()
     };
     
     try {
@@ -57,12 +57,14 @@ async function saveCategory() {
             body: JSON.stringify(category)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
             modal.hide();
             loadCategories();
         } else {
-            alert('Error saving category');
+            alert(data.error || 'Error saving category');
         }
     } catch (error) {
         console.error('Error saving category:', error);
@@ -96,7 +98,8 @@ async function deleteCategory(id) {
             if (response.ok) {
                 loadCategories();
             } else {
-                alert('Error deleting category');
+                const data = await response.json();
+                alert(data.error || 'Error deleting category');
             }
         } catch (error) {
             console.error('Error deleting category:', error);
@@ -133,7 +136,7 @@ async function loadLocations() {
 async function saveLocation() {
     const locationId = document.getElementById('locationId').value;
     const location = {
-        name: document.getElementById('locationName').value
+        name: document.getElementById('locationName').value.trim()
     };
     
     try {
@@ -148,12 +151,14 @@ async function saveLocation() {
             body: JSON.stringify(location)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('locationModal'));
             modal.hide();
             loadLocations();
         } else {
-            alert('Error saving location');
+            alert(data.error || 'Error saving location');
         }
     } catch (error) {
         console.error('Error saving location:', error);
@@ -187,7 +192,8 @@ async function deleteLocation(id) {
             if (response.ok) {
                 loadLocations();
             } else {
-                alert('Error deleting location');
+                const data = await response.json();
+                alert(data.error || 'Error deleting location');
             }
         } catch (error) {
             console.error('Error deleting location:', error);
