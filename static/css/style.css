@@ -86,13 +86,13 @@ body {
     overflow-y: auto;
 }
 
+/* Activity styling */
 .activity {
     margin-bottom: 5px;
     padding: 5px;
     border-radius: 4px;
-    color: white;
+    color: white !important;
     cursor: pointer;
-    font-size: 0.85rem;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -127,39 +127,27 @@ body {
 
 /* Modal styling */
 .modal-content {
-    background-color: #343a40;
+    background-color: #343a40 !important;
 }
 
 .modal-header,
 .modal-body,
 .modal-footer {
-    color: white;
-}
-
-.modal-header {
-    border-bottom-color: #495057;
-}
-
-.modal-footer {
-    border-top-color: #495057;
-}
-
-.modal .close {
-    color: #fff;
-}
-
-.modal .form-label {
-    color: #fff;
+    color: white !important;
 }
 
 .modal-body .form-control,
 .modal-body .form-select {
-    background-color: #495057;
-    border-color: #6c757d;
-    color: white;
+    background-color: #495057 !important;
+    border-color: #6c757d !important;
+    color: white !important;
 }
 
 .modal-body .form-check-label {
+    color: white !important;
+}
+
+.text-white {
     color: white !important;
 }
 
@@ -169,9 +157,6 @@ body {
 
 /* Color picker styling */
 .color-picker-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     margin-bottom: 1rem;
 }
 
