@@ -52,7 +52,7 @@
                         <th>{{ trans.time }}</th>
                         <th>{{ trans.title }}</th>
                         <th>{{ trans.location }}</th>
-                        <th>{{ trans.category }}</th>
+                        <th>{{ trans.categories }}</th>
                         <th>{{ trans.recurrence }}</th>
                         <th>{{ trans.actions }}</th>
                     </tr>
@@ -85,9 +85,21 @@
                         <input type="date" class="form-control" id="date" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.time }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
-                        <input type="time" class="form-control" id="time">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="is_all_day">
+                            <label class="form-check-label" for="is_all_day">{{ trans.all_day_event }}</label>
+                        </div>
+                        <div id="timeField">
+                            <label class="form-label">{{ trans.time }}</label>
+                            <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
+                            <input type="time" class="form-control" id="time">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ trans.color }}</label>
+                        <div class="color-picker-group">
+                            <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ trans.location }}</label>

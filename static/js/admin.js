@@ -2,7 +2,23 @@ document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
     setupShareLinkHandlers();
     setupRecurringActivityToggle();
+    setupAllDayToggle();
 });
+
+function setupAllDayToggle() {
+    const allDayCheckbox = document.getElementById('is_all_day');
+    const timeField = document.getElementById('timeField');
+    
+    if (allDayCheckbox && timeField) {
+        allDayCheckbox.addEventListener('change', function() {
+            timeField.style.display = this.checked ? 'none' : 'block';
+            const timeInput = document.getElementById('time');
+            if (this.checked) {
+                timeInput.value = '';
+            }
+        });
+    }
+}
 
 async function loadLocationsAndCategories() {
     try {
@@ -90,7 +106,8 @@ function setupRecurringActivityToggle() {
 function resetForm() {
     document.getElementById('activityForm').reset();
     document.getElementById('activityId').value = '';
-    loadLocationsAndCategories();  // Reload options when form is reset
+    document.getElementById('color').value = '#6f42c1';
+    loadLocationsAndCategories();
 }
 
 async function loadActivities() {
@@ -112,8 +129,13 @@ function displayActivities(activities) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${activity.date}</td>
-                <td>${activity.time || ''}</td>
-                <td>${activity.title}</td>
+                <td>${activity.is_all_day ? 'All day' : (activity.time || '')}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="color-dot" style="background-color: ${activity.color}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
+                        ${activity.title}
+                    </div>
+                </td>
                 <td>${activity.location || ''}</td>
                 <td>${activity.categories.join(', ')}</td>
                 <td>${activity.is_recurring ? `${activity.recurrence_type} until ${activity.recurrence_end_date}` : 'No'}</td>
@@ -146,7 +168,9 @@ async function saveActivity() {
     const activity = {
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
-        time: document.getElementById('time').value,
+        time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
+        is_all_day: document.getElementById('is_all_day').checked,
+        color: document.getElementById('color').value,
         location_id: document.getElementById('location').value || null,
         category_ids: selectedCategories,
         notes: document.getElementById('notes').value,
@@ -200,7 +224,10 @@ async function editActivity(id) {
         document.getElementById('activityId').value = id;
         document.getElementById('title').value = activity.title;
         document.getElementById('date').value = activity.date;
+        document.getElementById('is_all_day').checked = activity.is_all_day;
         document.getElementById('time').value = activity.time || '';
+        document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
+        document.getElementById('color').value = activity.color || '#6f42c1';
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         

@@ -37,10 +37,15 @@ document.addEventListener('DOMContentLoaded', function() {
             dateDiv.textContent = date;
             cell.appendChild(dateDiv);
             
+            const allDayDiv = document.createElement('div');
+            allDayDiv.className = 'all-day-activities';
+            cell.appendChild(allDayDiv);
+            
             const activitiesDiv = document.createElement('div');
-            activitiesDiv.className = 'activities';
+            activitiesDiv.className = 'timed-activities';
             const formattedDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
             activitiesDiv.setAttribute('data-date', formattedDate);
+            allDayDiv.setAttribute('data-date', formattedDate);
             cell.appendChild(activitiesDiv);
         }
         return cell;
@@ -49,48 +54,42 @@ document.addEventListener('DOMContentLoaded', function() {
     function createActivityElement(activity) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
-        activityDiv.style.cursor = 'pointer';
+        activityDiv.style.backgroundColor = activity.color || '#6f42c1';
+        activityDiv.style.borderLeftColor = activity.color || '#6f42c1';
+        activityDiv.style.color = '#ffffff';
         
-        // Add category classes
-        if (activity.categories && activity.categories.length > 0) {
-            activity.categories.forEach(category => {
-                activityDiv.classList.add(getActivityClass(category));
-            });
+        if (activity.is_all_day) {
+            activityDiv.classList.add('all-day');
         }
         
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'time';
-        timeSpan.textContent = activity.time || '';
-        activityDiv.appendChild(timeSpan);
-        
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = activity.title;
-        activityDiv.appendChild(titleSpan);
-        
-        if (activity.location) {
-            const locationSpan = document.createElement('div');
-            locationSpan.className = 'location';
-            locationSpan.textContent = activity.location;
-            activityDiv.appendChild(locationSpan);
+        let timeHtml = '';
+        if (!activity.is_all_day && activity.time) {
+            timeHtml = `<span class="time">${activity.time}</span>`;
         }
         
-        // Add click handler
+        activityDiv.innerHTML = `
+            ${timeHtml}
+            <span class="title">${activity.title}</span>
+            ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+        `;
+        
+        // Add click handler for activity details
         activityDiv.addEventListener('click', () => {
             const modalDiv = document.createElement('div');
             modalDiv.className = 'modal fade';
             modalDiv.innerHTML = `
                 <div class="modal-dialog">
-                    <div class="modal-content bg-dark text-white">
-                        <div class="modal-header border-secondary">
+                    <div class="modal-content">
+                        <div class="modal-header">
                             <h5 class="modal-title">${activity.title}</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                             <p><strong>Date:</strong> ${activity.date}</p>
-                            <p><strong>Heure:</strong> ${activity.time || 'Non spécifié'}</p>
-                            <p><strong>Lieu:</strong> ${activity.location || 'Non spécifié'}</p>
-                            <p><strong>Catégories:</strong> ${activity.categories.join(', ')}</p>
-                            <p><strong>Notes:</strong> ${activity.notes || 'Aucune note'}</p>
+                            <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time || 'Not specified')}</p>
+                            <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
+                            <p><strong>Categories:</strong> ${activity.categories.join(', ')}</p>
+                            <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
                         </div>
                     </div>
                 </div>
@@ -108,39 +107,37 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function fetchActivities(year, month) {
         try {
-            console.log('Fetching activities...');
             const response = await fetch('/api/activities');
             const activities = await response.json();
-            console.log('Received activities:', activities);
             
             activities.forEach(activity => {
                 const activityDate = new Date(activity.date);
-                console.log('Processing activity:', activity);
                 if (activityDate.getFullYear() === year && activityDate.getMonth() === month) {
                     const dateStr = activity.date;
-                    const dateCell = document.querySelector(`div.activities[data-date="${dateStr}"]`);
-                    if (dateCell) {
-                        console.log('Found date cell:', dateCell, 'for date:', dateStr);
+                    const container = activity.is_all_day ?
+                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                    
+                    if (container) {
                         const activityElement = createActivityElement(activity);
-                        dateCell.appendChild(activityElement);
-                    } else {
-                        console.log('No date cell found for:', dateStr);
+                        container.appendChild(activityElement);
                     }
                 }
+            });
+            
+            // Sort timed activities by time
+            document.querySelectorAll('.timed-activities').forEach(container => {
+                const activities = Array.from(container.children);
+                activities.sort((a, b) => {
+                    const timeA = a.querySelector('.time')?.textContent || '';
+                    const timeB = b.querySelector('.time')?.textContent || '';
+                    return timeA.localeCompare(timeB);
+                });
+                activities.forEach(activity => container.appendChild(activity));
             });
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
-    }
-    
-    function getActivityClass(category) {
-        const categoryMap = {
-            'Cours de langue': 'walking-club',
-            'Activités sociales': 'social',
-            'Activités physiques': 'walking-club',
-            'Ateliers': 'coffee-time'
-        };
-        return categoryMap[category] || 'default';
     }
     
     document.getElementById('prevMonth').addEventListener('click', () => {

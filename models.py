@@ -45,6 +45,8 @@ class Activity(db.Model):
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_all_day = db.Column(db.Boolean, default=False)
+    color = db.Column(db.String(7), default='#6f42c1')  # Default color is theme purple
     
     # Many-to-many relationship with categories
     categories = db.relationship('Category',
