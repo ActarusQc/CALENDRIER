@@ -17,27 +17,6 @@
             <a href="{{ url_for('manage_locations_categories') }}" class="btn btn-secondary">
                 {{ trans.manage_locations_categories }}
             </a>
-            <button class="btn btn-outline-primary" id="toggleShareCard">
-                <i class="bi bi-share"></i> {{ trans.toggle_share_link }}
-            </button>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div id="shareCardContainer" class="collapse">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">{{ trans.share_calendar }}</h5>
-                        <button type="button" class="btn-close" id="closeShareCard"></button>
-                    </div>
-                    <p class="card-text">{{ trans.share_link }}</p>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="shareLink" readonly>
-                        <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">{{ trans.copy }}</button>
-                    </div>
-                    <button class="btn btn-sm btn-outline-primary" onclick="generateNewShareLink()">{{ trans.generate_new_link }}</button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -53,7 +32,6 @@
                         <th>{{ trans.title }}</th>
                         <th>{{ trans.location }}</th>
                         <th>{{ trans.categories }}</th>
-                        <th>{{ trans.recurrence }}</th>
                         <th>{{ trans.actions }}</th>
                     </tr>
                 </thead>
@@ -98,7 +76,9 @@
                     <!-- Add color picker -->
                     <div class="mb-3">
                         <label class="form-label text-white">{{ trans.color }}</label>
-                        <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
+                        <div class="color-picker-group">
+                            <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-white">{{ trans.location }}</label>

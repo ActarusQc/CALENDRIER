@@ -111,19 +111,17 @@ async function editActivity(id) {
 
 async function saveActivity() {
     try {
-        // Get form values
         const activity = {
-            title: document.getElementById('title').value,
+            title: document.getElementById('title').value.trim(),
             date: document.getElementById('date').value,
-            is_all_day: document.getElementById('is_all_day').checked,
-            time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
-            color: document.getElementById('color').value,
+            is_all_day: document.getElementById('is_all_day')?.checked || false,
+            time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('time').value,
+            color: document.getElementById('color').value || '#6f42c1',
             location_id: document.getElementById('location').value || null,
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
-            notes: document.getElementById('notes').value
+            notes: document.getElementById('notes').value.trim()
         };
 
-        // Validate required fields
         if (!activity.title || !activity.date) {
             alert('Please fill in all required fields');
             return;
@@ -133,7 +131,6 @@ async function saveActivity() {
         const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
         const method = activityId ? 'PUT' : 'POST';
 
-        console.log('Saving activity:', activity);
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -147,7 +144,6 @@ async function saveActivity() {
             throw new Error(errorData.error || 'Failed to save activity');
         }
 
-        // Close modal and reload activities
         const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
         modal.hide();
         await loadActivities();
