@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function createDateCell(date) {
         const cell = document.createElement('div');
         cell.className = 'calendar-date';
+        
         if (date) {
             const dateDiv = document.createElement('div');
             dateDiv.className = 'date-number';
@@ -38,41 +39,46 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const activitiesDiv = document.createElement('div');
             activitiesDiv.className = 'activities';
-            activitiesDiv.setAttribute('data-date', `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`);
+            const formattedDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
+            activitiesDiv.setAttribute('data-date', formattedDate);
             cell.appendChild(activitiesDiv);
         }
         return cell;
     }
     
-    function getActivityClass(category) {
-        const categoryMap = {
-            'Walking Club': 'walking-club',
-            'Bingo': 'bingo',
-            'Social': 'social',
-            'Coffee Time': 'coffee-time'
-        };
-        return categoryMap[category] || 'default';
-    }
-    
     async function fetchActivities(year, month) {
         try {
+            console.log('Fetching activities...');
             const response = await fetch('/api/activities');
             const activities = await response.json();
+            console.log('Received activities:', activities);
             
             activities.forEach(activity => {
                 const activityDate = new Date(activity.date);
+                console.log('Processing activity:', activity);
                 if (activityDate.getFullYear() === year && activityDate.getMonth() === month) {
-                    const dateCell = document.querySelector(`[data-date="${activity.date}"]`);
+                    const dateStr = activity.date;
+                    const dateCell = document.querySelector(`div.activities[data-date="${dateStr}"]`);
                     if (dateCell) {
+                        console.log('Found date cell:', dateCell, 'for date:', dateStr);
                         const activityDiv = document.createElement('div');
-                        activityDiv.className = `activity ${getActivityClass(activity.category)}`;
+                        activityDiv.className = 'activity';
                         
-                        const timeSpan = document.createElement('div');
+                        // Add category classes
+                        if (activity.categories && activity.categories.length > 0) {
+                            activity.categories.forEach(category => {
+                                activityDiv.classList.add(getActivityClass(category));
+                            });
+                        }
+                        
+                        const timeSpan = document.createElement('span');
                         timeSpan.className = 'time';
-                        timeSpan.textContent = activity.time;
+                        timeSpan.textContent = activity.time || '';
+                        activityDiv.appendChild(timeSpan);
                         
-                        const titleSpan = document.createElement('div');
+                        const titleSpan = document.createElement('span');
                         titleSpan.textContent = activity.title;
+                        activityDiv.appendChild(titleSpan);
                         
                         if (activity.location) {
                             const locationSpan = document.createElement('div');
@@ -81,15 +87,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             activityDiv.appendChild(locationSpan);
                         }
                         
-                        activityDiv.appendChild(timeSpan);
-                        activityDiv.appendChild(titleSpan);
-                        dateCell.querySelector('.activities').appendChild(activityDiv);
+                        dateCell.appendChild(activityDiv);
+                    } else {
+                        console.log('No date cell found for:', dateStr);
                     }
                 }
             });
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
+    }
+    
+    function getActivityClass(category) {
+        const categoryMap = {
+            'Cours de langue': 'walking-club',
+            'Activités sociales': 'social',
+            'Activités physiques': 'walking-club',
+            'Ateliers': 'coffee-time'
+        };
+        return categoryMap[category] || 'default';
     }
     
     document.getElementById('prevMonth').addEventListener('click', () => {
