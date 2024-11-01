@@ -87,11 +87,12 @@ body {
 }
 
 .activity {
-    font-size: 0.85rem;
-    margin-bottom: 8px;
-    padding: 6px 8px;
+    margin-bottom: 5px;
+    padding: 5px;
     border-radius: 4px;
+    color: white;
     cursor: pointer;
+    font-size: 0.85rem;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -109,7 +110,7 @@ body {
 
 .activity .time {
     font-weight: bold;
-    color: #555;
+    color: rgba(255, 255, 255, 0.9);
     display: inline-block;
     margin-right: 4px;
 }
@@ -120,13 +121,18 @@ body {
 
 .activity .location {
     font-size: 0.8rem;
-    color: #666;
+    color: rgba(255, 255, 255, 0.8);
     margin-top: 2px;
 }
 
 /* Modal styling */
 .modal-content {
     background-color: #343a40;
+}
+
+.modal-header,
+.modal-body,
+.modal-footer {
     color: white;
 }
 
@@ -146,10 +152,6 @@ body {
     color: #fff;
 }
 
-.modal .text-muted {
-    color: #adb5bd !important;
-}
-
 .modal-body .form-control,
 .modal-body .form-select {
     background-color: #495057;
@@ -158,12 +160,11 @@ body {
 }
 
 .modal-body .form-check-label {
-    color: white;
+    color: white !important;
 }
 
-/* Form styling */
-.form-check-label {
-    color: #fff;
+.text-muted {
+    color: #adb5bd !important;
 }
 
 /* Color picker styling */
@@ -174,12 +175,11 @@ body {
     margin-bottom: 1rem;
 }
 
-.color-picker-group .form-control-color {
+.form-control-color {
     width: 60px;
     height: 38px;
     padding: 0;
     border: none;
-    cursor: pointer;
 }
 
 .color-picker-group .form-control-color::-webkit-color-swatch-wrapper {

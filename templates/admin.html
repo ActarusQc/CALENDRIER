@@ -75,63 +75,63 @@
                 <form id="activityForm">
                     <input type="hidden" id="activityId">
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.title }}</label>
+                        <label class="form-label text-white">{{ trans.title }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.title }}</small>
                         <input type="text" class="form-control" id="title" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.date }}</label>
+                        <label class="form-label text-white">{{ trans.date }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.date }}</small>
                         <input type="date" class="form-control" id="date" required>
                     </div>
                     <div class="mb-3">
-                        <div class="form-check mb-2">
+                        <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="is_all_day">
-                            <label class="form-check-label" for="is_all_day">{{ trans.all_day_event }}</label>
+                            <label class="form-check-label text-white" for="is_all_day">{{ trans.all_day_event }}</label>
                         </div>
-                        <div id="timeField">
-                            <label class="form-label">{{ trans.time }}</label>
+                        <div id="timeField" class="mt-2">
+                            <label class="form-label text-white">{{ trans.time }}</label>
                             <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
-                            <input type="time" class="form-control" id="time">
+                            <input type="time" class="form-control bg-dark text-white" id="time">
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.color }}</label>
+                        <label class="form-label text-white">{{ trans.color }}</label>
                         <div class="color-picker-group">
                             <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.location }}</label>
+                        <label class="form-label text-white">{{ trans.location }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.location }}</small>
-                        <select class="form-control" id="location">
+                        <select class="form-control bg-dark text-white" id="location">
                             <option value="">{{ trans.select_location }}</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.categories }}</label>
+                        <label class="form-label text-white">{{ trans.categories }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.categories }}</small>
                         <div id="categoriesContainer" class="border rounded p-3">
                             <!-- Categories will be dynamically added here -->
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.notes }}</label>
+                        <label class="form-label text-white">{{ trans.notes }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.notes }}</small>
-                        <textarea class="form-control" id="notes"></textarea>
+                        <textarea class="form-control bg-dark text-white" id="notes"></textarea>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="is_recurring">
-                            <label class="form-check-label" for="is_recurring">{{ trans.recurring_activity }}</label>
+                            <label class="form-check-label text-white" for="is_recurring">{{ trans.recurring_activity }}</label>
                             <small class="text-muted d-block mt-1">{{ helpers.recurring_activity }}</small>
                         </div>
                     </div>
                     <div id="recurrenceOptions" style="display: none;">
                         <div class="mb-3">
-                            <label class="form-label">{{ trans.recurrence_type }}</label>
+                            <label class="form-label text-white">{{ trans.recurrence_type }}</label>
                             <small class="text-muted d-block mb-2">{{ helpers.recurrence_type }}</small>
-                            <select class="form-control" id="recurrence_type">
+                            <select class="form-control bg-dark text-white" id="recurrence_type">
                                 <option value="daily">{{ trans.daily }}</option>
                                 <option value="weekly">{{ trans.weekly }}</option>
                                 <option value="monthly">{{ trans.monthly }}</option>
@@ -139,9 +139,9 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ trans.end_date }}</label>
+                            <label class="form-label text-white">{{ trans.end_date }}</label>
                             <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
-                            <input type="date" class="form-control" id="recurrence_end_date">
+                            <input type="date" class="form-control bg-dark text-white" id="recurrence_end_date">
                         </div>
                     </div>
                 </form>
