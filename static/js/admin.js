@@ -55,6 +55,7 @@ async function loadLocationsAndCategories() {
                 <input class="form-check-input category-checkbox" type="checkbox" 
                     value="${category.id}" id="category${category.id}">
                 <label class="form-check-label text-white" for="category${category.id}">
+                    <span class="color-dot" style="background-color: ${category.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
                     ${category.name}
                 </label>
             `;
@@ -84,7 +85,6 @@ async function editActivity(id) {
         document.getElementById('is_all_day').checked = activity.is_all_day;
         document.getElementById('time').value = activity.time || '';
         document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
-        document.getElementById('color').value = activity.color || '#6f42c1';
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         
@@ -110,7 +110,6 @@ async function saveActivity() {
             date: document.getElementById('date').value,
             is_all_day: document.getElementById('is_all_day')?.checked || false,
             time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('time').value,
-            color: document.getElementById('color').value || '#6f42c1',
             location_id: document.getElementById('location').value || null,
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
             notes: document.getElementById('notes').value.trim()
@@ -160,17 +159,18 @@ async function loadActivities() {
         activities.sort((a, b) => new Date(a.date) - new Date(b.date))
             .forEach(activity => {
                 const tr = document.createElement('tr');
+                const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
                 tr.innerHTML = `
                     <td>${activity.date}</td>
                     <td>${activity.is_all_day ? 'All day' : (activity.time || '')}</td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="color-dot" style="background-color: ${activity.color}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
+                            <div class="color-dot" style="background-color: ${categoryColor}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
                             ${activity.title}
                         </div>
                     </td>
                     <td>${activity.location || ''}</td>
-                    <td>${activity.categories.join(', ')}</td>
+                    <td>${activity.categories.map(c => c.name).join(', ')}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
                         <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>

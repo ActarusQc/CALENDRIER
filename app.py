@@ -130,8 +130,7 @@ def get_activity(activity_id):
         'location_id': activity.location_id,
         'category_ids': [c.id for c in activity.categories],
         'notes': activity.notes,
-        'is_all_day': activity.is_all_day,
-        'color': activity.color or '#6f42c1'
+        'is_all_day': activity.is_all_day
     })
 
 @app.route('/api/activities', methods=['POST'])
@@ -147,7 +146,6 @@ def create_activity():
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
             time=None if data.get('is_all_day') else data.get('time'),
             is_all_day=data.get('is_all_day', False),
-            color=data.get('color', '#6f42c1'),
             location_id=data.get('location_id'),
             notes=data.get('notes', '')
         )
@@ -177,7 +175,6 @@ def update_activity(activity_id):
         activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
         activity.is_all_day = data.get('is_all_day', False)
         activity.time = None if data.get('is_all_day') else data.get('time')
-        activity.color = data.get('color', '#6f42c1')
         activity.location_id = data.get('location_id')
         activity.notes = data.get('notes', '')
         
