@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return cell;
     }
 
-    function createActivityElement(activity) {
+    function createActivityElement(activity, position) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
         
@@ -65,11 +65,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (isMultiDay) {
             activityDiv.classList.add('multi-day');
-            activityDiv.style.gridColumn = '1 / -1';  // Span all columns
+            if (position === 'start') {
+                activityDiv.classList.add('start');
+            } else if (position === 'end') {
+                activityDiv.classList.add('end');
+            } else if (position === 'middle') {
+                activityDiv.classList.add('middle');
+            }
+        }
+        
+        if (activity.is_all_day) {
+            activityDiv.classList.add('all-day');
         }
         
         activityDiv.style.backgroundColor = categoryColor;
-        activityDiv.style.color = '#ffffff';
         
         // Add content
         let timeHtml = '';
@@ -77,11 +86,16 @@ document.addEventListener('DOMContentLoaded', function() {
             timeHtml = `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>`;
         }
         
-        activityDiv.innerHTML = `
-            ${timeHtml}
-            <span class="title">${activity.title}</span>
-            ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-        `;
+        // For middle and end segments of multi-day events, only show title on first day
+        if (position === 'middle' || position === 'end') {
+            activityDiv.innerHTML = '&nbsp;'; // Just show the colored bar
+        } else {
+            activityDiv.innerHTML = `
+                ${timeHtml}
+                <span class="title">${activity.title}</span>
+                ${activity.location && !isMultiDay ? `<div class="location">${activity.location}</div>` : ''}
+            `;
+        }
         
         // Add click handler for activity details
         activityDiv.addEventListener('click', () => {
@@ -134,7 +148,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                         
                         if (container) {
-                            const activityElement = createActivityElement(activity);
+                            let position = 'single';
+                            if (endDate > activityDate) {
+                                if (currentDate.getTime() === activityDate.getTime()) {
+                                    position = 'start';
+                                } else if (currentDate.getTime() === endDate.getTime()) {
+                                    position = 'end';
+                                } else {
+                                    position = 'middle';
+                                }
+                            }
+                            
+                            const activityElement = createActivityElement(activity, position);
                             container.appendChild(activityElement);
                         }
                     }
