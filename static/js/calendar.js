@@ -55,10 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
         
-        // Get category color
         const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
-        
-        // Check if multi-day event
         const startDate = new Date(activity.date);
         const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
         const isMultiDay = endDate > startDate;
@@ -77,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             // Add title as tooltip for all segments
             activityDiv.title = activity.title;
+            
+            // Set vertical position
+            activityDiv.style.top = '0px';
         } else {
             activityDiv.style.backgroundColor = categoryColor;
             activityDiv.innerHTML = `
@@ -132,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dateA.getTime() !== dateB.getTime()) {
                     return dateA - dateB;
                 }
-                // If same date, sort by time
                 return (a.time || '').localeCompare(b.time || '');
             });
             
@@ -173,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Event handlers for month navigation
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
