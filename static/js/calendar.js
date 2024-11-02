@@ -50,85 +50,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cell;
     }
-
+    
     function createActivityElement(activity, position) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
         
-        // Use the first category's color, or activity color, or default
-        const categoryColor = activity.color || 
-            (activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1');
+        // Get category color
+        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
         
-        // Check if this is a multi-day event
+        // Check if multi-day event
         const startDate = new Date(activity.date);
         const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
         const isMultiDay = endDate > startDate;
         
         if (isMultiDay) {
             activityDiv.classList.add('multi-day');
-            activityDiv.classList.add(position); // 'start', 'middle', or 'end'
-        }
-        
-        if (activity.is_all_day) {
-            activityDiv.classList.add('all-day');
-        }
-        
-        activityDiv.style.backgroundColor = categoryColor;
-        
-        // Add content
-        let timeHtml = '';
-        if (!activity.is_all_day && activity.time) {
-            timeHtml = `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>`;
-        }
-        
-        // For middle and end segments of multi-day events, only show the colored bar
-        if (position === 'middle' || position === 'end') {
-            activityDiv.innerHTML = '&nbsp;'; // Just show the colored bar
-            activityDiv.title = activity.title; // Add tooltip
+            activityDiv.classList.add(position);
+            activityDiv.style.backgroundColor = categoryColor;
+            
+            // Only show content on the first day
+            if (position === 'start') {
+                activityDiv.innerHTML = `
+                    <span class="title">${activity.title}</span>
+                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                `;
+            }
+            // Add title as tooltip for all segments
+            activityDiv.title = activity.title;
         } else {
+            activityDiv.style.backgroundColor = categoryColor;
             activityDiv.innerHTML = `
-                ${timeHtml}
+                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
                 <span class="title">${activity.title}</span>
-                ${activity.location && !isMultiDay ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
             `;
         }
         
         // Add click handler for activity details
-        activityDiv.addEventListener('click', () => {
-            const modalDiv = document.createElement('div');
-            modalDiv.className = 'modal fade';
-            modalDiv.innerHTML = `
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title text-white">${activity.title}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body text-white">
-                            <p><strong>Date:</strong> ${activity.date}${activity.end_date ? ' to ' + activity.end_date : ''}</p>
-                            <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Not specified')}</p>
-                            <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
-                            <p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>
-                            <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modalDiv);
-            const modal = new bootstrap.Modal(modalDiv);
-            modal.show();
-            modalDiv.addEventListener('hidden.bs.modal', () => {
-                document.body.removeChild(modalDiv);
-            });
-        });
+        activityDiv.addEventListener('click', () => showActivityDetails(activity));
         
         return activityDiv;
+    }
+    
+    function showActivityDetails(activity) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-white">${activity.title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-white">
+                        <p><strong>Date:</strong> ${activity.date}${activity.end_date ? ' to ' + activity.end_date : ''}</p>
+                        <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Not specified')}</p>
+                        <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
+                        <p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>
+                        <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        const modal = new bootstrap.Modal(modalDiv);
+        modal.show();
+        modalDiv.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modalDiv);
+        });
     }
     
     async function fetchActivities(year, month) {
         try {
             const response = await fetch('/api/activities');
             const activities = await response.json();
+            
+            // Sort activities by date and time
+            activities.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                if (dateA.getTime() !== dateB.getTime()) {
+                    return dateA - dateB;
+                }
+                // If same date, sort by time
+                return (a.time || '').localeCompare(b.time || '');
+            });
             
             activities.forEach(activity => {
                 const activityDate = new Date(activity.date);
@@ -161,17 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
-            });
-            
-            // Sort timed activities by time
-            document.querySelectorAll('.timed-activities').forEach(container => {
-                const activities = Array.from(container.children);
-                activities.sort((a, b) => {
-                    const timeA = a.querySelector('.time')?.textContent || '';
-                    const timeB = b.querySelector('.time')?.textContent || '';
-                    return timeA.localeCompare(timeB);
-                });
-                activities.forEach(activity => container.appendChild(activity));
             });
         } catch (error) {
             console.error('Error fetching activities:', error);

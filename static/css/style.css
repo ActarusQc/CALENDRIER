@@ -64,7 +64,7 @@ body {
     border-radius: 3px;
     color: white !important;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: box-shadow 0.2s;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -72,8 +72,7 @@ body {
 }
 
 .activity:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
 .activity.all-day {
@@ -103,39 +102,43 @@ body {
     margin-top: 1px;
 }
 
-/* Updated multi-day event styling */
+/* Multi-day event styling */
 .activity.multi-day {
-    margin: 0;
-    padding: 4px;
     position: relative;
+    margin: 0;
+    padding: 4px 8px;
+    border-radius: 0;
     font-weight: 500;
-    z-index: 2;
-    box-shadow: none;
-    transition: none;
+    z-index: 15;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    height: 32px;
+    display: flex;
+    align-items: center;
     border: none;
 }
 
+.activity.multi-day:hover {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    z-index: 16;
+}
+
 .activity.multi-day.start {
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
-    border-right: none;
-    padding-left: 8px;
-    margin-right: -1px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    padding-left: 12px;
+    margin-right: -2px;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    border-right: none;
-    border-left: none;
-    margin: 0 -1px;
+    margin: 0 -2px;
 }
 
 .activity.multi-day.end {
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
-    border-left: none;
-    padding-right: 8px;
-    margin-left: -1px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    padding-right: 12px;
+    margin-left: -2px;
 }
 
 /* Calendar styling */
@@ -158,11 +161,12 @@ body {
     background-color: #dee2e6;
     border: 1px solid #dee2e6;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    overflow: hidden;
 }
 
 .calendar-days {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(7, 1fr);
     background-color: var(--theme-purple);
     color: white;
     padding: 8px 0;
@@ -173,7 +177,8 @@ body {
 
 .calendar-dates {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(7, 1fr);
+    background-color: white;
 }
 
 .calendar-date {
@@ -182,9 +187,9 @@ body {
     background-color: white;
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
+    position: relative;
     display: flex;
     flex-direction: column;
-    position: relative;
 }
 
 .calendar-date .date-number {
@@ -199,10 +204,10 @@ body {
     border-bottom: 1px solid #f0f0f0;
     padding-bottom: 4px;
     position: relative;
-    z-index: 1;
+    z-index: 5;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
 }
 
 .timed-activities {
@@ -210,7 +215,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
 }
 
 @media print {
