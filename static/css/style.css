@@ -58,9 +58,9 @@ body {
 
 /* Activity display styling */
 .activity {
-    font-size: 0.75rem;  /* Reduced font size */
-    margin: 1px 0;  /* Reduced margin between events */
-    padding: 2px 4px;  /* Reduced padding */
+    font-size: 0.75rem;
+    margin: 1px 0;
+    padding: 2px 4px;
     border-radius: 3px;
     color: white !important;
     cursor: pointer;
@@ -103,36 +103,39 @@ body {
     margin-top: 1px;
 }
 
+/* Updated multi-day event styling */
 .activity.multi-day {
-    margin: 1px -1px;  /* Negative margin to overlap borders */
-    border-radius: 0;
-    padding: 2px 4px;
+    margin: 0;
+    padding: 4px;
+    position: relative;
     font-weight: 500;
-    z-index: 1;
+    z-index: 2;
+    box-shadow: none;
+    transition: none;
+    border: none;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 3px;
     border-bottom-left-radius: 3px;
+    border-right: none;
     padding-left: 8px;
     margin-right: -1px;
-    border-right: none;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    margin-left: -1px;
-    margin-right: -1px;
     border-right: none;
     border-left: none;
+    margin: 0 -1px;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 3px;
     border-bottom-right-radius: 3px;
+    border-left: none;
     padding-right: 8px;
     margin-left: -1px;
-    border-left: none;
 }
 
 /* Calendar styling */
@@ -151,7 +154,7 @@ body {
 
 .calendar-grid {
     display: grid;
-    gap: 1px;
+    gap: 0;
     background-color: #dee2e6;
     border: 1px solid #dee2e6;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -159,10 +162,10 @@ body {
 
 .calendar-days {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     background-color: var(--theme-purple);
     color: white;
-    padding: 8px;
+    padding: 8px 0;
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
@@ -170,14 +173,15 @@ body {
 
 .calendar-dates {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .calendar-date {
     min-height: 120px;
     padding: 6px;
     background-color: white;
-    border: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -196,11 +200,17 @@ body {
     padding-bottom: 4px;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
 .timed-activities {
     flex-grow: 1;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
 @media print {
