@@ -55,19 +55,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
         
-        // Use the first category's color, or default if no categories
+        // Use the first category's color, or default
         const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
-        activityDiv.style.backgroundColor = categoryColor;
-        activityDiv.style.borderLeftColor = categoryColor;
-        activityDiv.style.color = '#ffffff';
         
-        if (activity.is_all_day) {
-            activityDiv.classList.add('all-day');
+        // Check if this is a multi-day event
+        const startDate = new Date(activity.date);
+        const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
+        const isMultiDay = endDate > startDate;
+        
+        if (isMultiDay) {
+            activityDiv.classList.add('multi-day');
+            activityDiv.style.gridColumn = '1 / -1';  // Span all columns
         }
         
+        activityDiv.style.backgroundColor = categoryColor;
+        activityDiv.style.color = '#ffffff';
+        
+        // Add content
         let timeHtml = '';
         if (!activity.is_all_day && activity.time) {
-            timeHtml = `<span class="time">${activity.time}</span>`;
+            timeHtml = `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>`;
         }
         
         activityDiv.innerHTML = `
@@ -88,8 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body text-white">
-                            <p><strong>Date:</strong> ${activity.date}</p>
-                            <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time || 'Not specified')}</p>
+                            <p><strong>Date:</strong> ${activity.date}${activity.end_date ? ' to ' + activity.end_date : ''}</p>
+                            <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Not specified')}</p>
                             <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
                             <p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>
                             <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
@@ -115,16 +122,23 @@ document.addEventListener('DOMContentLoaded', function() {
             
             activities.forEach(activity => {
                 const activityDate = new Date(activity.date);
-                if (activityDate.getFullYear() === year && activityDate.getMonth() === month) {
-                    const dateStr = activity.date;
-                    const container = activity.is_all_day ?
-                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                    
-                    if (container) {
-                        const activityElement = createActivityElement(activity);
-                        container.appendChild(activityElement);
+                const endDate = activity.end_date ? new Date(activity.end_date) : activityDate;
+                
+                // For multi-day events, add to each day in the range
+                let currentDate = new Date(activityDate);
+                while (currentDate <= endDate) {
+                    if (currentDate.getFullYear() === year && currentDate.getMonth() === month) {
+                        const dateStr = currentDate.toISOString().split('T')[0];
+                        const container = activity.is_all_day ?
+                            document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                            document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                        
+                        if (container) {
+                            const activityElement = createActivityElement(activity);
+                            container.appendChild(activityElement);
+                        }
                     }
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
             });
             

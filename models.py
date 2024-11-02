@@ -49,12 +49,13 @@ class Activity(db.Model):
     is_all_day = db.Column(db.Boolean, default=False)
     end_date = db.Column(db.DateTime)
     end_time = db.Column(db.String(64))
+    color = db.Column(db.String(7))  # Optional custom color override
     
     # Many-to-many relationship with categories
     categories = db.relationship('Category',
-                                secondary=activity_categories,
-                                lazy='subquery',
-                                backref=db.backref('activities', lazy=True))
+                               secondary=activity_categories,
+                               lazy='subquery',
+                               backref=db.backref('activities', lazy=True))
     
     # Recurrence fields
     is_recurring = db.Column(db.Boolean, default=False)

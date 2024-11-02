@@ -393,18 +393,79 @@ def init_db():
             )
             db.session.add(admin)
             
-            default_categories = ['Cours de langue', 'Activités sociales', 'Activités physiques', 'Ateliers']
-            for category_name in default_categories:
-                if not Category.query.filter_by(name=category_name).first():
-                    category = Category(name=category_name)
+            # Create categories with different colors
+            categories = {
+                'Cours de langue': '#FF6B6B',  # Red
+                'Activités sociales': '#4ECDC4',  # Teal
+                'Activités physiques': '#45B7D1',  # Blue
+                'Ateliers': '#96CEB4'  # Green
+            }
+            
+            for name, color in categories.items():
+                if not Category.query.filter_by(name=name).first():
+                    category = Category(name=name, color=color)
                     db.session.add(category)
             
-            default_locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
-            for location_name in default_locations:
+            # Create locations
+            locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
+            for location_name in locations:
                 if not Location.query.filter_by(name=location_name).first():
                     location = Location(name=location_name)
                     db.session.add(location)
             
+            db.session.commit()
+
+            # Create test activities
+            # Get references to created categories and locations
+            categories = Category.query.all()
+            locations = Location.query.all()
+            
+            # Single day activity
+            activity1 = Activity(
+                title="French Language Class",
+                date=datetime(2024, 11, 4, 9, 0),
+                time="09:00",
+                end_time="10:30",
+                location_id=1,
+                is_all_day=False,
+                notes="Beginner level French class"
+            )
+            activity1.categories = [categories[0]]  # Language category
+            
+            # All-day activity
+            activity2 = Activity(
+                title="Cultural Festival",
+                date=datetime(2024, 11, 5),
+                is_all_day=True,
+                location_id=1,
+                notes="Annual cultural celebration"
+            )
+            activity2.categories = [categories[1]]  # Social category
+            
+            # Multi-day activity
+            activity3 = Activity(
+                title="Sports Week",
+                date=datetime(2024, 11, 6),
+                end_date=datetime(2024, 11, 8),
+                is_all_day=True,
+                location_id=3,
+                notes="Three days of sports activities"
+            )
+            activity3.categories = [categories[2]]  # Physical activities
+            
+            # Regular timed activity
+            activity4 = Activity(
+                title="Cooking Workshop",
+                date=datetime(2024, 11, 7, 14, 0),
+                time="14:00",
+                end_time="16:00",
+                location_id=4,
+                is_all_day=False,
+                notes="Learn to cook traditional dishes"
+            )
+            activity4.categories = [categories[3]]  # Workshop category
+            
+            db.session.add_all([activity1, activity2, activity3, activity4])
             db.session.commit()
 
 init_db()

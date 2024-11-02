@@ -84,8 +84,9 @@ body {
 
 /* Activity display styling */
 .activity {
-    margin-bottom: 5px;
-    padding: 5px;
+    font-size: 0.85rem;  /* Reduce font size */
+    margin-bottom: 3px;  /* Reduce margin between events */
+    padding: 3px;  /* Reduce padding */
     border-radius: 4px;
     color: white !important;
     cursor: pointer;
@@ -104,6 +105,7 @@ body {
 }
 
 .activity .time {
+    font-size: 0.8rem;
     font-weight: bold;
     color: rgba(255, 255, 255, 0.9);
     display: inline-block;
@@ -115,9 +117,16 @@ body {
 }
 
 .activity .location {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.8);
     margin-top: 2px;
+}
+
+.activity.multi-day {
+    margin: 2px 0;
+    border-radius: 3px;
+    padding: 2px 5px;
+    font-weight: 500;
 }
 
 /* Calendar styling */
@@ -164,6 +173,7 @@ body {
     border: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .calendar-date .date-number {
@@ -176,6 +186,8 @@ body {
     margin-bottom: 8px;
     border-bottom: 1px solid #dee2e6;
     padding-bottom: 8px;
+    position: relative;
+    z-index: 1;
 }
 
 .timed-activities {
