@@ -68,6 +68,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    position: relative;
 }
 
 .activity:hover {
@@ -103,27 +104,35 @@ body {
 }
 
 .activity.multi-day {
-    margin: 1px 0;
-    border-radius: 2px;
+    margin: 1px -1px;  /* Negative margin to overlap borders */
+    border-radius: 0;
     padding: 2px 4px;
     font-weight: 500;
+    z-index: 1;
 }
 
 .activity.multi-day.start {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    margin-right: 0;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    padding-left: 8px;
+    margin-right: -1px;
+    border-right: none;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    margin: 1px 0;
+    margin-left: -1px;
+    margin-right: -1px;
+    border-right: none;
+    border-left: none;
 }
 
 .activity.multi-day.end {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    margin-left: 0;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    padding-right: 8px;
+    margin-left: -1px;
+    border-left: none;
 }
 
 /* Calendar styling */

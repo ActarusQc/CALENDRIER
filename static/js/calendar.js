@@ -55,8 +55,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
         
-        // Use the first category's color, or default
-        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+        // Use the first category's color, or activity color, or default
+        const categoryColor = activity.color || 
+            (activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1');
         
         // Check if this is a multi-day event
         const startDate = new Date(activity.date);
@@ -65,13 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (isMultiDay) {
             activityDiv.classList.add('multi-day');
-            if (position === 'start') {
-                activityDiv.classList.add('start');
-            } else if (position === 'end') {
-                activityDiv.classList.add('end');
-            } else if (position === 'middle') {
-                activityDiv.classList.add('middle');
-            }
+            activityDiv.classList.add(position); // 'start', 'middle', or 'end'
         }
         
         if (activity.is_all_day) {
@@ -86,9 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
             timeHtml = `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>`;
         }
         
-        // For middle and end segments of multi-day events, only show title on first day
+        // For middle and end segments of multi-day events, only show the colored bar
         if (position === 'middle' || position === 'end') {
             activityDiv.innerHTML = '&nbsp;'; // Just show the colored bar
+            activityDiv.title = activity.title; // Add tooltip
         } else {
             activityDiv.innerHTML = `
                 ${timeHtml}
