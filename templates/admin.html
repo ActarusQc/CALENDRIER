@@ -62,23 +62,24 @@
                         <small class="text-muted d-block mb-2">{{ helpers.date }}</small>
                         <input type="date" class="form-control bg-dark text-white" id="date" required>
                     </div>
-                    <!-- Replace the existing time field section with this -->
+                    <!-- Time and all-day section -->
                     <div class="mb-3">
                         <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="is_all_day">
+                            <input type="checkbox" class="form-check-input" id="is_all_day" name="is_all_day">
                             <label class="form-check-label text-white" for="is_all_day">{{ trans.all_day_event }}</label>
                         </div>
                         <div id="timeField">
                             <label class="form-label text-white">{{ trans.time }}</label>
                             <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
-                            <input type="time" class="form-control bg-dark text-white" id="time">
+                            <input type="time" class="form-control bg-dark text-white" id="time" name="time">
                         </div>
                     </div>
-                    <!-- Add color picker after the time field -->
+
+                    <!-- Color picker -->
                     <div class="mb-3">
-                        <label class="form-label text-white">Couleur</label>
+                        <label class="form-label text-white">{{ trans.color }}</label>
                         <div class="color-picker-group">
-                            <input type="color" class="form-control form-control-color" id="color" value="#6f42c1">
+                            <input type="color" class="form-control form-control-color" id="color" name="color" value="#6f42c1">
                         </div>
                     </div>
                     <div class="mb-3">

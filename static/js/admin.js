@@ -9,6 +9,9 @@ function setupForm() {
     const timeField = document.getElementById('timeField');
     
     if (allDayCheckbox && timeField) {
+        // Set initial state
+        timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
+        
         allDayCheckbox.addEventListener('change', function() {
             timeField.style.display = this.checked ? 'none' : 'block';
             if (this.checked) {
@@ -71,22 +74,16 @@ async function editActivity(id) {
         }
         const activity = await response.json();
         
-        // Load locations and categories first
+        // Wait for locations and categories to load
         await loadLocationsAndCategories();
         
         // Set form values
         document.getElementById('activityId').value = id;
         document.getElementById('title').value = activity.title;
         document.getElementById('date').value = activity.date;
-        
-        // Set all-day checkbox and time field
-        const allDayCheckbox = document.getElementById('is_all_day');
-        const timeField = document.getElementById('timeField');
-        allDayCheckbox.checked = activity.is_all_day;
+        document.getElementById('is_all_day').checked = activity.is_all_day;
         document.getElementById('time').value = activity.time || '';
-        timeField.style.display = activity.is_all_day ? 'none' : 'block';
-        
-        // Set color
+        document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
         document.getElementById('color').value = activity.color || '#6f42c1';
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
@@ -97,7 +94,6 @@ async function editActivity(id) {
             checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
         });
         
-        // Show modal
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
         modal.show();
     } catch (error) {
@@ -108,18 +104,17 @@ async function editActivity(id) {
 
 async function saveActivity() {
     try {
+        // Get form values
         const activity = {
             title: document.getElementById('title').value.trim(),
             date: document.getElementById('date').value,
-            is_all_day: document.getElementById('is_all_day').checked,
-            time: document.getElementById('is_all_day').checked ? null : document.getElementById('time').value,
-            color: document.getElementById('color').value,
+            is_all_day: document.getElementById('is_all_day')?.checked || false,
+            time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('time').value,
+            color: document.getElementById('color').value || '#6f42c1',
             location_id: document.getElementById('location').value || null,
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
             notes: document.getElementById('notes').value.trim()
         };
-        
-        console.log('Saving activity:', activity); // Debug log
 
         if (!activity.title || !activity.date) {
             alert('Please fill in all required fields');
@@ -129,6 +124,8 @@ async function saveActivity() {
         const activityId = document.getElementById('activityId').value;
         const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
         const method = activityId ? 'PUT' : 'POST';
+
+        console.log('Saving activity:', activity); // Debug log
 
         const response = await fetch(url, {
             method: method,

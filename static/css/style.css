@@ -43,8 +43,9 @@ body {
     border-color: #6f42c1 !important;
 }
 
-.modal-body .form-check-label {
+.form-check-label {
     color: white !important;
+    user-select: none;
 }
 
 .text-white {
