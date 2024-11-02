@@ -47,6 +47,8 @@ class Activity(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_all_day = db.Column(db.Boolean, default=False)
+    end_date = db.Column(db.DateTime)
+    end_time = db.Column(db.String(64))
     
     # Many-to-many relationship with categories
     categories = db.relationship('Category',

@@ -7,15 +7,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupForm() {
     const allDayCheckbox = document.getElementById('is_all_day');
     const timeField = document.getElementById('timeField');
+    const endTimeField = document.getElementById('endTimeField');
     
-    if (allDayCheckbox && timeField) {
+    if (allDayCheckbox && timeField && endTimeField) {
         // Set initial state
         timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
+        endTimeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
         
         allDayCheckbox.addEventListener('change', function() {
             timeField.style.display = this.checked ? 'none' : 'block';
+            endTimeField.style.display = this.checked ? 'none' : 'block';
             if (this.checked) {
                 document.getElementById('time').value = '';
+                document.getElementById('end_time').value = '';
             }
         });
     }
@@ -82,9 +86,12 @@ async function editActivity(id) {
         document.getElementById('activityId').value = id;
         document.getElementById('title').value = activity.title;
         document.getElementById('date').value = activity.date;
+        document.getElementById('end_date').value = activity.end_date || '';
         document.getElementById('is_all_day').checked = activity.is_all_day;
         document.getElementById('time').value = activity.time || '';
+        document.getElementById('end_time').value = activity.end_time || '';
         document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
+        document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         
@@ -104,12 +111,13 @@ async function editActivity(id) {
 
 async function saveActivity() {
     try {
-        // Get form values
         const activity = {
             title: document.getElementById('title').value.trim(),
             date: document.getElementById('date').value,
             is_all_day: document.getElementById('is_all_day')?.checked || false,
             time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('time').value,
+            end_date: document.getElementById('end_date').value || null,
+            end_time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('end_time').value,
             location_id: document.getElementById('location').value || null,
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
             notes: document.getElementById('notes').value.trim()
@@ -120,11 +128,15 @@ async function saveActivity() {
             return;
         }
 
+        // Add validation for end date
+        if (activity.end_date && activity.date > activity.end_date) {
+            alert('End date cannot be before start date');
+            return;
+        }
+
         const activityId = document.getElementById('activityId').value;
         const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
         const method = activityId ? 'PUT' : 'POST';
-
-        console.log('Saving activity:', activity); // Debug log
 
         const response = await fetch(url, {
             method: method,
@@ -162,7 +174,7 @@ async function loadActivities() {
                 const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
                 tr.innerHTML = `
                     <td>${activity.date}</td>
-                    <td>${activity.is_all_day ? 'All day' : (activity.time || '')}</td>
+                    <td>${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : ''))}</td>
                     <td>
                         <div class="d-flex align-items-center">
                             <div class="color-dot" style="background-color: ${categoryColor}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
