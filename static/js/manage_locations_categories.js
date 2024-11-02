@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('[data-bs-target="#categoryModal"]').addEventListener('click', function() {
         document.getElementById('categoryId').value = '';
         document.getElementById('categoryName').value = '';
+        document.getElementById('categoryColor').value = '#6f42c1';
     });
 
     document.querySelector('[data-bs-target="#locationModal"]').addEventListener('click', function() {
@@ -28,6 +29,9 @@ async function loadCategories() {
             tr.innerHTML = `
                 <td>${category.name}</td>
                 <td>
+                    <div class="color-preview" style="background-color: ${category.color}; width: 20px; height: 20px; border-radius: 4px;"></div>
+                </td>
+                <td>
                     <button class="btn btn-sm btn-primary" onclick="editCategory(${category.id})">${window.translations.edit}</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteCategory(${category.id})">${window.translations.delete}</button>
                 </td>
@@ -42,7 +46,8 @@ async function loadCategories() {
 async function saveCategory() {
     const categoryId = document.getElementById('categoryId').value;
     const category = {
-        name: document.getElementById('categoryName').value.trim()
+        name: document.getElementById('categoryName').value.trim(),
+        color: document.getElementById('categoryColor').value
     };
     
     try {
@@ -79,6 +84,7 @@ async function editCategory(id) {
         
         document.getElementById('categoryId').value = id;
         document.getElementById('categoryName').value = category.name;
+        document.getElementById('categoryColor').value = category.color || '#6f42c1';
         
         const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
         modal.show();
@@ -89,7 +95,7 @@ async function editCategory(id) {
 }
 
 async function deleteCategory(id) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
+    if (confirm(window.translations.delete_confirmation)) {
         try {
             const response = await fetch(`/api/categories/${id}`, {
                 method: 'DELETE'
@@ -183,7 +189,7 @@ async function editLocation(id) {
 }
 
 async function deleteLocation(id) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
+    if (confirm(window.translations.delete_confirmation)) {
         try {
             const response = await fetch(`/api/locations/${id}`, {
                 method: 'DELETE'

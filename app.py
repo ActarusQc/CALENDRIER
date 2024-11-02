@@ -96,7 +96,6 @@ def manage_users():
     users = User.query.all()
     return render_template('users.html', users=users, trans=trans, helpers=helpers)
 
-# API Endpoints for Activities
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
     activities = Activity.query.all()
@@ -107,14 +106,16 @@ def get_activities():
         'time': activity.time,
         'location': activity.location_obj.name if activity.location_obj else None,
         'location_id': activity.location_id,
-        'categories': [category.name for category in activity.categories],
+        'categories': [{
+            'name': category.name,
+            'color': category.color
+        } for category in activity.categories],
         'category_ids': [category.id for category in activity.categories],
         'notes': activity.notes,
         'is_recurring': activity.is_recurring,
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
-        'is_all_day': activity.is_all_day,
-        'color': activity.color or '#6f42c1'
+        'is_all_day': activity.is_all_day
     } for activity in activities])
 
 @app.route('/api/activities/<int:activity_id>', methods=['GET'])
@@ -206,21 +207,25 @@ def delete_activity(activity_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# API Endpoints for Categories
 @app.route('/api/categories', methods=['GET'])
 @login_required
 def get_categories():
     categories = Category.query.all()
     return jsonify([{
         'id': category.id,
-        'name': category.name
+        'name': category.name,
+        'color': category.color
     } for category in categories])
 
 @app.route('/api/categories/<int:category_id>', methods=['GET'])
 @login_required
 def get_category(category_id):
     category = Category.query.get_or_404(category_id)
-    return jsonify({'id': category.id, 'name': category.name})
+    return jsonify({
+        'id': category.id,
+        'name': category.name,
+        'color': category.color
+    })
 
 @app.route('/api/categories', methods=['POST'])
 @login_required
@@ -235,7 +240,10 @@ def create_category():
     if Category.query.filter_by(name=data['name']).first():
         return jsonify({'error': 'Category already exists'}), 400
     
-    category = Category(name=data['name'])
+    category = Category(
+        name=data['name'],
+        color=data.get('color', '#6f42c1')
+    )
     db.session.add(category)
     
     try:
@@ -267,6 +275,7 @@ def update_category(category_id):
     
     try:
         category.name = data['name']
+        category.color = data.get('color', '#6f42c1')
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -292,7 +301,6 @@ def delete_category(category_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# API Endpoints for Locations
 @app.route('/api/locations', methods=['GET'])
 @login_required
 def get_locations():
@@ -376,12 +384,9 @@ def delete_location(location_id):
 
 def init_db():
     with app.app_context():
-        # Drop all tables
         db.drop_all()
-        # Recreate all tables with new schema
         db.create_all()
         
-        # Re-create admin user if it doesn't exist
         if not User.query.filter_by(username='admin').first():
             admin = User(
                 username='admin',
@@ -391,14 +396,12 @@ def init_db():
             )
             db.session.add(admin)
             
-            # Create default categories
             default_categories = ['Cours de langue', 'Activités sociales', 'Activités physiques', 'Ateliers']
             for category_name in default_categories:
                 if not Category.query.filter_by(name=category_name).first():
                     category = Category(name=category_name)
                     db.session.add(category)
             
-            # Create default locations
             default_locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
             for location_name in default_locations:
                 if not Location.query.filter_by(name=location_name).first():
@@ -407,7 +410,6 @@ def init_db():
             
             db.session.commit()
 
-# Initialize database with new schema
 init_db()
 
 if __name__ == '__main__':

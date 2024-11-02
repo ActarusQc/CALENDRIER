@@ -54,8 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function createActivityElement(activity) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
-        activityDiv.style.backgroundColor = activity.color || '#6f42c1';
-        activityDiv.style.borderLeftColor = activity.color || '#6f42c1';
+        
+        // Use the first category's color, or default if no categories
+        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+        activityDiv.style.backgroundColor = categoryColor;
+        activityDiv.style.borderLeftColor = categoryColor;
         activityDiv.style.color = '#ffffff';
         
         if (activity.is_all_day) {
@@ -81,14 +84,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">${activity.title}</h5>
+                            <h5 class="modal-title text-white">${activity.title}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body text-white">
                             <p><strong>Date:</strong> ${activity.date}</p>
                             <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time || 'Not specified')}</p>
                             <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
-                            <p><strong>Categories:</strong> ${activity.categories.join(', ')}</p>
+                            <p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>
                             <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
                         </div>
                     </div>

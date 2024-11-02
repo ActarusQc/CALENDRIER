@@ -30,6 +30,7 @@ activity_categories = db.Table('activity_categories',
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
+    color = db.Column(db.String(7), default='#6f42c1')  # Default color is theme purple
 
 class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -46,7 +47,6 @@ class Activity(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_all_day = db.Column(db.Boolean, default=False)
-    color = db.Column(db.String(7), default='#6f42c1')  # Default color is theme purple
     
     # Many-to-many relationship with categories
     categories = db.relationship('Category',

@@ -17,6 +17,7 @@
                             <thead>
                                 <tr>
                                     <th>{{ trans.name }}</th>
+                                    <th>{{ trans.color }}</th>
                                     <th>{{ trans.actions }}</th>
                                 </tr>
                             </thead>
@@ -66,9 +67,15 @@
                 <form id="categoryForm">
                     <input type="hidden" id="categoryId">
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.name }}</label>
+                        <label class="form-label text-white">{{ trans.name }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.category_name }}</small>
                         <input type="text" class="form-control" id="categoryName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">{{ trans.color }}</label>
+                        <div class="color-picker-group">
+                            <input type="color" class="form-control form-control-color" id="categoryColor" value="#6f42c1">
+                        </div>
                     </div>
                 </form>
             </div>
@@ -92,7 +99,7 @@
                 <form id="locationForm">
                     <input type="hidden" id="locationId">
                     <div class="mb-3">
-                        <label class="form-label">{{ trans.name }}</label>
+                        <label class="form-label text-white">{{ trans.name }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.location_name }}</small>
                         <input type="text" class="form-control" id="locationName" required>
                     </div>
