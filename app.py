@@ -104,6 +104,8 @@ def get_activities():
         'title': activity.title,
         'date': activity.date.strftime('%Y-%m-%d'),
         'time': activity.time,
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
+        'end_time': activity.end_time,
         'location': activity.location_obj.name if activity.location_obj else None,
         'location_id': activity.location_id,
         'categories': [{
@@ -127,6 +129,8 @@ def get_activity(activity_id):
         'title': activity.title,
         'date': activity.date.strftime('%Y-%m-%d'),
         'time': activity.time,
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
+        'end_time': activity.end_time,
         'location_id': activity.location_id,
         'category_ids': [c.id for c in activity.categories],
         'notes': activity.notes,
@@ -145,6 +149,8 @@ def create_activity():
             title=data['title'],
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
             time=None if data.get('is_all_day') else data.get('time'),
+            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None,
+            end_time=None if data.get('is_all_day') else data.get('end_time'),
             is_all_day=data.get('is_all_day', False),
             location_id=data.get('location_id'),
             notes=data.get('notes', '')
@@ -175,6 +181,8 @@ def update_activity(activity_id):
         activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
         activity.is_all_day = data.get('is_all_day', False)
         activity.time = None if data.get('is_all_day') else data.get('time')
+        activity.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None
+        activity.end_time = None if data.get('is_all_day') else data.get('end_time')
         activity.location_id = data.get('location_id')
         activity.notes = data.get('notes', '')
         
@@ -393,12 +401,11 @@ def init_db():
             )
             db.session.add(admin)
             
-            # Create categories with different colors
             categories = {
-                'Cours de langue': '#FF6B6B',  # Red
-                'Activités sociales': '#4ECDC4',  # Teal
-                'Activités physiques': '#45B7D1',  # Blue
-                'Ateliers': '#96CEB4'  # Green
+                'Cours de langue': '#FF6B6B',
+                'Activités sociales': '#4ECDC4',
+                'Activités physiques': '#45B7D1',
+                'Ateliers': '#96CEB4'
             }
             
             for name, color in categories.items():
@@ -406,7 +413,6 @@ def init_db():
                     category = Category(name=name, color=color)
                     db.session.add(category)
             
-            # Create locations
             locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
             for location_name in locations:
                 if not Location.query.filter_by(name=location_name).first():
@@ -415,12 +421,9 @@ def init_db():
             
             db.session.commit()
 
-            # Create test activities
-            # Get references to created categories and locations
             categories = Category.query.all()
             locations = Location.query.all()
             
-            # Single day activity
             activity1 = Activity(
                 title="French Language Class",
                 date=datetime(2024, 11, 4, 9, 0),
@@ -430,9 +433,8 @@ def init_db():
                 is_all_day=False,
                 notes="Beginner level French class"
             )
-            activity1.categories = [categories[0]]  # Language category
+            activity1.categories = [categories[0]]
             
-            # All-day activity
             activity2 = Activity(
                 title="Cultural Festival",
                 date=datetime(2024, 11, 5),
@@ -440,9 +442,8 @@ def init_db():
                 location_id=1,
                 notes="Annual cultural celebration"
             )
-            activity2.categories = [categories[1]]  # Social category
+            activity2.categories = [categories[1]]
             
-            # Multi-day activity
             activity3 = Activity(
                 title="Sports Week",
                 date=datetime(2024, 11, 6),
@@ -451,9 +452,8 @@ def init_db():
                 location_id=3,
                 notes="Three days of sports activities"
             )
-            activity3.categories = [categories[2]]  # Physical activities
+            activity3.categories = [categories[2]]
             
-            # Regular timed activity
             activity4 = Activity(
                 title="Cooking Workshop",
                 date=datetime(2024, 11, 7, 14, 0),
@@ -463,7 +463,7 @@ def init_db():
                 is_all_day=False,
                 notes="Learn to cook traditional dishes"
             )
-            activity4.categories = [categories[3]]  # Workshop category
+            activity4.categories = [categories[3]]
             
             db.session.add_all([activity1, activity2, activity3, activity4])
             db.session.commit()
