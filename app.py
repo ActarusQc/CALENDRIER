@@ -1,4 +1,3 @@
-# Update the error message in the delete_location function
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
@@ -377,9 +376,12 @@ def delete_location(location_id):
 
 if __name__ == '__main__':
     with app.app_context():
+        # Drop all tables
+        db.drop_all()
+        # Recreate all tables with new schema
         db.create_all()
         
-        # Create admin user if it doesn't exist
+        # Re-create admin user if it doesn't exist
         if not User.query.filter_by(username='admin').first():
             admin = User(
                 username='admin',
