@@ -374,7 +374,7 @@ def delete_location(location_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
+def init_db():
     with app.app_context():
         # Drop all tables
         db.drop_all()
@@ -406,5 +406,9 @@ if __name__ == '__main__':
                     db.session.add(location)
             
             db.session.commit()
-    
+
+# Initialize database with new schema
+init_db()
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
