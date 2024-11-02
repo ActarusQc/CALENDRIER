@@ -69,20 +69,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (position === 'start') {
                 activityDiv.innerHTML = `
                     <span class="title">${activity.title}</span>
-                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                    ${activity.location ? `<span class="location">${activity.location}</span>` : ''}
                 `;
             }
-            // Add title as tooltip for all segments
-            activityDiv.title = activity.title;
             
-            // Set vertical position
-            activityDiv.style.top = '0px';
+            // Add title as tooltip for all segments
+            activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
         } else {
             activityDiv.style.backgroundColor = categoryColor;
             activityDiv.innerHTML = `
                 ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
                 <span class="title">${activity.title}</span>
-                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.location ? `<span class="location">${activity.location}</span>` : ''}
             `;
         }
         
