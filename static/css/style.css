@@ -23,12 +23,9 @@ body {
 
 .calendar-grid {
     display: grid;
-    gap: 0;
     background-color: #dee2e6;
     border: 1px solid #dee2e6;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    position: relative;
-    overflow: visible;
 }
 
 .calendar-days {
@@ -47,7 +44,6 @@ body {
     grid-template-columns: repeat(7, 1fr);
     background-color: white;
     position: relative;
-    overflow: visible;
 }
 
 .calendar-date {
@@ -65,8 +61,6 @@ body {
     font-weight: bold;
     margin-bottom: 6px;
     color: var(--theme-purple);
-    position: relative;
-    z-index: 1;
 }
 
 /* Activity display styling */
@@ -79,7 +73,6 @@ body {
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .activity:hover {
@@ -109,41 +102,43 @@ body {
 /* Multi-day event styling */
 .activity.multi-day {
     position: absolute;
+    left: -1px;
+    right: -1px;
     margin: 0;
     padding: 4px 8px;
-    border-radius: 0;
-    font-weight: 500;
-    z-index: 15;
     height: 24px;
+    z-index: 100;
+    border: none;
+    font-weight: 500;
     display: flex;
     align-items: center;
     white-space: nowrap;
-    left: -1px;
-    right: -1px;
-    background-clip: padding-box;
+    overflow: hidden;
+    box-shadow: none;
+    margin-top: 2px;
 }
 
 .activity.multi-day.start {
+    left: 6px;
+    margin-right: -2px;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-left: 6px;
     padding-left: 8px;
-    left: 6px;
 }
 
 .activity.multi-day.middle {
-    margin: 0 -1px;
+    margin: 0 -2px;
     border-radius: 0;
     border-left: none;
     border-right: none;
 }
 
 .activity.multi-day.end {
+    right: 6px;
+    margin-left: -2px;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    margin-right: 6px;
     padding-right: 8px;
-    right: 6px;
 }
 
 /* All-day activities container */
@@ -151,8 +146,10 @@ body {
     position: relative;
     padding-top: 28px;
     margin-bottom: 4px;
+    border-bottom: 1px solid #f0f0f0;
     min-height: 32px;
     overflow: visible;
+    z-index: 10;
 }
 
 .timed-activities {
