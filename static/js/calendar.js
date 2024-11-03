@@ -65,11 +65,13 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
             
-            // Only show content on the first day
+            // Only show content on the first day, now with location on second line
             if (position === 'start') {
                 activityDiv.innerHTML = `
-                    <span class="title">${activity.title}</span>
-                    ${activity.location ? `<span class="location">${activity.location}</span>` : ''}
+                    <div class="activity-content">
+                        <div class="title">${activity.title}</div>
+                        ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                    </div>
                 `;
             }
             
@@ -79,8 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.style.backgroundColor = categoryColor;
             activityDiv.innerHTML = `
                 ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
-                <span class="title">${activity.title}</span>
-                ${activity.location ? `<span class="location">${activity.location}</span>` : ''}
+                <div class="activity-content">
+                    <div class="title">${activity.title}</div>
+                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                </div>
             `;
         }
         
