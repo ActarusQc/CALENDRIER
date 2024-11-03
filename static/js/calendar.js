@@ -37,10 +37,8 @@ function setupForm() {
         timeField.style.display = this.checked ? 'none' : 'block';
         endTimeField.style.display = this.checked ? 'none' : 'block';
         if (this.checked) {
-            const timeInput = document.getElementById('time');
-            const endTimeInput = document.getElementById('end_time');
-            if (timeInput) timeInput.value = '';
-            if (endTimeInput) endTimeInput.value = '';
+            document.getElementById('time').value = '';
+            document.getElementById('end_time').value = '';
         }
     });
 }
@@ -109,14 +107,14 @@ function createActivityElement(activity, position, top = 0) {
     const categoryColor = activity.categories && activity.categories.length > 0 
         ? activity.categories[0].color 
         : '#6f42c1';
-    
+        
     if (activity.end_date && activity.date !== activity.end_date) {
         activityDiv.classList.add('multi-day');
         activityDiv.classList.add(position);
         activityDiv.style.backgroundColor = categoryColor;
         activityDiv.style.top = `${top}px`;
         
-        // Always show content for multi-day events
+        // Always show full content for multi-day events
         activityDiv.innerHTML = `
             <div class="activity-content">
                 <div class="title">${activity.title}</div>
