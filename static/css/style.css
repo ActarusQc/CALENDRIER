@@ -21,8 +21,10 @@ body {
     color: var(--theme-purple);
 }
 
+/* Calendar grid layout */
 .calendar-grid {
     display: grid;
+    gap: 0;
     background-color: #dee2e6;
     border: 1px solid #dee2e6;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -44,6 +46,7 @@ body {
     grid-template-columns: repeat(7, 1fr);
     background-color: white;
     position: relative;
+    border-collapse: collapse;
 }
 
 .calendar-date {
@@ -88,68 +91,63 @@ body {
 }
 
 .activity .title {
-    display: block;
+    font-size: 0.75rem;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .activity .location {
-    font-size: 0.65rem;
-    opacity: 0.8;
+    font-size: 0.7rem;
+    opacity: 0.9;
 }
 
 /* Multi-day event styling */
 .activity.multi-day {
     position: absolute;
-    left: -1px;
-    right: -1px;
-    margin: 0;
-    padding: 4px 8px;
+    left: 0;
+    right: 0;
     height: 24px;
+    margin: 2px 0;
+    padding: 4px 8px;
     z-index: 100;
-    border: none;
-    font-weight: 500;
     display: flex;
     align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    box-shadow: none;
-    margin-top: 2px;
+    border: none;
+    font-weight: 500;
+    background-clip: padding-box;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .activity.multi-day.start {
-    left: 6px;
+    margin-left: 6px;
     margin-right: -2px;
+    padding-left: 8px;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    padding-left: 8px;
 }
 
 .activity.multi-day.middle {
-    margin: 0 -2px;
+    margin-left: -2px;
+    margin-right: -2px;
     border-radius: 0;
-    border-left: none;
-    border-right: none;
 }
 
 .activity.multi-day.end {
-    right: 6px;
     margin-left: -2px;
+    margin-right: 6px;
+    padding-right: 8px;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    padding-right: 8px;
 }
 
-/* All-day activities container */
+/* Container for all-day events */
 .all-day-activities {
     position: relative;
     padding-top: 28px;
     margin-bottom: 4px;
-    border-bottom: 1px solid #f0f0f0;
     min-height: 32px;
-    overflow: visible;
-    z-index: 10;
+    z-index: 5;
 }
 
 .timed-activities {
