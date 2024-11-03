@@ -8,7 +8,6 @@ body {
     color: #333;
 }
 
-/* Calendar layout */
 .calendar-container {
     max-width: 100%;
     margin: 0 auto;
@@ -21,7 +20,6 @@ body {
     color: var(--theme-purple);
 }
 
-/* Calendar grid layout */
 .calendar-grid {
     display: grid;
     gap: 0;
@@ -48,7 +46,6 @@ body {
     position: relative;
 }
 
-/* Calendar date cell layout */
 .calendar-date {
     min-height: 120px;
     padding: 0;
@@ -60,7 +57,6 @@ body {
     flex-direction: column;
 }
 
-/* Quick add button */
 .quick-add-btn {
     position: absolute;
     bottom: 5px;
@@ -89,7 +85,6 @@ body {
     background-color: #563d7c;
 }
 
-/* Date number styling */
 .date-number {
     font-size: 0.85rem;
     font-weight: bold;
@@ -99,7 +94,6 @@ body {
     border-bottom: 1px solid #dee2e6;
 }
 
-/* All-day events section */
 .all-day-activities {
     background-color: var(--theme-light-purple);
     padding: 4px;
@@ -108,7 +102,6 @@ body {
     position: relative;
 }
 
-/* Timed events section */
 .timed-activities {
     flex: 1;
     padding: 4px;
@@ -116,7 +109,6 @@ body {
     position: relative;
 }
 
-/* Activity styling */
 .activity {
     font-size: 0.75rem;
     margin: 1px 0;
@@ -138,6 +130,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .activity .title {
@@ -158,27 +153,28 @@ body {
     text-overflow: ellipsis;
 }
 
-/* Multi-day event styling */
 .activity.multi-day {
     position: absolute;
-    height: 32px;
-    padding: 4px;
+    min-height: 24px;
+    padding: 2px 4px;
     z-index: 100;
-    margin: 2px 0;
+    margin: 1px 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     box-sizing: border-box;
     left: 0;
-    width: 100%;
+    right: 0;
+    font-size: 0.75rem;
 }
 
 .activity.multi-day.start {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-right: none;
     margin-right: -1px;
-    padding-left: 8px;
-    width: 100%;
+    padding-left: 6px;
+    width: calc(100% + 1px);
 }
 
 .activity.multi-day.middle {
@@ -189,14 +185,14 @@ body {
 }
 
 .activity.multi-day.end {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-left: none;
     margin-left: -1px;
-    padding-right: 8px;
+    padding-right: 6px;
     width: calc(100% + 1px);
 }
 
-/* Other UI elements */
 .navbar-logo {
     height: 40px;
     width: auto;
@@ -204,7 +200,6 @@ body {
     margin-right: 10px;
 }
 
-/* Modal styling */
 .modal-content {
     background-color: #343a40 !important;
 }
@@ -245,7 +240,6 @@ body {
     color: #adb5bd !important;
 }
 
-/* Print styles */
 @media print {
     .navbar,
     .btn {
