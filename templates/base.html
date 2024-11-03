@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ session.get('language', 'en') }}">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,16 +16,6 @@
                 <span class="navbar-brand">CALENDRIER ACTIVITÉS CFSJ</span>
             </div>
             <div class="navbar-nav ms-auto d-flex align-items-center">
-                <div class="nav-item dropdown me-3">
-                    <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-globe"></i>
-                        {{ 'English' if session.get('language', 'en') == 'en' else 'Français' }}
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='en') }}">English</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='fr') }}">Français</a></li>
-                    </ul>
-                </div>
                 {% if current_user.is_authenticated %}
                     {% if current_user.can_manage_activities() %}
                         <a class="nav-link me-3" href="{{ url_for('admin') }}">

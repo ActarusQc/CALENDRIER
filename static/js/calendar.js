@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const month = currentDate.getMonth();
         
         document.getElementById('currentMonth').textContent = 
-            new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+            new Date(year, month).toLocaleString('fr-FR', { month: 'long', year: 'numeric' })
+            .replace(/^./, str => str.toUpperCase());
         
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);

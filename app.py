@@ -40,8 +40,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 def get_translations():
-    lang = session.get('language', 'en')
-    return translations[lang], form_helpers[lang]
+    return translations['fr'], form_helpers['fr']
 
 @app.route('/language/<lang>')
 def set_language(lang):
