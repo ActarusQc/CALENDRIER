@@ -57,34 +57,6 @@ body {
     flex-direction: column;
 }
 
-.quick-add-btn {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: var(--theme-purple);
-    color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 18px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 10;
-}
-
-.calendar-date:hover .quick-add-btn {
-    opacity: 1;
-}
-
-.quick-add-btn:hover {
-    background-color: #563d7c;
-}
-
 .date-number {
     font-size: 0.85rem;
     font-weight: bold;
@@ -130,13 +102,12 @@ body {
 .activity-content {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
 }
 
 .activity .title {
     font-weight: 500;
     line-height: 1.2;
-    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -151,12 +122,17 @@ body {
     text-overflow: ellipsis;
 }
 
+.activity .time {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    margin-bottom: 2px;
+}
+
 .activity.multi-day {
     position: absolute;
     min-height: 24px;
     padding: 2px 4px;
     z-index: 100;
-    margin: 1px 0;
     width: calc(100% + 1px);
     display: flex;
     flex-direction: column;
@@ -183,6 +159,42 @@ body {
     border-bottom-right-radius: 3px;
     left: -1px;
     padding-right: 6px;
+}
+
+.quick-add-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--theme-purple);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.calendar-date:hover .quick-add-btn {
+    opacity: 1;
+}
+
+.quick-add-btn:hover {
+    background-color: #563d7c;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
 }
 
 .navbar-logo {
