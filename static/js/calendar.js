@@ -48,8 +48,27 @@ document.addEventListener('DOMContentLoaded', function() {
             activitiesDiv.setAttribute('data-date', formattedDate);
             allDayDiv.setAttribute('data-date', formattedDate);
             cell.appendChild(activitiesDiv);
+
+            // Add quick add button if user has permission
+            if (window.userCanManageActivities) {
+                const quickAddBtn = document.createElement('button');
+                quickAddBtn.className = 'quick-add-btn';
+                quickAddBtn.innerHTML = '+';
+                quickAddBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
+                    openQuickAddModal(dateStr);
+                };
+                cell.appendChild(quickAddBtn);
+            }
         }
         return cell;
+    }
+
+    function openQuickAddModal(date) {
+        document.getElementById('date').value = date;
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
     }
     
     function createActivityElement(activity, position) {
@@ -66,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
             
-            // Only show content on the first day, now with location on second line
+            // Only show content on the first day
             if (position === 'start') {
                 activityDiv.innerHTML = `
                     <div class="activity-content">
@@ -78,6 +97,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add title as tooltip for all segments
             activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
+            
+            // Calculate width for multi-day events
+            const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            const remainingDays = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            if (position === 'start') {
+                activityDiv.style.width = `calc(100% * ${totalDays})`;
+            }
         } else {
             activityDiv.style.backgroundColor = categoryColor;
             activityDiv.innerHTML = `
@@ -138,6 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return (a.time || '').localeCompare(b.time || '');
             });
             
+            const processedEvents = new Set();
+            
             activities.forEach(activity => {
                 const activityDate = new Date(activity.date);
                 const endDate = activity.end_date ? new Date(activity.end_date) : activityDate;
@@ -151,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                             document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                         
-                        if (container) {
+                        if (container && !processedEvents.has(activity.id + dateStr)) {
                             let position = 'single';
                             if (endDate > activityDate) {
                                 if (currentDate.getTime() === activityDate.getTime()) {
@@ -165,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             const activityElement = createActivityElement(activity, position);
                             container.appendChild(activityElement);
+                            processedEvents.add(activity.id + dateStr);
                         }
                     }
                     currentDate.setDate(currentDate.getDate() + 1);

@@ -28,6 +28,7 @@
 {% block scripts %}
 <script>
 window.translations = {{ trans|tojson|safe }};
+window.userCanManageActivities = {{ current_user.can_manage_activities()|tojson|safe if current_user.is_authenticated else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}
