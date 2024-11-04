@@ -71,6 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 activityDiv.innerHTML = `
                     <div class="activity-content">
                         <div class="title">${activity.title}</div>
+                        ${!activity.is_all_day && activity.time ? 
+                            `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>` : 
+                            ''}
                         ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
                     </div>
                 `;
@@ -84,8 +87,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             activityDiv.style.backgroundColor = categoryColor;
             activityDiv.innerHTML = `
-                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
                 <div class="activity-content">
+                    ${!activity.is_all_day && activity.time ? 
+                        `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>` : 
+                        ''}
                     <div class="title">${activity.title}</div>
                     ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
                 </div>
