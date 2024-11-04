@@ -31,6 +31,8 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow: visible;  /* Allow events to overlap */
 }
 
 /* Date number styling */
@@ -48,6 +50,8 @@
     min-height: 40px;
     position: relative;
     border-bottom: 1px solid #dee2e6;
+    overflow: visible;
+    z-index: 5;  /* Lower than events but above grid */
 }
 
 .timed-activities {
@@ -63,6 +67,9 @@
     border-radius: 4px;
     color: white;
     font-size: 0.75rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .activity-content {
@@ -74,40 +81,49 @@
 .activity .title {
     font-weight: 500;
     line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .activity .location {
     font-size: 0.7rem;
     opacity: 0.9;
     line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Multi-day event styling */
 .activity.multi-day {
     position: absolute;
     left: 0;
-    right: 0;
+    right: -1px;  /* Extend slightly to overlap borders */
     margin: 0;
     padding: 4px 8px;
     z-index: 10;
-    height: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    border: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);  /* Add subtle shadow */
 }
 
 .activity.multi-day.start {
+    left: 6px;  /* Align with cell padding */
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-right: -1px;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    margin: 0 -1px;
+    margin-left: -1px;
+    margin-right: -1px;
 }
 
 .activity.multi-day.end {
+    right: 6px;  /* Align with cell padding */
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    margin-left: -1px;
 }
 
 /* Calendar header */
@@ -120,6 +136,12 @@
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
+}
+
+/* Hover effects */
+.activity:hover {
+    filter: brightness(1.1);
+    cursor: pointer;
 }
 
 /* Print styles */
