@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
             
-            // Only show content on the first day, now with location on second line
+            // Show full content only on the first day
             if (position === 'start') {
                 activityDiv.innerHTML = `
                     <div class="activity-content">
@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
                     </div>
                 `;
+            } else {
+                // For middle and end segments, just use a continuous bar
+                activityDiv.style.borderRadius = position === 'end' ? '0 4px 4px 0' : '0';
             }
             
             // Add title as tooltip for all segments
@@ -138,12 +141,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 return (a.time || '').localeCompare(b.time || '');
             });
             
-            activities.forEach(activity => {
-                const activityDate = new Date(activity.date);
-                const endDate = activity.end_date ? new Date(activity.end_date) : activityDate;
+            // Clear existing activities before adding new ones
+            document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
+            document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
+            
+            // Process multi-day events first to ensure they appear at the top
+            const multiDayActivities = activities.filter(activity => activity.end_date);
+            const singleDayActivities = activities.filter(activity => !activity.end_date);
+            
+            // Add multi-day events
+            multiDayActivities.forEach(activity => {
+                const startDate = new Date(activity.date);
+                const endDate = new Date(activity.end_date);
                 
-                // For multi-day events, add to each day in the range
-                let currentDate = new Date(activityDate);
+                let currentDate = new Date(startDate);
                 while (currentDate <= endDate) {
                     if (currentDate.getFullYear() === year && currentDate.getMonth() === month) {
                         const dateStr = currentDate.toISOString().split('T')[0];
@@ -152,15 +163,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                         
                         if (container) {
-                            let position = 'single';
-                            if (endDate > activityDate) {
-                                if (currentDate.getTime() === activityDate.getTime()) {
-                                    position = 'start';
-                                } else if (currentDate.getTime() === endDate.getTime()) {
-                                    position = 'end';
-                                } else {
-                                    position = 'middle';
-                                }
+                            let position = 'middle';
+                            if (currentDate.getTime() === startDate.getTime()) {
+                                position = 'start';
+                            } else if (currentDate.getTime() === endDate.getTime()) {
+                                position = 'end';
                             }
                             
                             const activityElement = createActivityElement(activity, position);
@@ -168,6 +175,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     currentDate.setDate(currentDate.getDate() + 1);
+                }
+            });
+            
+            // Add single-day events
+            singleDayActivities.forEach(activity => {
+                const activityDate = new Date(activity.date);
+                if (activityDate.getFullYear() === year && activityDate.getMonth() === month) {
+                    const dateStr = activityDate.toISOString().split('T')[0];
+                    const container = activity.is_all_day ?
+                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                    
+                    if (container) {
+                        const activityElement = createActivityElement(activity, 'single');
+                        container.appendChild(activityElement);
+                    }
                 }
             });
         } catch (error) {

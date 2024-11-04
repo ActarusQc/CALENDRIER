@@ -469,5 +469,123 @@ def init_db():
 
 init_db()
 
+# User Management API endpoints
+@app.route('/api/users')
+@login_required
+def get_users():
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    users = User.query.all()
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    } for user in users])
+
+@app.route('/api/users/<int:user_id>')
+@login_required
+def get_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@login_required
+def update_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    data = request.json
+    
+    if not data.get('username') or not data.get('email') or not data.get('role'):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    try:
+        # Check for existing username/email
+        username_exists = User.query.filter(
+            User.username == data['username'],
+            User.id != user_id
+        ).first()
+        email_exists = User.query.filter(
+            User.email == data['email'],
+            User.id != user_id
+        ).first()
+        
+        if username_exists:
+            return jsonify({'error': 'Username already exists'}), 400
+        if email_exists:
+            return jsonify({'error': 'Email already exists'}), 400
+        
+        user.username = data['username']
+        user.email = data['email']
+        user.role = data['role']
+        
+        if data.get('password'):
+            user.password_hash = generate_password_hash(data['password'])
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users', methods=['POST'])
+@login_required
+def create_user():
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    if not data.get('username') or not data.get('email') or not data.get('password') or not data.get('role'):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    try:
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            password_hash=generate_password_hash(data['password']),
+            role=data['role']
+        )
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'success': True, 'id': user.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+    
+    user = User.query.get_or_404(user_id)
+    if user.username == 'admin':
+        return jsonify({'error': 'Cannot delete admin user'}), 400
+    
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
