@@ -2,19 +2,20 @@ let currentDate = new Date();
 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // First update calendar grid
+        // Create calendar grid first
         updateCalendar();
         
-        // Then load activities after small delay to ensure DOM is ready
-        setTimeout(async () => {
-            if (window.userCanManageActivities) {
-                await loadLocationsAndCategories();
-                setupForm();
-            }
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            await loadActivities(year, month);
-        }, 100);
+        // Wait for grid to be fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Load activities first since they don't require authentication
+        await loadActivities(currentDate.getFullYear(), currentDate.getMonth());
+        
+        // Only try to load locations and categories if user is authenticated
+        if (typeof window.userCanManageActivities !== 'undefined' && window.userCanManageActivities) {
+            await loadLocationsAndCategories();
+            setupForm();
+        }
     } catch (error) {
         console.error('Error during initialization:', error);
     }
@@ -41,16 +42,19 @@ function setupForm() {
 }
 
 async function loadLocationsAndCategories() {
-    if (!window.userCanManageActivities) return;
-    
     try {
+        if (!window.userCanManageActivities) {
+            return;
+        }
+
         const [locationsResponse, categoriesResponse] = await Promise.all([
             fetch('/api/locations'),
             fetch('/api/categories')
         ]);
         
         if (!locationsResponse.ok || !categoriesResponse.ok) {
-            throw new Error('Failed to load data');
+            // User might not be authenticated, skip silently
+            return;
         }
         
         const locations = await locationsResponse.json();
@@ -85,122 +89,137 @@ async function loadLocationsAndCategories() {
             });
         }
     } catch (error) {
-        console.error('Error loading locations and categories:', error);
+        console.warn('Error loading locations and categories:', error);
+        // Don't show error to users
     }
 }
 
-function createActivityElement(activity, position, top = 0) {
-    if (!activity || !activity.title) return null;
+function createActivityElement(activity, position = 'single', top = 0) {
+    if (!activity?.title) {
+        console.warn('Invalid activity data:', activity);
+        return null;
+    }
     
     const activityDiv = document.createElement('div');
     activityDiv.className = 'activity';
     
-    const categoryColor = activity.categories && activity.categories.length > 0 
-        ? activity.categories[0].color 
-        : '#6f42c1';
+    try {
+        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
         
-    if (activity.end_date && activity.date !== activity.end_date) {
-        activityDiv.classList.add('multi-day');
-        activityDiv.classList.add(position);
-        activityDiv.style.backgroundColor = categoryColor;
-        activityDiv.style.top = `${top}px`;
+        if (activity.end_date && new Date(activity.end_date) > new Date(activity.date)) {
+            activityDiv.classList.add('multi-day');
+            activityDiv.classList.add(position);
+            activityDiv.style.backgroundColor = categoryColor;
+            activityDiv.style.top = `${top}px`;
+            
+            // For multi-day events, always show the title and location
+            activityDiv.innerHTML = `
+                <div class="activity-content">
+                    <div class="title">${activity.title}</div>
+                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                </div>
+            `;
+        } else {
+            activityDiv.style.backgroundColor = categoryColor;
+            activityDiv.innerHTML = `
+                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
+                <div class="activity-content">
+                    <div class="title">${activity.title}</div>
+                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                </div>
+            `;
+        }
         
-        // Always show full content for multi-day events
-        activityDiv.innerHTML = `
-            <div class="activity-content">
-                <div class="title">${activity.title}</div>
-                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-            </div>
-        `;
-    } else {
-        activityDiv.style.backgroundColor = categoryColor;
-        activityDiv.innerHTML = `
-            ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
-            <div class="activity-content">
-                <div class="title">${activity.title}</div>
-                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-            </div>
-        `;
+        activityDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showActivityDetails(activity);
+        });
+        
+        return activityDiv;
+    } catch (error) {
+        console.error('Error creating activity element:', error);
+        return null;
     }
-    
-    activityDiv.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showActivityDetails(activity);
-    });
-    
-    return activityDiv;
 }
 
 async function loadActivities(year, month) {
     try {
+        // Ensure calendar grid exists
+        const calendarGrid = document.getElementById('calendarDates');
+        if (!calendarGrid) {
+            console.warn('Calendar grid not found, retrying in 100ms');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return loadActivities(year, month);
+        }
+
         const response = await fetch('/api/activities');
         if (!response.ok) {
-            throw new Error('Failed to load activities');
+            throw new Error(`Failed to load activities: ${response.statusText}`);
         }
+
         const activities = await response.json();
-        
-        // Clear existing activities
-        document.querySelectorAll('.all-day-activities, .timed-activities').forEach(container => {
-            if (container) container.innerHTML = '';
-        });
-        
-        if (!activities || !Array.isArray(activities)) {
-            console.warn('No activities found or invalid response');
+        if (!Array.isArray(activities)) {
+            console.warn('Invalid activities data received');
             return;
         }
+
+        // Clear existing activities before adding new ones
+        const containers = document.querySelectorAll('.all-day-activities, .timed-activities');
+        containers.forEach(container => {
+            if (container) container.innerHTML = '';
+        });
         
         // Sort activities by date
         activities.sort((a, b) => new Date(a.date) - new Date(b.date));
         
+        // Track multi-day event positions to prevent overlapping
         const multiDayEvents = new Map();
         const processedEvents = new Set();
+        let multiDayOffset = 0;
         
         activities.forEach(activity => {
-            if (!activity || !activity.date) return;
+            if (!activity?.date) return;
             
-            const activityDate = new Date(activity.date);
-            const endDate = activity.end_date ? new Date(activity.end_date) : activityDate;
+            const startDate = new Date(activity.date);
+            const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
             
-            let currentDateInRange = new Date(activityDate);
-            while (currentDateInRange <= endDate) {
-                if (currentDateInRange.getFullYear() === year && currentDateInRange.getMonth() === month) {
-                    const dateStr = currentDateInRange.toISOString().split('T')[0];
-                    const containerSelector = activity.is_all_day || (endDate > activityDate)
-                        ? `div.all-day-activities[data-date="${dateStr}"]`
-                        : `div.timed-activities[data-date="${dateStr}"]`;
+            let currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                if (currentDate.getFullYear() === year && currentDate.getMonth() === month) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const container = document.querySelector(
+                        `${activity.is_all_day || endDate > startDate ? '.all-day-activities' : '.timed-activities'}[data-date="${dateStr}"]`
+                    );
                     
-                    const container = document.querySelector(containerSelector);
                     if (container && !processedEvents.has(activity.id + dateStr)) {
                         let position = 'single';
-                        if (endDate > activityDate) {
-                            position = currentDateInRange.getTime() === activityDate.getTime() ? 'start' :
-                                     currentDateInRange.getTime() === endDate.getTime() ? 'end' : 'middle';
-                        }
-                        
                         let top = 0;
-                        if (endDate > activityDate) {
+                        
+                        if (endDate > startDate) {
+                            position = currentDate.getTime() === startDate.getTime() ? 'start' :
+                                     currentDate.getTime() === endDate.getTime() ? 'end' : 'middle';
+                            
+                            // Calculate vertical position for multi-day events
                             if (!multiDayEvents.has(activity.id)) {
-                                multiDayEvents.set(activity.id, multiDayEvents.size * 30);
+                                multiDayEvents.set(activity.id, multiDayOffset);
+                                multiDayOffset += 30; // Height of multi-day event + spacing
                             }
                             top = multiDayEvents.get(activity.id);
                         }
                         
-                        try {
-                            const activityElement = createActivityElement(activity, position, top);
-                            if (activityElement) {
-                                container.appendChild(activityElement);
-                                processedEvents.add(activity.id + dateStr);
-                            }
-                        } catch (err) {
-                            console.error('Error creating activity element:', err);
+                        const element = createActivityElement(activity, position, top);
+                        if (element) {
+                            container.appendChild(element);
+                            processedEvents.add(activity.id + dateStr);
                         }
                     }
                 }
-                currentDateInRange.setDate(currentDateInRange.getDate() + 1);
+                currentDate.setDate(currentDate.getDate() + 1);
             }
         });
     } catch (error) {
         console.error('Error loading activities:', error);
+        // Don't show error alert to users, just log it
     }
 }
 
@@ -245,20 +264,27 @@ function updateCalendar() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     
-    document.getElementById('currentMonth').textContent = 
-        new Date(year, month).toLocaleString('fr-FR', { month: 'long', year: 'numeric' })
-        .replace(/^./, str => str.toUpperCase());
+    const monthElement = document.getElementById('currentMonth');
+    if (monthElement) {
+        monthElement.textContent = new Date(year, month)
+            .toLocaleString('fr-FR', { month: 'long', year: 'numeric' })
+            .replace(/^./, str => str.toUpperCase());
+    }
+    
+    const calendarDates = document.getElementById('calendarDates');
+    if (!calendarDates) return;
+    
+    calendarDates.innerHTML = '';
     
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     
-    const calendarDates = document.getElementById('calendarDates');
-    calendarDates.innerHTML = '';
-    
+    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay.getDay(); i++) {
         calendarDates.appendChild(createDateCell());
     }
     
+    // Add cells for each day of the month
     for (let date = 1; date <= lastDay.getDate(); date++) {
         calendarDates.appendChild(createDateCell(date));
     }
@@ -307,6 +333,7 @@ async function openQuickAddModal(date) {
         const dateInput = document.getElementById('date');
         if (dateInput) dateInput.value = date;
         
+        // Reset all form fields
         ['activityId', 'title', 'notes', 'end_date'].forEach(fieldId => {
             const field = document.getElementById(fieldId);
             if (field) field.value = '';
@@ -326,16 +353,19 @@ async function openQuickAddModal(date) {
             modal.show();
         }
     } catch (error) {
-        console.error('Error opening modal:', error);
+        console.error('Error opening quick add modal:', error);
     }
 }
 
-document.getElementById('prevMonth').addEventListener('click', () => {
+// Month navigation event listeners
+document.getElementById('prevMonth')?.addEventListener('click', () => {
     currentDate.setMonth(currentDate.getMonth() - 1);
-    initializeCalendar();
+    updateCalendar();
+    loadActivities(currentDate.getFullYear(), currentDate.getMonth());
 });
 
-document.getElementById('nextMonth').addEventListener('click', () => {
+document.getElementById('nextMonth')?.addEventListener('click', () => {
     currentDate.setMonth(currentDate.getMonth() + 1);
-    initializeCalendar();
+    updateCalendar();
+    loadActivities(currentDate.getFullYear(), currentDate.getMonth());
 });
