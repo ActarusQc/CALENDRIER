@@ -75,6 +75,86 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function createActivityElement(activity, position) {
+        const activityDiv = document.createElement('div');
+        activityDiv.className = 'activity';
+        
+        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+        const startDate = new Date(activity.date);
+        const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
+        const isMultiDay = endDate > startDate;
+        
+        if (isMultiDay) {
+            activityDiv.classList.add('multi-day');
+            activityDiv.classList.add(position);
+            activityDiv.style.backgroundColor = categoryColor;
+            
+            // Only show content on the first day
+            if (position === 'start') {
+                activityDiv.innerHTML = `
+                    <div class="activity-content">
+                        <div class="title">${activity.title}</div>
+                        ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            // Add title as tooltip for all segments
+            activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
+        } else {
+            activityDiv.style.backgroundColor = categoryColor;
+            activityDiv.innerHTML = `
+                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
+                <div class="activity-content">
+                    <div class="title">${activity.title}</div>
+                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                </div>
+            `;
+        }
+        
+        if (window.userCanManageActivities) {
+            activityDiv.addEventListener('click', () => editActivity(activity.id));
+        }
+        
+        return activityDiv;
+    }
+
+    async function editActivity(id) {
+        try {
+            const response = await fetch(`/api/activities/${id}`);
+            if (!response.ok) {
+                throw new Error('Failed to load activity');
+            }
+            const activity = await response.json();
+            
+            // Wait for locations and categories to load
+            await loadLocationsAndCategories();
+            
+            // Set form values
+            document.getElementById('activityId').value = id;
+            document.getElementById('title').value = activity.title;
+            document.getElementById('date').value = activity.date;
+            document.getElementById('end_date').value = activity.end_date || '';
+            document.getElementById('is_all_day').checked = activity.is_all_day;
+            document.getElementById('time').value = activity.time || '';
+            document.getElementById('end_time').value = activity.end_time || '';
+            document.getElementById('location').value = activity.location_id || '';
+            document.getElementById('notes').value = activity.notes || '';
+            
+            // Set categories
+            const checkboxes = document.querySelectorAll('.category-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
+            });
+            
+            const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+            modal.show();
+        } catch (error) {
+            console.error('Error loading activity:', error);
+            alert('Error loading activity: ' + error.message);
+        }
+    }
+
     async function saveActivity() {
         try {
             const activity = {

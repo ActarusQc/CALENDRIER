@@ -28,38 +28,6 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
-# Initialize test data
-with app.app_context():
-    db.create_all()
-    if Activity.query.count() == 0:
-        # Add a test category
-        category = Category.query.first()
-        if not category:
-            category = Category(name='Test Category', color='#6f42c1')
-            db.session.add(category)
-            
-        # Add a test location
-        location = Location.query.first()
-        if not location:
-            location = Location(name='Test Location')
-            db.session.add(location)
-            
-        db.session.commit()
-        
-        # Add a test activity
-        activity = Activity(
-            title='Test Activity',
-            date=datetime.now(),
-            time='09:00',
-            end_time='10:00',
-            location_id=location.id,
-            notes='Test activity for debugging'
-        )
-        activity.categories.append(category)
-        db.session.add(activity)
-        db.session.commit()
-        print("Added test data to database")
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -137,76 +105,29 @@ def get_user(user_id):
         'role': user.role
     })
 
-@app.route('/api/users', methods=['POST'])
-@login_required
-@admin_required
-def create_user():
-    data = request.get_json()
-    
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'error': 'Username already exists'}), 400
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'error': 'Email already exists'}), 400
-    
-    user = User(
-        username=data['username'],
-        email=data['email'],
-        password_hash=generate_password_hash(data['password']),
-        role=data['role']
-    )
-    db.session.add(user)
-    db.session.commit()
-    
+@app.route('/api/activities/<int:activity_id>', methods=['GET'])
+def get_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
     return jsonify({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'role': user.role
+        'id': activity.id,
+        'title': activity.title,
+        'date': activity.date.strftime('%Y-%m-%d'),
+        'time': activity.time,
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
+        'end_time': activity.end_time,
+        'location': activity.location_obj.name if activity.location_obj else None,
+        'location_id': activity.location_id,
+        'categories': [{
+            'name': category.name,
+            'color': category.color
+        } for category in activity.categories],
+        'category_ids': [category.id for category in activity.categories],
+        'notes': activity.notes,
+        'is_recurring': activity.is_recurring,
+        'recurrence_type': activity.recurrence_type,
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
+        'is_all_day': activity.is_all_day
     })
-
-@app.route('/api/users/<int:user_id>', methods=['PUT'])
-@login_required
-@admin_required
-def update_user(user_id):
-    user = User.query.get_or_404(user_id)
-    data = request.get_json()
-    
-    # Check username uniqueness if changed
-    if data['username'] != user.username and User.query.filter_by(username=data['username']).first():
-        return jsonify({'error': 'Username already exists'}), 400
-    
-    # Check email uniqueness if changed
-    if data['email'] != user.email and User.query.filter_by(email=data['email']).first():
-        return jsonify({'error': 'Email already exists'}), 400
-    
-    user.username = data['username']
-    user.email = data['email']
-    user.role = data['role']
-    
-    # Update password only if provided
-    if 'password' in data and data['password']:
-        user.password_hash = generate_password_hash(data['password'])
-    
-    db.session.commit()
-    
-    return jsonify({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'role': user.role
-    })
-
-@app.route('/api/users/<int:user_id>', methods=['DELETE'])
-@login_required
-@admin_required
-def delete_user(user_id):
-    user = User.query.get_or_404(user_id)
-    if user.username == 'admin':
-        return jsonify({'error': 'Cannot delete admin user'}), 400
-    
-    db.session.delete(user)
-    db.session.commit()
-    return '', 204
 
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
