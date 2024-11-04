@@ -8,6 +8,8 @@ function setupForm() {
     const allDayCheckbox = document.getElementById('is_all_day');
     const timeField = document.getElementById('timeField');
     const endTimeField = document.getElementById('endTimeField');
+    const recurringCheckbox = document.getElementById('is_recurring');
+    const recurrenceFields = document.getElementById('recurrenceFields');
     
     if (allDayCheckbox && timeField && endTimeField) {
         // Set initial state
@@ -20,6 +22,16 @@ function setupForm() {
             if (this.checked) {
                 document.getElementById('time').value = '';
                 document.getElementById('end_time').value = '';
+            }
+        });
+    }
+
+    if (recurringCheckbox && recurrenceFields) {
+        recurringCheckbox.addEventListener('change', function() {
+            recurrenceFields.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                document.getElementById('recurrence_type').value = '';
+                document.getElementById('recurrence_end_date').value = '';
             }
         });
     }
@@ -95,6 +107,12 @@ async function editActivity(id) {
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
         
+        // Set recurring fields
+        document.getElementById('is_recurring').checked = activity.is_recurring;
+        document.getElementById('recurrence_type').value = activity.recurrence_type || '';
+        document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
+        document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
+        
         // Set categories
         const checkboxes = document.querySelectorAll('.category-checkbox');
         checkboxes.forEach(checkbox => {
@@ -120,7 +138,10 @@ async function saveActivity() {
             end_time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('end_time').value,
             location_id: document.getElementById('location').value || null,
             category_ids: Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => parseInt(cb.value)),
-            notes: document.getElementById('notes').value.trim()
+            notes: document.getElementById('notes').value.trim(),
+            is_recurring: document.getElementById('is_recurring').checked,
+            recurrence_type: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_type').value : null,
+            recurrence_end_date: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_end_date').value : null
         };
 
         if (!activity.title || !activity.date) {
