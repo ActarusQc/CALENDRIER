@@ -35,6 +35,27 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
+def generate_recurring_dates(start_date, recurrence_type, end_date):
+    dates = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        dates.append(current_date)
+        
+        if recurrence_type == 'daily':
+            current_date = current_date + timedelta(days=1)
+        elif recurrence_type == 'weekly':
+            current_date = current_date + timedelta(weeks=1)
+        elif recurrence_type == 'monthly':
+            year = current_date.year + ((current_date.month + 1) // 12)
+            month = ((current_date.month + 1) % 12) or 12
+            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+            current_date = current_date.replace(year=year, month=month, day=day)
+        elif recurrence_type == 'annually':
+            current_date = current_date.replace(year=current_date.year + 1)
+    
+    return dates
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -147,7 +168,7 @@ def create_activity():
     
     data = request.json
     try:
-        activity = Activity(
+        base_activity = Activity(
             title=data['title'],
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
             time=None if data.get('is_all_day') else data.get('time'),
@@ -163,11 +184,38 @@ def create_activity():
         
         if data.get('category_ids'):
             categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
-            activity.categories = categories
+            base_activity.categories = categories
         
-        db.session.add(activity)
+        activities_to_create = [base_activity]
+        
+        if data.get('is_recurring') and data.get('recurrence_type') and data.get('recurrence_end_date'):
+            start_date = datetime.strptime(data['date'], '%Y-%m-%d')
+            end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d')
+            
+            recurring_dates = generate_recurring_dates(start_date, data['recurrence_type'], end_date)
+            
+            for date in recurring_dates[1:]:
+                recurring_activity = Activity(
+                    title=data['title'],
+                    date=date,
+                    time=data.get('time'),
+                    end_date=date + (base_activity.end_date - base_activity.date) if base_activity.end_date else None,
+                    end_time=data.get('end_time'),
+                    is_all_day=data.get('is_all_day', False),
+                    location_id=data.get('location_id'),
+                    notes=data.get('notes', ''),
+                    is_recurring=True,
+                    recurrence_type=data.get('recurrence_type'),
+                    recurrence_end_date=end_date
+                )
+                recurring_activity.categories = categories if data.get('category_ids') else []
+                activities_to_create.append(recurring_activity)
+        
+        for activity in activities_to_create:
+            db.session.add(activity)
+        
         db.session.commit()
-        return jsonify({'success': True, 'id': activity.id})
+        return jsonify({'success': True, 'id': base_activity.id})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -211,7 +259,6 @@ def delete_activity(activity_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     activity = Activity.query.get_or_404(activity_id)
-    
     try:
         db.session.delete(activity)
         db.session.commit()
