@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const locations = await locationsResponse.json();
             const categories = await categoriesResponse.json();
+            console.log('Loaded locations:', locations);  // Debug log
+            console.log('Loaded categories:', categories);  // Debug log
             
             // Populate location dropdown
             const locationSelect = document.getElementById('location');
@@ -156,6 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.className = 'calendar-date';
         
         if (date) {
+            const formattedDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
+            console.log('Creating cell for date:', formattedDate);  // Debug log
+            
             const dateDiv = document.createElement('div');
             dateDiv.className = 'date-number';
             dateDiv.textContent = date;
@@ -167,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const activitiesDiv = document.createElement('div');
             activitiesDiv.className = 'timed-activities';
-            const formattedDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
             activitiesDiv.setAttribute('data-date', formattedDate);
             allDayDiv.setAttribute('data-date', formattedDate);
             cell.appendChild(activitiesDiv);
@@ -200,85 +204,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return cell;
     }
     
-    function createActivityElement(activity, position) {
-        const activityDiv = document.createElement('div');
-        activityDiv.className = 'activity';
-        
-        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
-        const startDate = new Date(activity.date);
-        const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-        const isMultiDay = endDate > startDate;
-        
-        if (isMultiDay) {
-            activityDiv.classList.add('multi-day');
-            activityDiv.classList.add(position);
-            activityDiv.style.backgroundColor = categoryColor;
-            
-            if (position === 'start') {
-                activityDiv.innerHTML = `
-                    <div class="activity-content">
-                        <div class="title">${activity.title}</div>
-                        ${!activity.is_all_day && activity.time ? 
-                            `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>` : 
-                            ''}
-                        ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                    </div>
-                `;
-            } else {
-                activityDiv.innerHTML = `<div class="activity-content"><div class="title">${activity.title}</div></div>`;
-            }
-            
-            activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
-        } else {
-            activityDiv.style.backgroundColor = categoryColor;
-            activityDiv.innerHTML = `
-                <div class="activity-content">
-                    ${!activity.is_all_day && activity.time ? 
-                        `<span class="time">${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</span>` : 
-                        ''}
-                    <div class="title">${activity.title}</div>
-                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                </div>
-            `;
-        }
-        
-        activityDiv.addEventListener('click', () => showActivityDetails(activity));
-        
-        return activityDiv;
-    }
-    
-    function showActivityDetails(activity) {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal fade';
-        modalDiv.innerHTML = `
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-white">${activity.title}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-white">
-                        <p><strong>Date:</strong> ${activity.date}${activity.end_date ? ' to ' + activity.end_date : ''}</p>
-                        <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Not specified')}</p>
-                        <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
-                        <p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>
-                        <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modalDiv);
-        const modal = new bootstrap.Modal(modalDiv);
-        modal.show();
-        modalDiv.addEventListener('hidden.bs.modal', () => {
-            document.body.removeChild(modalDiv);
-        });
-    }
-    
     async function fetchActivities(year, month) {
         try {
             const response = await fetch('/api/activities');
             const activities = await response.json();
+            console.log('Loaded activities:', activities);  // Debug log
             
             activities.sort((a, b) => {
                 const dateA = new Date(a.date);
@@ -295,6 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const multiDayActivities = activities.filter(activity => activity.end_date);
             const singleDayActivities = activities.filter(activity => !activity.end_date);
             
+            console.log('Multi-day activities:', multiDayActivities);  // Debug log
+            console.log('Single-day activities:', singleDayActivities);  // Debug log
+            
             multiDayActivities.forEach(activity => {
                 const startDate = new Date(activity.date);
                 const endDate = new Date(activity.end_date);
@@ -306,6 +239,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         const container = activity.is_all_day ?
                             document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                             document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                        
+                        console.log('Adding multi-day activity to container:', dateStr, container);  // Debug log
                         
                         if (container) {
                             let position = 'middle';
@@ -330,6 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const container = activity.is_all_day ?
                         document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                         document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                    
+                    console.log('Adding single-day activity to container:', dateStr, container);  // Debug log
                     
                     if (container) {
                         const activityElement = createActivityElement(activity, 'single');

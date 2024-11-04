@@ -28,6 +28,38 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
+# Initialize test data
+with app.app_context():
+    db.create_all()
+    if Activity.query.count() == 0:
+        # Add a test category
+        category = Category.query.first()
+        if not category:
+            category = Category(name='Test Category', color='#6f42c1')
+            db.session.add(category)
+            
+        # Add a test location
+        location = Location.query.first()
+        if not location:
+            location = Location(name='Test Location')
+            db.session.add(location)
+            
+        db.session.commit()
+        
+        # Add a test activity
+        activity = Activity(
+            title='Test Activity',
+            date=datetime.now(),
+            time='09:00',
+            end_time='10:00',
+            location_id=location.id,
+            notes='Test activity for debugging'
+        )
+        activity.categories.append(category)
+        db.session.add(activity)
+        db.session.commit()
+        print("Added test data to database")
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -78,7 +110,8 @@ def admin():
 @admin_required
 def manage_users():
     trans, helpers = get_translations()
-    return render_template('users.html', trans=trans, helpers=helpers)
+    users = User.query.all()  # Get all users to pass to template
+    return render_template('users.html', trans=trans, helpers=helpers, users=users)
 
 @app.route('/api/users', methods=['GET'])
 @login_required
@@ -178,6 +211,7 @@ def delete_user(user_id):
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
     activities = Activity.query.all()
+    print(f"Returning {len(activities)} activities")  # Debug log
     return jsonify([{
         'id': activity.id,
         'title': activity.title,
