@@ -35,6 +35,14 @@ def load_user(user_id):
 def get_translations():
     return translations['fr'], form_helpers['fr']
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.can_manage_users():
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
 def index():
     trans, helpers = get_translations()
@@ -64,6 +72,108 @@ def admin():
         return redirect(url_for('index'))
     trans, helpers = get_translations()
     return render_template('admin.html', trans=trans, helpers=helpers, user=current_user)
+
+@app.route('/manage_users')
+@login_required
+@admin_required
+def manage_users():
+    trans, helpers = get_translations()
+    return render_template('users.html', trans=trans, helpers=helpers)
+
+@app.route('/api/users', methods=['GET'])
+@login_required
+@admin_required
+def get_users():
+    users = User.query.all()
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    } for user in users])
+
+@app.route('/api/users/<int:user_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_user(user_id):
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
+@app.route('/api/users', methods=['POST'])
+@login_required
+@admin_required
+def create_user():
+    data = request.get_json()
+    
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    user = User(
+        username=data['username'],
+        email=data['email'],
+        password_hash=generate_password_hash(data['password']),
+        role=data['role']
+    )
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@login_required
+@admin_required
+def update_user(user_id):
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+    
+    # Check username uniqueness if changed
+    if data['username'] != user.username and User.query.filter_by(username=data['username']).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    
+    # Check email uniqueness if changed
+    if data['email'] != user.email and User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    user.username = data['username']
+    user.email = data['email']
+    user.role = data['role']
+    
+    # Update password only if provided
+    if 'password' in data and data['password']:
+        user.password_hash = generate_password_hash(data['password'])
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.username == 'admin':
+        return jsonify({'error': 'Cannot delete admin user'}), 400
+    
+    db.session.delete(user)
+    db.session.commit()
+    return '', 204
 
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
@@ -105,6 +215,14 @@ def get_locations():
         'id': location.id,
         'name': location.name
     } for location in locations])
+
+@app.route('/manage_locations_categories')
+@login_required
+def manage_locations_categories():
+    if not current_user.can_manage_activities():
+        return redirect(url_for('index'))
+    trans, helpers = get_translations()
+    return render_template('manage_locations_categories.html', trans=trans, helpers=helpers)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
