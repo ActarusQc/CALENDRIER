@@ -250,7 +250,6 @@ function createDateCell(date) {
             <div class="date-number">${date}</div>
             <div class="all-day-activities" data-date="${formattedDate}"></div>
             <div class="timed-activities" data-date="${formattedDate}"></div>
-            ${window.userCanManageActivities ? `<button class="quick-add-btn" onclick="openQuickAddModal('${formattedDate}')">+</button>` : ''}
         `;
     }
     
@@ -286,32 +285,6 @@ function showActivityDetails(activity) {
     modalDiv.addEventListener('hidden.bs.modal', () => {
         document.body.removeChild(modalDiv);
     });
-}
-
-async function openQuickAddModal(date) {
-    if (!window.userCanManageActivities) return;
-    
-    try {
-        await loadLocationsAndCategories();
-        
-        document.getElementById('activityId').value = '';
-        document.getElementById('title').value = '';
-        document.getElementById('date').value = date;
-        document.getElementById('end_date').value = '';
-        document.getElementById('is_all_day').checked = false;
-        document.getElementById('time').value = '';
-        document.getElementById('end_time').value = '';
-        document.getElementById('notes').value = '';
-        
-        document.querySelectorAll('.category-checkbox').forEach(checkbox => {
-            checkbox.checked = false;
-        });
-        
-        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
-        modal.show();
-    } catch (error) {
-        console.error('Error opening quick add modal:', error);
-    }
 }
 
 // Navigation event handlers
