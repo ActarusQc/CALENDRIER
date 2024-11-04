@@ -48,6 +48,21 @@ document.addEventListener('DOMContentLoaded', function() {
             activitiesDiv.setAttribute('data-date', formattedDate);
             allDayDiv.setAttribute('data-date', formattedDate);
             cell.appendChild(activitiesDiv);
+            
+            if (window.userCanManageActivities) {
+                const addButton = document.createElement('button');
+                addButton.className = 'add-activity-btn';
+                addButton.innerHTML = '+';
+                addButton.title = 'Add activity';
+                
+                addButton.addEventListener('click', () => {
+                    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+                    document.getElementById('date').value = formattedDate;
+                    modal.show();
+                });
+                
+                cell.appendChild(addButton);
+            }
         }
         return cell;
     }
@@ -78,8 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             } else {
-                // For middle and end segments, just use a continuous bar
-                activityDiv.style.borderRadius = position === 'end' ? '0 4px 4px 0' : '0';
+                // For middle and end segments, just show the title
+                activityDiv.innerHTML = `<div class="activity-content"><div class="title">${activity.title}</div></div>`;
             }
             
             // Add title as tooltip for all segments
@@ -199,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } catch (error) {
-            console.error('Error fetching activities:', error);
+            console.error('Error loading activities:', error);
         }
     }
     
