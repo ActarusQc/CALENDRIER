@@ -3,6 +3,12 @@
     --theme-light-purple: #e9ecef;
 }
 
+/* Logo size in navbar */
+.navbar-logo {
+    height: 32px;
+    width: auto;
+}
+
 /* Calendar grid layout */
 .calendar-grid {
     display: grid;
