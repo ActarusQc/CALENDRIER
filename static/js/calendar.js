@@ -14,7 +14,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelector('[data-view="month"]').classList.add('active');
 
-    function updateCalendarHeader() {
+    // Update the calendar header for business week view
+    function updateCalendarHeader(view) {
+        const daysContainer = document.querySelector('.calendar-days');
+        daysContainer.innerHTML = '';
+        
+        switch(view) {
+            case 'business-week':
+                // Show only Monday-Friday
+                ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    daysContainer.appendChild(div);
+                });
+                break;
+            case 'day':
+                // Show only current day name
+                const dayName = currentDate.toLocaleString('fr-FR', { weekday: 'long' });
+                const div = document.createElement('div');
+                div.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                daysContainer.appendChild(div);
+                break;
+            default:
+                // Full week for month and week views
+                ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    daysContainer.appendChild(div);
+                });
+        }
+
         const monthYear = new Date(currentDate).toLocaleString('fr-FR', { 
             month: 'long', 
             year: 'numeric' 
@@ -27,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const calendarGrid = document.querySelector('.calendar-grid');
         calendarGrid.className = 'calendar-grid ' + currentView;
         
-        updateCalendarHeader();
+        updateCalendarHeader(currentView);
         
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.innerHTML = '';
@@ -142,48 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return cell;
     }
 
-    function createActivityElement(activity, position) {
-        const activityDiv = document.createElement('div');
-        activityDiv.className = 'activity';
-        
-        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
-        const startDate = new Date(activity.date);
-        const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-        const isMultiDay = endDate > startDate;
-        
-        if (isMultiDay) {
-            activityDiv.classList.add('multi-day');
-            activityDiv.classList.add(position);
-            activityDiv.style.backgroundColor = categoryColor;
-            
-            if (position === 'start') {
-                activityDiv.innerHTML = `
-                    <div class="activity-content">
-                        <div class="title">${activity.title}</div>
-                        ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                    </div>
-                `;
-            } else {
-                activityDiv.style.borderRadius = position === 'end' ? '0 4px 4px 0' : '0';
-            }
-            
-            activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
-        } else {
-            activityDiv.style.backgroundColor = categoryColor;
-            activityDiv.innerHTML = `
-                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
-                <div class="activity-content">
-                    <div class="title">${activity.title}</div>
-                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                </div>
-            `;
-        }
-        
-        activityDiv.addEventListener('click', () => showActivityDetails(activity));
-        
-        return activityDiv;
-    }
-
     async function fetchActivities(year, month) {
         try {
             const response = await fetch('/api/activities');
@@ -207,41 +194,130 @@ document.addEventListener('DOMContentLoaded', function() {
             const endDate = new Date(year, month + 1, 0);
             
             activities.forEach(activity => {
-                const activityStartDate = new Date(activity.date);
-                const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
-                
-                // Skip if activity is outside current month/view range
-                if (activityStartDate > endDate || activityEndDate < startDate) {
-                    return;
-                }
-                
-                let currentDate = new Date(Math.max(activityStartDate, startDate));
-                const viewEndDate = new Date(Math.min(activityEndDate, endDate));
-                
-                while (currentDate <= viewEndDate) {
-                    const dateStr = currentDate.toISOString().split('T')[0];
-                    const container = activity.is_all_day ?
-                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                    
-                    if (container) {
-                        let position = 'middle';
-                        if (currentDate.getTime() === activityStartDate.getTime()) {
-                            position = 'start';
-                        } else if (currentDate.getTime() === activityEndDate.getTime()) {
-                            position = 'end';
-                        }
-                        
-                        const activityElement = createActivityElement(activity, position);
-                        container.appendChild(activityElement);
-                    }
-                    
-                    currentDate.setDate(currentDate.getDate() + 1);
+                if (activity.is_recurring) {
+                    handleRecurringActivity(activity, startDate, endDate);
+                } else {
+                    handleRegularActivity(activity, startDate, endDate);
                 }
             });
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
+    }
+
+    function handleRecurringActivity(activity, startDate, endDate) {
+        const activityStartDate = new Date(activity.date);
+        let currentDate = new Date(Math.max(activityStartDate, startDate));
+        const recurrenceEndDate = activity.recurrence_end_date ? new Date(activity.recurrence_end_date) : endDate;
+        
+        while (currentDate <= recurrenceEndDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const container = activity.is_all_day ?
+                document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+            
+            if (container) {
+                const activityElement = createActivityElement({
+                    ...activity,
+                    date: dateStr,
+                    is_recurring: true
+                }, 'single');
+                container.appendChild(activityElement);
+            }
+            
+            // Increment date based on recurrence type
+            switch (activity.recurrence_type) {
+                case 'daily':
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    break;
+                case 'weekly':
+                    currentDate.setDate(currentDate.getDate() + 7);
+                    break;
+                case 'monthly':
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                    break;
+                case 'annually':
+                    currentDate.setFullYear(currentDate.getFullYear() + 1);
+                    break;
+            }
+        }
+    }
+
+    function handleRegularActivity(activity, startDate, endDate) {
+        const activityStartDate = new Date(activity.date);
+        const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
+        
+        // Skip if activity is outside current month/view range
+        if (activityStartDate > endDate || activityEndDate < startDate) {
+            return;
+        }
+        
+        let currentDate = new Date(Math.max(activityStartDate, startDate));
+        const viewEndDate = new Date(Math.min(activityEndDate, endDate));
+        
+        while (currentDate <= viewEndDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const container = activity.is_all_day ?
+                document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+            
+            if (container) {
+                let position = 'middle';
+                if (currentDate.getTime() === activityStartDate.getTime()) {
+                    position = 'start';
+                } else if (currentDate.getTime() === activityEndDate.getTime()) {
+                    position = 'end';
+                }
+                
+                const activityElement = createActivityElement(activity, position);
+                container.appendChild(activityElement);
+            }
+            
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    }
+
+    function createActivityElement(activity, position) {
+        const activityDiv = document.createElement('div');
+        activityDiv.className = 'activity';
+        
+        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+        const startDate = new Date(activity.date);
+        const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
+        const isMultiDay = endDate > startDate;
+        
+        if (isMultiDay && !activity.is_recurring) {
+            activityDiv.classList.add('multi-day');
+            activityDiv.classList.add(position);
+            activityDiv.style.backgroundColor = categoryColor;
+            
+            if (position === 'start') {
+                activityDiv.innerHTML = `
+                    <div class="activity-content">
+                        <div class="title">${activity.title}</div>
+                        ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                activityDiv.style.borderRadius = position === 'end' ? '0 4px 4px 0' : '0';
+            }
+            
+            activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
+        } else {
+            activityDiv.style.backgroundColor = categoryColor;
+            activityDiv.innerHTML = `
+                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
+                <div class="activity-content">
+                    <div class="title">${activity.title}</div>
+                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                    ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
+                </div>
+            `;
+        }
+        
+        activityDiv.addEventListener('click', () => showActivityDetails(activity));
+        
+        return activityDiv;
     }
 
     function showActivityDetails(activity) {
