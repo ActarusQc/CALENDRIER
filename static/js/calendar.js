@@ -270,6 +270,83 @@ document.addEventListener('DOMContentLoaded', function() {
         return activityDiv;
     }
 
+    function showActivityDetails(activity) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="modal-header border-bottom border-light border-opacity-25">
+                        <h5 class="modal-title text-white fw-bold">${activity.title}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-white">
+                            <div class="mb-3">
+                                <strong>Date:</strong> ${activity.date}
+                                ${activity.end_date ? ` - ${activity.end_date}` : ''}
+                            </div>
+                            ${!activity.is_all_day && activity.time ? `
+                                <div class="mb-3">
+                                    <strong>Heure:</strong> ${activity.time}
+                                    ${activity.end_time ? ` - ${activity.end_time}` : ''}
+                                </div>
+                            ` : ''}
+                            ${activity.is_all_day ? `
+                                <div class="mb-3">
+                                    <strong>Type:</strong> Toute la journée
+                                </div>
+                            ` : ''}
+                            ${activity.location ? `
+                                <div class="mb-3">
+                                    <strong>Lieu:</strong> ${activity.location}
+                                </div>
+                            ` : ''}
+                            ${activity.categories.length > 0 ? `
+                                <div class="mb-3">
+                                    <strong>Catégories:</strong>
+                                    <div class="d-flex flex-wrap gap-2 mt-1">
+                                        ${activity.categories.map(cat => `
+                                            <span class="badge" style="background-color: ${cat.color}">${cat.name}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${activity.is_recurring ? `
+                                <div class="mb-3">
+                                    <strong>Récurrence:</strong> 
+                                    ${activity.recurrence_type === 'daily' ? 'Quotidien' :
+                                      activity.recurrence_type === 'weekly' ? 'Hebdomadaire' :
+                                      activity.recurrence_type === 'monthly' ? 'Mensuel' :
+                                      'Annuel'}
+                                    ${activity.recurrence_end_date ? ` jusqu'au ${activity.recurrence_end_date}` : ''}
+                                </div>
+                            ` : ''}
+                            ${activity.notes ? `
+                                <div class="mb-3">
+                                    <strong>Notes:</strong>
+                                    <div class="mt-1">${activity.notes}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modalDiv);
+        
+        const modal = new bootstrap.Modal(modalDiv);
+        modal.show();
+        
+        modalDiv.addEventListener('hidden.bs.modal', function () {
+            document.body.removeChild(modalDiv);
+        });
+    }
+
     function showAddActivityModal(date) {
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal fade';
@@ -466,37 +543,6 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(error.message);
         });
     }
-
-    // Navigation event handlers
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        switch(currentView) {
-            case 'day':
-                currentDate.setDate(currentDate.getDate() - 1);
-                break;
-            case 'week':
-            case 'business-week':
-                currentDate.setDate(currentDate.getDate() - 7);
-                break;
-            default:
-                currentDate.setMonth(currentDate.getMonth() - 1);
-        }
-        updateCalendar();
-    });
-
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        switch(currentView) {
-            case 'day':
-                currentDate.setDate(currentDate.getDate() + 1);
-                break;
-            case 'week':
-            case 'business-week':
-                currentDate.setDate(currentDate.getDate() + 7);
-                break;
-            default:
-                currentDate.setMonth(currentDate.getMonth() + 1);
-        }
-        updateCalendar();
-    });
 
     // Make functions globally available
     window.showAddActivityModal = showAddActivityModal;
