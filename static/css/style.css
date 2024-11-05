@@ -22,10 +22,14 @@
     grid-template-columns: repeat(7, 1fr);
     background-color: var(--theme-purple);
     color: white;
-    padding: 8px 0;
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
+}
+
+.calendar-days > div {
+    padding: 8px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .calendar-dates {
@@ -37,13 +41,19 @@
 /* Business week specific styles */
 .business-week .calendar-days,
 .business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr);
 }
 
 /* Day view specific styles */
 .day-view .calendar-days,
 .day-view .calendar-dates {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
+}
+
+/* Week view specific styles */
+.week-view .calendar-days,
+.week-view .calendar-dates {
+    grid-template-columns: repeat(7, 1fr);
 }
 
 .calendar-date {
@@ -55,7 +65,7 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    overflow: visible;  /* Allow events to overlap */
+    overflow: visible;
 }
 
 /* Date number styling */
@@ -82,7 +92,7 @@
     position: relative;
     border-bottom: 1px solid #dee2e6;
     overflow: visible;
-    z-index: 5;  /* Lower than events but above grid */
+    z-index: 5;
 }
 
 .timed-activities {
@@ -134,7 +144,7 @@
 .activity.multi-day {
     position: absolute;
     left: 0;
-    right: -1px;  /* Extend slightly to overlap borders */
+    right: -1px;
     margin: 0;
     padding: 4px 8px;
     z-index: 10;
@@ -142,11 +152,11 @@
     display: flex;
     align-items: center;
     border: none;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);  /* Add subtle shadow */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .activity.multi-day.start {
-    left: 6px;  /* Align with cell padding */
+    left: 6px;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
 }
@@ -158,7 +168,7 @@
 }
 
 .activity.multi-day.end {
-    right: 6px;  /* Align with cell padding */
+    right: 6px;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
 }
