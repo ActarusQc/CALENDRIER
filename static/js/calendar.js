@@ -1,14 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
-    let currentView = 'month'; // Track current view
+    let currentView = 'month';
 
-    // Update view switching
     document.querySelectorAll('[data-view]').forEach(button => {
         button.addEventListener('click', function() {
             const view = this.dataset.view;
             currentView = view;
             
-            // Update active button state
             document.querySelectorAll('[data-view]').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -22,10 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const calendarGrid = document.querySelector('.calendar-grid');
         calendarGrid.className = 'calendar-grid ' + currentView;
         
-        // Update header based on current view
         updateCalendarHeader();
         
-        // Clear and rebuild calendar dates
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.innerHTML = '';
         
@@ -44,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
 
-        // Fetch and display activities
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         fetchActivities(year, month);
@@ -76,7 +71,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         }
 
-        // Update month/year display
         const monthYear = currentDate.toLocaleString('fr-FR', { 
             month: 'long', 
             year: 'numeric' 
@@ -94,12 +88,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         
-        // Fill in days from previous month
         for (let i = 0; i < firstDay.getDay(); i++) {
             calendarDates.appendChild(createDateCell());
         }
         
-        // Fill in days of current month
         for (let date = 1; date <= lastDay.getDate(); date++) {
             const cellDate = new Date(year, month, date);
             calendarDates.appendChild(createDateCell(cellDate));
@@ -184,7 +176,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/activities');
             const activities = await response.json();
             
-            // Clear existing activities
             document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
             document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
             
@@ -203,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const activityStartDate = new Date(activity.date);
         const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
         
-        // Skip if activity is outside current month/view range
         if (activityStartDate > endDate || activityEndDate < startDate) {
             return;
         }
@@ -368,34 +358,38 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <input type="date" class="form-control bg-dark text-white" id="quickActivityDate" value="${date}" required>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label text-white">Date de fin</label>
+                                <input type="date" class="form-control bg-dark text-white" id="quickActivityEndDate">
+                            </div>
+                            <div class="mb-3">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="quickActivityAllDay">
                                     <label class="form-check-label text-white">Toute la journée</label>
                                 </div>
                             </div>
-                            <div id="quickTimeField">
+                            <div id="quickTimeFields">
                                 <div class="mb-3">
                                     <label class="form-label text-white">Heure</label>
                                     <input type="time" class="form-control bg-dark text-white" id="quickActivityTime">
                                 </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Heure de fin</label>
+                                    <input type="time" class="form-control bg-dark text-white" id="quickActivityEndTime">
+                                </div>
                             </div>
-                            <!-- Recurring event section -->
                             <div class="mb-3">
-                                <div class="form-check">
+                                <div class="form-check mb-2">
                                     <input type="checkbox" class="form-check-input" id="quickActivityRecurring">
                                     <label class="form-check-label text-white">Activité récurrente</label>
                                 </div>
-                                <div id="quickRecurrenceFields" style="display: none;">
-                                    <div class="mt-3">
-                                        <label class="form-label text-white">Type de récurrence</label>
-                                        <select class="form-control bg-dark text-white" id="quickActivityRecurrenceType">
-                                            <option value="daily">Quotidien</option>
-                                            <option value="weekly">Hebdomadaire</option>
-                                            <option value="monthly">Mensuel</option>
-                                            <option value="annually">Annuel</option>
-                                        </select>
-                                    </div>
-                                    <div class="mt-3">
+                                <div id="recurrenceFields" style="display: none;">
+                                    <select class="form-control bg-dark text-white mb-2" id="quickActivityRecurrenceType">
+                                        <option value="daily">Quotidien</option>
+                                        <option value="weekly">Hebdomadaire</option>
+                                        <option value="monthly">Mensuel</option>
+                                        <option value="annually">Annuel</option>
+                                    </select>
+                                    <div class="mb-3">
                                         <label class="form-label text-white">Date de fin de récurrence</label>
                                         <input type="date" class="form-control bg-dark text-white" id="quickActivityRecurrenceEndDate">
                                     </div>
@@ -422,133 +416,130 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
+
         document.body.appendChild(modalDiv);
-        
-        // Setup all-day checkbox behavior
+
         const allDayCheckbox = modalDiv.querySelector('#quickActivityAllDay');
-        const timeField = modalDiv.querySelector('#quickTimeField');
+        const timeFields = modalDiv.querySelector('#quickTimeFields');
+        const recurringCheckbox = modalDiv.querySelector('#quickActivityRecurring');
+        const recurrenceFields = modalDiv.querySelector('#recurrenceFields');
+
         allDayCheckbox.addEventListener('change', function() {
-            timeField.style.display = this.checked ? 'none' : 'block';
+            timeFields.style.display = this.checked ? 'none' : 'block';
         });
 
-        // Setup recurring checkbox behavior
-        const recurringCheckbox = modalDiv.querySelector('#quickActivityRecurring');
-        const recurrenceFields = modalDiv.querySelector('#quickRecurrenceFields');
         recurringCheckbox.addEventListener('change', function() {
             recurrenceFields.style.display = this.checked ? 'block' : 'none';
         });
-        
-        // Load locations and categories
-        fetch('/api/locations')
-            .then(response => response.json())
-            .then(locations => {
-                const locationSelect = modalDiv.querySelector('#quickActivityLocation');
-                locations.forEach(location => {
-                    const option = document.createElement('option');
-                    option.value = location.id;
-                    option.textContent = location.name;
-                    locationSelect.appendChild(option);
-                });
-            });
 
-        fetch('/api/categories')
-            .then(response => response.json())
-            .then(categories => {
-                const categoriesContainer = modalDiv.querySelector('#quickActivityCategories');
-                categories.forEach(category => {
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    div.innerHTML = `
-                        <input class="form-check-input" type="checkbox" 
-                            value="${category.id}" id="quickCategory${category.id}">
-                        <label class="form-check-label text-white">
-                            <span class="color-dot" style="background-color: ${category.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
-                            ${category.name}
-                        </label>
-                    `;
-                    categoriesContainer.appendChild(div);
-                });
-            });
-        
-        // Show modal
+        loadLocationsAndCategories(modalDiv);
+
         const modal = new bootstrap.Modal(modalDiv);
         modal.show();
-        
-        // Clean up on hide
+
         modalDiv.addEventListener('hidden.bs.modal', function () {
             document.body.removeChild(modalDiv);
         });
     }
 
-    function quickSaveActivity() {
+    async function loadLocationsAndCategories(modalDiv) {
+        try {
+            const [locationsResponse, categoriesResponse] = await Promise.all([
+                fetch('/api/locations'),
+                fetch('/api/categories')
+            ]);
+
+            if (!locationsResponse.ok || !categoriesResponse.ok) {
+                throw new Error('Failed to load data');
+            }
+
+            const locations = await locationsResponse.json();
+            const categories = await categoriesResponse.json();
+
+            const locationSelect = modalDiv.querySelector('#quickActivityLocation');
+            locations.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location.id;
+                option.textContent = location.name;
+                locationSelect.appendChild(option);
+            });
+
+            const categoriesContainer = modalDiv.querySelector('#quickActivityCategories');
+            categories.forEach(category => {
+                const div = document.createElement('div');
+                div.className = 'form-check';
+                div.innerHTML = `
+                    <input class="form-check-input" type="checkbox" value="${category.id}" id="category${category.id}">
+                    <label class="form-check-label text-white" for="category${category.id}">
+                        <span class="color-dot" style="background-color: ${category.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
+                        ${category.name}
+                    </label>
+                `;
+                categoriesContainer.appendChild(div);
+            });
+        } catch (error) {
+            console.error('Error loading data:', error);
+            alert('Error loading locations and categories');
+        }
+    }
+
+    async function quickSaveActivity() {
         const activity = {
             title: document.getElementById('quickActivityTitle').value,
             date: document.getElementById('quickActivityDate').value,
+            end_date: document.getElementById('quickActivityEndDate').value || null,
             is_all_day: document.getElementById('quickActivityAllDay').checked,
             time: document.getElementById('quickActivityAllDay').checked ? null : document.getElementById('quickActivityTime').value,
+            end_time: document.getElementById('quickActivityAllDay').checked ? null : document.getElementById('quickActivityEndTime').value,
             location_id: document.getElementById('quickActivityLocation').value || null,
             category_ids: Array.from(document.querySelectorAll('#quickActivityCategories input:checked')).map(cb => parseInt(cb.value)),
-            // Add recurring event data
             is_recurring: document.getElementById('quickActivityRecurring').checked,
-            recurrence_type: document.getElementById('quickActivityRecurring').checked ? 
-                document.getElementById('quickActivityRecurrenceType').value : null,
-            recurrence_end_date: document.getElementById('quickActivityRecurring').checked ? 
-                document.getElementById('quickActivityRecurrenceEndDate').value : null
+            recurrence_type: document.getElementById('quickActivityRecurring').checked ? document.getElementById('quickActivityRecurrenceType').value : null,
+            recurrence_end_date: document.getElementById('quickActivityRecurring').checked ? document.getElementById('quickActivityRecurrenceEndDate').value : null
         };
 
-        // Validate required fields
         if (!activity.title || !activity.date) {
             alert('Veuillez remplir tous les champs obligatoires');
             return;
         }
 
-        // Validate recurring activity fields
-        if (activity.is_recurring && (!activity.recurrence_type || !activity.recurrence_end_date)) {
-            alert('Pour une activité récurrente, veuillez sélectionner le type de récurrence et la date de fin');
+        if (activity.end_date && activity.date > activity.end_date) {
+            alert('La date de fin ne peut pas être antérieure à la date de début');
             return;
         }
 
-        // Validate dates
-        if (activity.is_recurring && activity.recurrence_end_date < activity.date) {
-            alert('La date de fin de récurrence ne peut pas être antérieure à la date de début');
+        if (activity.is_recurring && !activity.recurrence_end_date) {
+            alert('Veuillez spécifier une date de fin pour l\'activité récurrente');
             return;
         }
-        
-        fetch('/api/activities', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(activity)
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.error || 'Erreur lors de l\'enregistrement de l\'activité');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
+
+        try {
+            const response = await fetch('/api/activities', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(activity)
+            });
+
+            const data = await response.json();
+
             if (data.success) {
                 const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
                 modal.hide();
                 updateCalendar();
             } else {
-                throw new Error(data.error || 'Erreur lors de l\'enregistrement de l\'activité');
+                alert(data.error || 'Erreur lors de l\'enregistrement de l\'activité');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
-            alert(error.message);
-        });
+            alert('Erreur lors de l\'enregistrement de l\'activité');
+        }
     }
 
-    // Make functions globally available
     window.showAddActivityModal = showAddActivityModal;
     window.quickSaveActivity = quickSaveActivity;
 
-    // Set month view as default and initialize calendar
     document.querySelector('[data-view="month"]').classList.add('active');
     updateCalendar();
 });
