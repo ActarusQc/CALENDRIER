@@ -127,6 +127,12 @@
 }
 
 /* Calendar header */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -136,6 +142,13 @@
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
+}
+
+/* View switching buttons */
+.btn[data-view].active {
+    background-color: var(--theme-purple);
+    color: white;
+    border-color: var(--theme-purple);
 }
 
 /* Hover effects */

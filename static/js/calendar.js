@@ -1,5 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
+    let currentView = 'month'; // Default view
+
+    document.querySelectorAll('[data-view]').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('[data-view]').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            currentView = button.getAttribute('data-view');
+            updateCalendar();
+        });
+    });
+
+    document.querySelector('[data-view="month"]').classList.add('active');
     
     function updateCalendar() {
         const year = currentDate.getFullYear();
@@ -14,21 +27,69 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.innerHTML = '';
-        
-        // Add empty cells for days before the first of the month
-        for (let i = 0; i < firstDay.getDay(); i++) {
-            calendarDates.appendChild(createDateCell());
-        }
-        
-        // Add cells for each day of the month
-        for (let date = 1; date <= lastDay.getDate(); date++) {
-            calendarDates.appendChild(createDateCell(date));
+
+        switch(currentView) {
+            case 'month':
+                renderMonthView(firstDay, lastDay);
+                break;
+            case 'week':
+                renderWeekView();
+                break;
+            case 'business-week':
+                renderBusinessWeekView();
+                break;
+            case 'day':
+                renderDayView();
+                break;
         }
         
         fetchActivities(year, month);
     }
+
+    function renderMonthView(firstDay, lastDay) {
+        const calendarDates = document.getElementById('calendarDates');
+        
+        for (let i = 0; i < firstDay.getDay(); i++) {
+            calendarDates.appendChild(createDateCell());
+        }
+        
+        for (let date = 1; date <= lastDay.getDate(); date++) {
+            calendarDates.appendChild(createDateCell(date));
+        }
+    }
+
+    function renderWeekView() {
+        const calendarDates = document.getElementById('calendarDates');
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            calendarDates.appendChild(createDateCell(date.getDate(), true));
+        }
+    }
+
+    function renderBusinessWeekView() {
+        const calendarDates = document.getElementById('calendarDates');
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+
+        for (let i = 0; i < 5; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            calendarDates.appendChild(createDateCell(date.getDate(), true));
+        }
+        calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
+    }
+
+    function renderDayView() {
+        const calendarDates = document.getElementById('calendarDates');
+        calendarDates.appendChild(createDateCell(currentDate.getDate(), true));
+        calendarDates.style.gridTemplateColumns = '1fr';
+    }
     
-    function createDateCell(date) {
+    function createDateCell(date, isCurrentPeriod = false) {
         const cell = document.createElement('div');
         cell.className = 'calendar-date';
         
@@ -66,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
             
-            // Show full content only on the first day
             if (position === 'start') {
                 activityDiv.innerHTML = `
                     <div class="activity-content">
@@ -75,11 +135,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             } else {
-                // For middle and end segments, just use a continuous bar
                 activityDiv.style.borderRadius = position === 'end' ? '0 4px 4px 0' : '0';
             }
             
-            // Add title as tooltip for all segments
             activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
         } else {
             activityDiv.style.backgroundColor = categoryColor;
@@ -92,7 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        // Add click handler for activity details
         activityDiv.addEventListener('click', () => showActivityDetails(activity));
         
         return activityDiv;
@@ -165,7 +222,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/activities');
             const activities = await response.json();
             
-            // Sort activities by date and time
             activities.sort((a, b) => {
                 const dateA = new Date(a.date);
                 const dateB = new Date(b.date);
@@ -175,15 +231,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return (a.time || '').localeCompare(b.time || '');
             });
             
-            // Clear existing activities before adding new ones
             document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
             document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
             
-            // Process multi-day events first to ensure they appear at the top
             const multiDayActivities = activities.filter(activity => activity.end_date);
             const singleDayActivities = activities.filter(activity => !activity.end_date);
             
-            // Add multi-day events
             multiDayActivities.forEach(activity => {
                 const startDate = new Date(activity.date);
                 const endDate = new Date(activity.end_date);
@@ -212,7 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Add single-day events
             singleDayActivities.forEach(activity => {
                 const activityDate = new Date(activity.date);
                 if (activityDate.getFullYear() === year && activityDate.getMonth() === month) {
@@ -232,7 +284,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Event handlers for month navigation
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
