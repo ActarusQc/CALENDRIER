@@ -122,12 +122,10 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarDates.innerHTML = '';
         calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
         
-        // Find Monday of current week
         const startOfWeek = new Date(currentDate);
         const diff = startOfWeek.getDay() === 0 ? -6 : 1 - startOfWeek.getDay(); // Adjust to get to Monday
         startOfWeek.setDate(startOfWeek.getDate() + diff);
         
-        // Create date cells for Monday through Friday
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
@@ -177,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAddActivityModal(date) {
-        // Create modal element
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal fade';
         modalDiv.innerHTML = `
@@ -191,23 +188,68 @@ document.addEventListener('DOMContentLoaded', function() {
                         <form id="quickAddActivityForm">
                             <div class="mb-3">
                                 <label class="form-label text-white">Titre</label>
-                                <input type="text" class="form-control" id="quickActivityTitle" required>
+                                <input type="text" class="form-control bg-dark text-white" id="quickActivityTitle" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-white">Date</label>
-                                <input type="date" class="form-control" id="quickActivityDate" value="${date}" required>
+                                <input type="date" class="form-control bg-dark text-white" id="quickActivityDate" value="${date}" required>
                             </div>
                             <div class="mb-3">
-                                <div class="form-check">
+                                <label class="form-label text-white">Date de fin</label>
+                                <input type="date" class="form-control bg-dark text-white" id="quickActivityEndDate">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check mb-2">
                                     <input type="checkbox" class="form-check-input" id="quickActivityAllDay">
                                     <label class="form-check-label text-white">Toute la journée</label>
                                 </div>
-                            </div>
-                            <div id="quickTimeField">
-                                <div class="mb-3">
-                                    <label class="form-label text-white">Heure</label>
-                                    <input type="time" class="form-control" id="quickActivityTime">
+                                <div id="quickTimeFields">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Heure</label>
+                                        <input type="time" class="form-control bg-dark text-white" id="quickActivityTime">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Heure de fin</label>
+                                        <input type="time" class="form-control bg-dark text-white" id="quickActivityEndTime">
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="quickActivityRecurring">
+                                    <label class="form-check-label text-white">Activité récurrente</label>
+                                </div>
+                                <div id="quickRecurrenceFields" style="display: none;">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Type de récurrence</label>
+                                        <select class="form-control bg-dark text-white" id="quickActivityRecurrenceType">
+                                            <option value="daily">Quotidien</option>
+                                            <option value="weekly">Hebdomadaire</option>
+                                            <option value="monthly">Mensuel</option>
+                                            <option value="annually">Annuel</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Date de fin de récurrence</label>
+                                        <input type="date" class="form-control bg-dark text-white" id="quickActivityRecurrenceEndDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Lieu</label>
+                                <select class="form-control bg-dark text-white" id="quickActivityLocation">
+                                    <option value="">Sélectionnez un lieu</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Catégories</label>
+                                <div id="quickActivityCategories" class="border rounded p-3">
+                                    <!-- Categories will be loaded here -->
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Notes</label>
+                                <textarea class="form-control bg-dark text-white" id="quickActivityNotes"></textarea>
                             </div>
                         </form>
                     </div>
@@ -219,12 +261,50 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         document.body.appendChild(modalDiv);
+
+        // Load locations and categories
+        fetch('/api/locations')
+            .then(response => response.json())
+            .then(locations => {
+                const locationSelect = document.getElementById('quickActivityLocation');
+                locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location.id;
+                    option.textContent = location.name;
+                    locationSelect.appendChild(option);
+                });
+            });
+
+        fetch('/api/categories')
+            .then(response => response.json())
+            .then(categories => {
+                const categoriesContainer = document.getElementById('quickActivityCategories');
+                categories.forEach(category => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    div.innerHTML = `
+                        <input class="form-check-input" type="checkbox" 
+                            value="${category.id}" id="quickCategory${category.id}">
+                        <label class="form-check-label text-white" for="quickCategory${category.id}">
+                            <span class="color-dot" style="background-color: ${category.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
+                            ${category.name}
+                        </label>
+                    `;
+                    categoriesContainer.appendChild(div);
+                });
+            });
         
-        // Setup all-day checkbox behavior
+        // Setup event listeners
         const allDayCheckbox = modalDiv.querySelector('#quickActivityAllDay');
-        const timeField = modalDiv.querySelector('#quickTimeField');
+        const timeFields = modalDiv.querySelector('#quickTimeFields');
         allDayCheckbox.addEventListener('change', function() {
-            timeField.style.display = this.checked ? 'none' : 'block';
+            timeFields.style.display = this.checked ? 'none' : 'block';
+        });
+
+        const recurringCheckbox = modalDiv.querySelector('#quickActivityRecurring');
+        const recurrenceFields = modalDiv.querySelector('#quickRecurrenceFields');
+        recurringCheckbox.addEventListener('change', function() {
+            recurrenceFields.style.display = this.checked ? 'block' : 'none';
         });
         
         // Show modal
@@ -238,18 +318,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function quickSaveActivity() {
-        const title = document.getElementById('quickActivityTitle').value;
-        const date = document.getElementById('quickActivityDate').value;
-        const isAllDay = document.getElementById('quickActivityAllDay').checked;
-        const time = isAllDay ? null : document.getElementById('quickActivityTime').value;
-        
         const activity = {
-            title: title,
-            date: date,
-            is_all_day: isAllDay,
-            time: time
+            title: document.getElementById('quickActivityTitle').value,
+            date: document.getElementById('quickActivityDate').value,
+            end_date: document.getElementById('quickActivityEndDate').value || null,
+            is_all_day: document.getElementById('quickActivityAllDay').checked,
+            time: document.getElementById('quickActivityAllDay').checked ? null : document.getElementById('quickActivityTime').value,
+            end_time: document.getElementById('quickActivityAllDay').checked ? null : document.getElementById('quickActivityEndTime').value,
+            location_id: document.getElementById('quickActivityLocation').value || null,
+            category_ids: Array.from(document.querySelectorAll('#quickActivityCategories input:checked')).map(cb => parseInt(cb.value)),
+            notes: document.getElementById('quickActivityNotes').value,
+            is_recurring: document.getElementById('quickActivityRecurring').checked,
+            recurrence_type: document.getElementById('quickActivityRecurring').checked ? document.getElementById('quickActivityRecurrenceType').value : null,
+            recurrence_end_date: document.getElementById('quickActivityRecurring').checked ? document.getElementById('quickActivityRecurrenceEndDate').value : null
         };
-        
+
+        if (!activity.title || !activity.date) {
+            alert('Veuillez remplir tous les champs obligatoires');
+            return;
+        }
+
+        if (activity.is_recurring && !activity.recurrence_end_date) {
+            alert('Veuillez spécifier une date de fin pour l\'activité récurrente');
+            return;
+        }
+
         fetch('/api/activities', {
             method: 'POST',
             headers: {
@@ -264,12 +357,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 modal.hide();
                 updateCalendar();
             } else {
-                alert('Error saving activity');
+                alert(data.error || 'Erreur lors de l\'enregistrement de l\'activité');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error saving activity');
+            alert('Erreur lors de l\'enregistrement de l\'activité');
         });
     }
 
@@ -392,23 +485,17 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.classList.add('multi-day');
             activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
-            
-            if (position === 'start') {
-                activityDiv.innerHTML = `
-                    <div class="activity-content">
-                        <div class="title">${activity.title}</div>
-                        ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                    </div>
-                `;
-            } else {
-                activityDiv.style.borderRadius = position === 'end' ? '0 4px 4px 0' : '0';
-            }
-            
-            activityDiv.title = `${activity.title}${activity.location ? ' - ' + activity.location : ''}`;
         } else {
             activityDiv.style.backgroundColor = categoryColor;
+        }
+        
+        if (position === 'start' || position === 'single') {
+            let timeDisplay = '';
+            if (!activity.is_all_day && activity.time) {
+                timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
+            }
+            
             activityDiv.innerHTML = `
-                ${!activity.is_all_day && activity.time ? `<span class="time">${activity.time}</span>` : ''}
                 <div class="activity-content">
                     <div class="title">${activity.title}</div>
                     ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
@@ -422,107 +509,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return activityDiv;
     }
 
-    function showActivityDetails(activity) {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal fade';
-        modalDiv.innerHTML = `
-            <div class="modal-dialog">
-                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-                    <div class="modal-header border-bottom border-light border-opacity-25">
-                        <h5 class="modal-title text-white fw-bold">${activity.title}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="d-flex flex-column gap-3">
-                            <div class="d-flex align-items-center text-white">
-                                <i class="bi bi-calendar3 me-3"></i>
-                                <div>
-                                    <div class="opacity-75 small">Date</div>
-                                    <div>${activity.date}${activity.end_date ? ' → ' + activity.end_date : ''}</div>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center text-white">
-                                <i class="bi bi-clock me-3"></i>
-                                <div>
-                                    <div class="opacity-75 small">Horaire</div>
-                                    <div>${activity.is_all_day ? 'Toute la journée' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Non spécifié')}</div>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center text-white">
-                                <i class="bi bi-geo-alt me-3"></i>
-                                <div>
-                                    <div class="opacity-75 small">Lieu</div>
-                                    <div>${activity.location || 'Non spécifié'}</div>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center text-white">
-                                <i class="bi bi-tag me-3"></i>
-                                <div>
-                                    <div class="opacity-75 small">Catégories</div>
-                                    <div>${activity.categories.map(c => c.name).join(', ') || 'Aucune catégorie'}</div>
-                                </div>
-                            </div>
-                            ${activity.notes ? `
-                            <div class="d-flex align-items-start text-white">
-                                <i class="bi bi-sticky me-3 mt-1"></i>
-                                <div>
-                                    <div class="opacity-75 small">Notes</div>
-                                    <div>${activity.notes}</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                            ${activity.is_recurring ? `
-                            <div class="d-flex align-items-start text-white">
-                                <i class="bi bi-arrow-repeat me-3 mt-1"></i>
-                                <div>
-                                    <div class="opacity-75 small">Récurrence</div>
-                                    <div>${activity.recurrence_type} jusqu'au ${activity.recurrence_end_date}</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modalDiv);
-        const modal = new bootstrap.Modal(modalDiv);
-        modal.show();
-        modalDiv.addEventListener('hidden.bs.modal', () => {
-            document.body.removeChild(modalDiv);
-        });
-    }
-
     document.getElementById('prevMonth').addEventListener('click', () => {
-        switch(currentView) {
-            case 'day':
-                currentDate.setDate(currentDate.getDate() - 1);
-                break;
-            case 'week':
-            case 'business-week':
-                currentDate.setDate(currentDate.getDate() - 7);
-                break;
-            default:
-                currentDate.setMonth(currentDate.getMonth() - 1);
-        }
+        currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
-        switch(currentView) {
-            case 'day':
-                currentDate.setDate(currentDate.getDate() + 1);
-                break;
-            case 'week':
-            case 'business-week':
-                currentDate.setDate(currentDate.getDate() + 7);
-                break;
-            default:
-                currentDate.setMonth(currentDate.getMonth() + 1);
-        }
+        currentDate.setMonth(currentDate.getMonth() + 1);
         updateCalendar();
     });
 
+    // Initial calendar render
     updateCalendar();
 });
