@@ -208,6 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
             
             if (container) {
+                const existingActivities = container.querySelectorAll('.activity').length;
                 let position = 'middle';
                 if (currentDate.getTime() === activityStartDate.getTime()) {
                     position = 'start';
@@ -216,6 +217,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const activityElement = createActivityElement(activity, position);
+                
+                if (activity.is_all_day) {
+                    activityElement.style.position = 'relative';
+                    activityElement.style.top = '0';
+                    activityElement.style.width = '100%';
+                }
+                
                 container.appendChild(activityElement);
             }
             
