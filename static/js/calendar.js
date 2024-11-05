@@ -14,6 +14,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelector('[data-view="month"]').classList.add('active');
     
+    function updateCalendarHeader(view) {
+        const daysContainer = document.querySelector('.calendar-days');
+        daysContainer.innerHTML = '';
+        
+        switch(view) {
+            case 'business-week':
+                // Show only Monday-Friday
+                ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    daysContainer.appendChild(div);
+                });
+                break;
+            case 'day':
+                // Show only current day name
+                const dayName = currentDate.toLocaleString('fr-FR', { weekday: 'long' });
+                const div = document.createElement('div');
+                div.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                daysContainer.appendChild(div);
+                break;
+            default:
+                // Full week for month and week views
+                ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    daysContainer.appendChild(div);
+                });
+        }
+    }
+
     function updateCalendar() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
@@ -22,11 +52,14 @@ document.addEventListener('DOMContentLoaded', function() {
             new Date(year, month).toLocaleString('fr-FR', { month: 'long', year: 'numeric' })
             .replace(/^./, str => str.toUpperCase());
         
+        updateCalendarHeader(currentView);
+        
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.innerHTML = '';
+        calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)'; // Reset grid columns
 
         switch(currentView) {
             case 'month':
@@ -75,18 +108,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
 
+        calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
+        
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
             calendarDates.appendChild(createDateCell(date.getDate(), true));
         }
-        calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
     }
 
     function renderDayView() {
         const calendarDates = document.getElementById('calendarDates');
-        calendarDates.appendChild(createDateCell(currentDate.getDate(), true));
         calendarDates.style.gridTemplateColumns = '1fr';
+        calendarDates.appendChild(createDateCell(currentDate.getDate(), true));
     }
     
     function createDateCell(date, isCurrentPeriod = false) {
@@ -284,13 +318,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Update navigation button handlers
     document.getElementById('prevMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
+        switch(currentView) {
+            case 'day':
+                currentDate.setDate(currentDate.getDate() - 1);
+                break;
+            case 'week':
+            case 'business-week':
+                currentDate.setDate(currentDate.getDate() - 7);
+                break;
+            default:
+                currentDate.setMonth(currentDate.getMonth() - 1);
+        }
         updateCalendar();
     });
     
     document.getElementById('nextMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
+        switch(currentView) {
+            case 'day':
+                currentDate.setDate(currentDate.getDate() + 1);
+                break;
+            case 'week':
+            case 'business-week':
+                currentDate.setDate(currentDate.getDate() + 7);
+                break;
+            default:
+                currentDate.setMonth(currentDate.getMonth() + 1);
+        }
         updateCalendar();
     });
     
