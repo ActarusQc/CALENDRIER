@@ -35,12 +35,15 @@
 }
 
 /* Business week specific styles */
-.business-week .calendar-days {
-    grid-template-columns: repeat(5, 1fr);
+.business-week .calendar-days,
+.business-week .calendar-dates {
+    grid-template-columns: repeat(5, 1fr) !important;
 }
 
-.business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr);
+/* Day view specific styles */
+.day-view .calendar-days,
+.day-view .calendar-dates {
+    grid-template-columns: 1fr !important;
 }
 
 .calendar-date {
