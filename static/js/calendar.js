@@ -103,17 +103,51 @@ document.addEventListener('DOMContentLoaded', function() {
         modalDiv.className = 'modal fade';
         modalDiv.innerHTML = `
             <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-white">${activity.title}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="modal-header border-bottom border-light border-opacity-25">
+                        <h5 class="modal-title text-white fw-bold">${activity.title}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body text-white">
-                        <p><strong>Date:</strong> ${activity.date}${activity.end_date ? ' to ' + activity.end_date : ''}</p>
-                        <p><strong>Time:</strong> ${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Not specified')}</p>
-                        <p><strong>Location:</strong> ${activity.location || 'Not specified'}</p>
-                        <p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>
-                        <p><strong>Notes:</strong> ${activity.notes || 'No notes'}</p>
+                    <div class="modal-body">
+                        <div class="d-flex flex-column gap-3">
+                            <div class="d-flex align-items-center text-white">
+                                <i class="bi bi-calendar3 me-3"></i>
+                                <div>
+                                    <div class="opacity-75 small">Date</div>
+                                    <div>${activity.date}${activity.end_date ? ' → ' + activity.end_date : ''}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-white">
+                                <i class="bi bi-clock me-3"></i>
+                                <div>
+                                    <div class="opacity-75 small">Horaire</div>
+                                    <div>${activity.is_all_day ? 'Toute la journée' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : '') || 'Non spécifié')}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-white">
+                                <i class="bi bi-geo-alt me-3"></i>
+                                <div>
+                                    <div class="opacity-75 small">Lieu</div>
+                                    <div>${activity.location || 'Non spécifié'}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-white">
+                                <i class="bi bi-tag me-3"></i>
+                                <div>
+                                    <div class="opacity-75 small">Catégories</div>
+                                    <div>${activity.categories.map(c => c.name).join(', ') || 'Aucune catégorie'}</div>
+                                </div>
+                            </div>
+                            ${activity.notes ? `
+                            <div class="d-flex align-items-start text-white">
+                                <i class="bi bi-sticky me-3 mt-1"></i>
+                                <div>
+                                    <div class="opacity-75 small">Notes</div>
+                                    <div>${activity.notes}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             </div>
