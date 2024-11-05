@@ -105,19 +105,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderBusinessWeekView() {
         const calendarDates = document.getElementById('calendarDates');
-        const startOfWeek = new Date(currentDate);
-        
-        // Get to Monday (1) from current date
-        const currentDay = startOfWeek.getDay(); // 0 (Sunday) through 6 (Saturday)
-        const diff = currentDay === 0 ? -6 : 1 - currentDay; // If Sunday, go back to previous Monday
-        startOfWeek.setDate(currentDate.getDate() + diff);
-        
         calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
         
+        // Find Monday of current week
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1); // +1 because we want Monday
+        
+        // Create date cells for Monday through Friday
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
-            calendarDates.appendChild(createDateCell(date.getDate(), true));
+            const dateCell = createDateCell(date.getDate(), true);
+            
+            // Set data attribute for the date to help with activity placement
+            const formattedDate = date.toISOString().split('T')[0];
+            dateCell.querySelector('.all-day-activities').setAttribute('data-date', formattedDate);
+            dateCell.querySelector('.timed-activities').setAttribute('data-date', formattedDate);
+            
+            calendarDates.appendChild(dateCell);
         }
     }
 
