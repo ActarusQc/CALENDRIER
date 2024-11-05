@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelector('[data-view="month"]').classList.add('active');
 
-    // Update the calendar header for business week view
     function updateCalendarHeader(view) {
         const daysContainer = document.querySelector('.calendar-days');
         daysContainer.innerHTML = '';
@@ -151,9 +150,15 @@ document.addEventListener('DOMContentLoaded', function() {
         cell.className = 'calendar-date';
         
         if (date) {
-            const dateDiv = document.createElement('div');
+            const dateDiv = document.createElement('a');
+            dateDiv.href = '#';
             dateDiv.className = 'date-number';
             dateDiv.textContent = date.getDate();
+            dateDiv.addEventListener('click', (e) => {
+                e.preventDefault();
+                const formattedDate = date.toISOString().split('T')[0];
+                showAddActivityModal(formattedDate);
+            });
             cell.appendChild(dateDiv);
             
             const allDayDiv = document.createElement('div');
@@ -169,6 +174,103 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         return cell;
+    }
+
+    function showAddActivityModal(date) {
+        // Create modal element
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="modal-header border-bottom border-light border-opacity-25">
+                        <h5 class="modal-title text-white fw-bold">Ajouter une activité</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="quickAddActivityForm">
+                            <div class="mb-3">
+                                <label class="form-label text-white">Titre</label>
+                                <input type="text" class="form-control" id="quickActivityTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Date</label>
+                                <input type="date" class="form-control" id="quickActivityDate" value="${date}" required>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="quickActivityAllDay">
+                                    <label class="form-check-label text-white">Toute la journée</label>
+                                </div>
+                            </div>
+                            <div id="quickTimeField">
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Heure</label>
+                                    <input type="time" class="form-control" id="quickActivityTime">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <button type="button" class="btn btn-primary" onclick="quickSaveActivity()">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        
+        // Setup all-day checkbox behavior
+        const allDayCheckbox = modalDiv.querySelector('#quickActivityAllDay');
+        const timeField = modalDiv.querySelector('#quickTimeField');
+        allDayCheckbox.addEventListener('change', function() {
+            timeField.style.display = this.checked ? 'none' : 'block';
+        });
+        
+        // Show modal
+        const modal = new bootstrap.Modal(modalDiv);
+        modal.show();
+        
+        // Clean up on hide
+        modalDiv.addEventListener('hidden.bs.modal', function () {
+            document.body.removeChild(modalDiv);
+        });
+    }
+
+    function quickSaveActivity() {
+        const title = document.getElementById('quickActivityTitle').value;
+        const date = document.getElementById('quickActivityDate').value;
+        const isAllDay = document.getElementById('quickActivityAllDay').checked;
+        const time = isAllDay ? null : document.getElementById('quickActivityTime').value;
+        
+        const activity = {
+            title: title,
+            date: date,
+            is_all_day: isAllDay,
+            time: time
+        };
+        
+        fetch('/api/activities', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(activity)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
+                modal.hide();
+                updateCalendar();
+            } else {
+                alert('Error saving activity');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving activity');
+        });
     }
 
     async function fetchActivities(year, month) {
