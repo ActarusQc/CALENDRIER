@@ -17,39 +17,30 @@
     border: 1px solid #dee2e6;
 }
 
-/* Update calendar days grid for business week view */
 .calendar-days {
     display: grid;
-    gap: 0;
+    grid-template-columns: repeat(7, 1fr);
     background-color: var(--theme-purple);
     color: white;
+    padding: 8px 0;
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
-}
-
-.calendar-days > div {
-    padding: 8px;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.calendar-days > div:last-child {
-    border-right: none;
-}
-
-/* Add specific styles for business week view */
-.business-week .calendar-days {
-    grid-template-columns: repeat(5, 1fr);
-}
-
-.business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr);
 }
 
 .calendar-dates {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     background-color: white;
+}
+
+/* Business week specific styles */
+.business-week .calendar-days {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.business-week .calendar-dates {
+    grid-template-columns: repeat(5, 1fr);
 }
 
 .calendar-date {
@@ -99,6 +90,12 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.activity:hover {
+    filter: brightness(1.1);
 }
 
 .activity-content {
@@ -162,17 +159,18 @@
     margin-bottom: 1rem;
 }
 
+.calendar-header h1 {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
 /* View switching buttons */
 .btn[data-view].active {
     background-color: var(--theme-purple);
     color: white;
     border-color: var(--theme-purple);
-}
-
-/* Hover effects */
-.activity:hover {
-    filter: brightness(1.1);
-    cursor: pointer;
 }
 
 /* Print styles */
