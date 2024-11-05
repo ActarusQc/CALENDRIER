@@ -106,8 +106,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderBusinessWeekView() {
         const calendarDates = document.getElementById('calendarDates');
         const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
-
+        
+        // Get to Monday (1) from current date
+        const currentDay = startOfWeek.getDay(); // 0 (Sunday) through 6 (Saturday)
+        const diff = currentDay === 0 ? -6 : 1 - currentDay; // If Sunday, go back to previous Monday
+        startOfWeek.setDate(currentDate.getDate() + diff);
+        
         calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
         
         for (let i = 0; i < 5; i++) {
@@ -238,6 +242,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                             ` : ''}
+                            ${activity.is_recurring ? `
+                            <div class="d-flex align-items-start text-white">
+                                <i class="bi bi-arrow-repeat me-3 mt-1"></i>
+                                <div>
+                                    <div class="opacity-75 small">Récurrence</div>
+                                    <div>${activity.recurrence_type} jusqu'au ${activity.recurrence_end_date}</div>
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -318,7 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Update navigation button handlers
     document.getElementById('prevMonth').addEventListener('click', () => {
         switch(currentView) {
             case 'day':
