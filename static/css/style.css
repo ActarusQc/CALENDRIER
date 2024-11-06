@@ -41,7 +41,7 @@
 /* Business week specific styles */
 .business-week .calendar-days,
 .business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, 1fr) !important;
 }
 
 /* Day view specific styles */
@@ -136,6 +136,7 @@
     z-index: 10;
     width: calc(100% + 2px);
     left: -1px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .activity.multi-day.start {
@@ -149,6 +150,8 @@
 
 .activity.multi-day.middle {
     border-radius: 0;
+    margin-left: -1px;
+    margin-right: -1px;
 }
 
 .activity.multi-day.end {
@@ -157,6 +160,7 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     width: calc(100% + 1px);
+    margin-left: -1px;
 }
 
 /* Print styles */
