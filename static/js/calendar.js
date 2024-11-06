@@ -241,7 +241,8 @@ document.addEventListener('DOMContentLoaded', function() {
         allDayContainers.forEach(container => {
             const events = container.querySelectorAll('.activity');
             if (events.length > 0) {
-                container.style.minHeight = `${events.length * 28}px`;
+                const totalHeight = events.length * 32 + (events.length - 1) * 4; // height + gap
+                container.style.minHeight = `${totalHeight}px`;
             }
         });
     }
@@ -285,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const activityElement = createActivityElement(activity, position);
                 
                 if (isMultiDay && activity.is_all_day) {
-                    activityElement.style.top = `${verticalPosition * 28}px`;
+                    activityElement.style.top = `${verticalPosition * 32 + verticalPosition * 4}px`; // height + gap
                 }
                 
                 container.appendChild(activityElement);
@@ -304,31 +305,209 @@ document.addEventListener('DOMContentLoaded', function() {
         const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
         const isMultiDay = endDate > startDate;
         
-        if (isMultiDay && !activity.is_recurring) {
+        if (isMultiDay) {
             activityDiv.classList.add('multi-day', position);
+            activityDiv.style.zIndex = '1';
             activityDiv.style.backgroundColor = categoryColor;
         } else {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
-        if (position === 'start' || position === 'single' || !isMultiDay) {
-            let timeDisplay = '';
-            if (!activity.is_all_day && activity.time) {
-                timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
-            }
-            
-            activityDiv.innerHTML = `
-                <div class="activity-content">
-                    <div class="title">${activity.title}</div>
-                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                    ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
-                </div>
-            `;
+        let timeDisplay = '';
+        if (!activity.is_all_day && activity.time) {
+            timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
         }
         
-        activityDiv.addEventListener('click', () => showActivityDetails(activity));
+        activityDiv.innerHTML = `
+            <div class="activity-content">
+                <div class="title">${activity.title}</div>
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
+            </div>
+        `;
+        
+        activityDiv.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showActivityDetails(activity);
+        });
         
         return activityDiv;
+    }
+
+    function showActivityDetails(activity) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="modal-header border-bottom border-light border-opacity-25">
+                        <h5 class="modal-title text-white fw-bold">${activity.title}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-white">
+                        <div class="mb-3">
+                            <strong>Date:</strong> ${activity.date}
+                            ${activity.end_date ? ` - ${activity.end_date}` : ''}
+                        </div>
+                        ${!activity.is_all_day && activity.time ? `
+                            <div class="mb-3">
+                                <strong>Heure:</strong> ${activity.time}
+                                ${activity.end_time ? ` - ${activity.end_time}` : ''}
+                            </div>
+                        ` : ''}
+                        ${activity.is_all_day ? `
+                            <div class="mb-3">
+                                <strong>Type:</strong> Toute la journée
+                            </div>
+                        ` : ''}
+                        ${activity.location ? `
+                            <div class="mb-3">
+                                <strong>Lieu:</strong> ${activity.location}
+                            </div>
+                        ` : ''}
+                        ${activity.categories && activity.categories.length > 0 ? `
+                            <div class="mb-3">
+                                <strong>Catégories:</strong>
+                                <div class="d-flex flex-wrap gap-2 mt-1">
+                                    ${activity.categories.map(cat => `
+                                        <span class="badge" style="background-color: ${cat.color}">${cat.name}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${activity.notes ? `
+                            <div class="mb-3">
+                                <strong>Notes:</strong>
+                                <div class="mt-1">${activity.notes}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modalDiv);
+        const modal = new bootstrap.Modal(modalDiv);
+        modal.show();
+        
+        modalDiv.addEventListener('hidden.bs.modal', function () {
+            document.body.removeChild(modalDiv);
+        });
+    }
+
+    function showAddActivityModal(date) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="modal-header border-bottom border-light border-opacity-25">
+                        <h5 class="modal-title text-white fw-bold">Ajouter une activité</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="quickAddActivityForm">
+                            <div class="mb-3">
+                                <label class="form-label text-white">Titre</label>
+                                <input type="text" class="form-control bg-dark text-white" id="quickActivityTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Date</label>
+                                <input type="date" class="form-control bg-dark text-white" id="quickActivityDate" value="${date}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Date de fin</label>
+                                <input type="date" class="form-control bg-dark text-white" id="quickActivityEndDate">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="quickActivityAllDay">
+                                    <label class="form-check-label text-white">Toute la journée</label>
+                                </div>
+                            </div>
+                            <div id="quickTimeFields">
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Heure</label>
+                                    <input type="time" class="form-control bg-dark text-white" id="quickActivityTime">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Heure de fin</label>
+                                    <input type="time" class="form-control bg-dark text-white" id="quickActivityEndTime">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Lieu</label>
+                                <select class="form-control bg-dark text-white" id="quickActivityLocation">
+                                    <option value="">Sélectionnez un lieu</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-white">Catégories</label>
+                                <div id="quickActivityCategories" class="border rounded p-3">
+                                    <!-- Categories will be loaded here -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <button type="button" class="btn btn-primary" onclick="quickSaveActivity()">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to document
+        document.body.appendChild(modalDiv);
+        
+        // Setup all-day checkbox behavior
+        const allDayCheckbox = modalDiv.querySelector('#quickActivityAllDay');
+        const timeFields = modalDiv.querySelector('#quickTimeFields');
+        allDayCheckbox.addEventListener('change', function() {
+            timeFields.style.display = this.checked ? 'none' : 'block';
+        });
+        
+        // Load locations and categories
+        fetch('/api/locations')
+            .then(response => response.json())
+            .then(locations => {
+                const locationSelect = modalDiv.querySelector('#quickActivityLocation');
+                locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location.id;
+                    option.textContent = location.name;
+                    locationSelect.appendChild(option);
+                });
+            });
+
+        fetch('/api/categories')
+            .then(response => response.json())
+            .then(categories => {
+                const categoriesContainer = modalDiv.querySelector('#quickActivityCategories');
+                categories.forEach(category => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    div.innerHTML = `
+                        <input class="form-check-input" type="checkbox" value="${category.id}" id="quickCategory${category.id}">
+                        <label class="form-check-label text-white">
+                            <span class="color-dot" style="background-color: ${category.color}; width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
+                            ${category.name}
+                        </label>
+                    `;
+                    categoriesContainer.appendChild(div);
+                });
+            });
+        
+        const modal = new bootstrap.Modal(modalDiv);
+        modal.show();
+        
+        modalDiv.addEventListener('hidden.bs.modal', function () {
+            document.body.removeChild(modalDiv);
+        });
     }
 
     // Initialize calendar
