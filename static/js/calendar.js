@@ -7,14 +7,44 @@ document.addEventListener('DOMContentLoaded', function() {
             const view = this.dataset.view;
             currentView = view;
             
+            // Update active button state
             document.querySelectorAll('[data-view]').forEach(btn => {
                 btn.classList.remove('active');
             });
             this.classList.add('active');
             
+            // Update calendar header days
+            updateCalendarHeader();
             updateCalendar();
         });
     });
+
+    function updateCalendarHeader() {
+        const daysContainer = document.querySelector('.calendar-days');
+        daysContainer.innerHTML = '';
+        
+        switch(currentView) {
+            case 'business-week':
+                ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    daysContainer.appendChild(div);
+                });
+                break;
+            case 'day':
+                const dayName = currentDate.toLocaleString('fr-FR', { weekday: 'long' });
+                const div = document.createElement('div');
+                div.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                daysContainer.appendChild(div);
+                break;
+            default:
+                ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    daysContainer.appendChild(div);
+                });
+        }
+    }
 
     function updateCalendar() {
         const calendarGrid = document.querySelector('.calendar-grid');
@@ -43,15 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         fetchActivities(year, month);
-    }
-
-    function updateCalendarHeader() {
-        const monthYear = currentDate.toLocaleString('fr-FR', { 
-            month: 'long', 
-            year: 'numeric' 
-        }).replace(/^./, str => str.toUpperCase());
-        
-        document.getElementById('currentMonth').textContent = monthYear;
     }
 
     function renderMonthView() {
@@ -99,10 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarDates.innerHTML = '';
         calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
         
+        // Get Monday of current week
         const startOfWeek = new Date(currentDate);
-        const diff = startOfWeek.getDay() === 0 ? -6 : 1 - startOfWeek.getDay();
+        const day = startOfWeek.getDay();
+        const diff = day === 0 ? -6 : 1 - day; // Adjust to get Monday
         startOfWeek.setDate(startOfWeek.getDate() + diff);
         
+        // Create cells for Monday through Friday only
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
@@ -175,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (allDayContainer && timedContainer) {
+                    // Process all-day events first to ensure proper stacking
                     dateActivities.allDay.forEach(activity => {
                         displayActivity(activity, startDate, endDate);
                     });
