@@ -128,13 +128,11 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarDates.innerHTML = '';
         calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
         
-        // Get Monday of current week
         const startOfWeek = new Date(currentDate);
         const day = startOfWeek.getDay();
-        const diff = day === 0 ? -6 : 1 - day; // Adjust to get Monday
+        const diff = day === 0 ? -6 : 1 - day;
         startOfWeek.setDate(startOfWeek.getDate() + diff);
         
-        // Create cells for Monday through Friday only
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
@@ -200,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
-        // Add content only for start or single events
         if (position === 'start' || position === 'single') {
             activityDiv.innerHTML = `
                 <div class="activity-content">
@@ -317,7 +314,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showActivityDetails(activity) {
-        // Create modal HTML
         const modalHTML = `
             <div class="modal fade" id="activityDetailsModal" tabindex="-1">
                 <div class="modal-dialog">
@@ -326,36 +322,36 @@ document.addEventListener('DOMContentLoaded', function() {
                             <h5 class="modal-title text-white">${activity.title}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-2">
-                                <strong>Date:</strong> ${activity.date}
+                        <div class="modal-body text-white">
+                            <div class="mb-2 text-white">
+                                <strong class="text-white">Date:</strong> ${activity.date}
                                 ${activity.end_date ? `- ${activity.end_date}` : ''}
                             </div>
                             ${!activity.is_all_day ? `
-                                <div class="mb-2">
-                                    <strong>Time:</strong> ${activity.time || ''}
+                                <div class="mb-2 text-white">
+                                    <strong class="text-white">Time:</strong> ${activity.time || ''}
                                     ${activity.end_time ? ` - ${activity.end_time}` : ''}
                                 </div>
                             ` : ''}
                             ${activity.location ? `
-                                <div class="mb-2">
-                                    <strong>Location:</strong> ${activity.location}
+                                <div class="mb-2 text-white">
+                                    <strong class="text-white">Location:</strong> ${activity.location}
                                 </div>
                             ` : ''}
                             ${activity.categories.length > 0 ? `
-                                <div class="mb-2">
-                                    <strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}
+                                <div class="mb-2 text-white">
+                                    <strong class="text-white">Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}
                                 </div>
                             ` : ''}
                             ${activity.notes ? `
-                                <div class="mb-2">
-                                    <strong>Notes:</strong><br>
+                                <div class="mb-2 text-white">
+                                    <strong class="text-white">Notes:</strong><br>
                                     ${activity.notes}
                                 </div>
                             ` : ''}
                             ${activity.is_recurring ? `
-                                <div class="mb-2">
-                                    <strong>Recurring:</strong> ${activity.recurrence_type}
+                                <div class="mb-2 text-white">
+                                    <strong class="text-white">Recurring:</strong> ${activity.recurrence_type}
                                     (until ${activity.recurrence_end_date})
                                 </div>
                             ` : ''}
@@ -368,16 +364,13 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        // Remove any existing modal
         const existingModal = document.getElementById('activityDetailsModal');
         if (existingModal) {
             existingModal.remove();
         }
 
-        // Add new modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Show modal
         const modal = new bootstrap.Modal(document.getElementById('activityDetailsModal'));
         modal.show();
     }
