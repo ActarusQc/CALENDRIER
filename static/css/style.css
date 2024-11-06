@@ -25,6 +25,7 @@
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .calendar-days > div {
@@ -36,24 +37,7 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     background-color: white;
-}
-
-/* Business week specific styles */
-.business-week .calendar-days,
-.business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr);
-}
-
-/* Day view specific styles */
-.day-view .calendar-days,
-.day-view .calendar-dates {
-    grid-template-columns: 1fr;
-}
-
-/* Week view specific styles */
-.week-view .calendar-days,
-.week-view .calendar-dates {
-    grid-template-columns: repeat(7, 1fr);
+    min-height: 600px;
 }
 
 .calendar-date {
@@ -62,9 +46,9 @@
     background-color: white;
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
     position: relative;
-    display: grid;
-    grid-template-rows: auto auto 1fr;
 }
 
 .calendar-date.other-month {
@@ -73,97 +57,55 @@
 
 /* Date number styling */
 .date-number {
-    padding: 4px 6px;
+    padding: 4px 8px;
     font-size: 0.85rem;
     color: var(--theme-purple);
-    background-color: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
     text-decoration: none;
     display: block;
-    position: relative;
     z-index: 2;
+    position: relative;
+    background: transparent;
 }
 
 .other-month .date-number {
     color: #adb5bd;
 }
 
-.date-number:hover {
-    background-color: var(--theme-purple);
-    color: white;
-    cursor: pointer;
-}
-
-/* Activities sections */
+/* Activity sections */
 .all-day-activities {
     padding: 4px;
     background-color: white;
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    position: relative;
+    gap: 2px;
     min-height: 32px;
-}
-
-.all-day-activities:empty {
-    min-height: 32px;
-    border-bottom: 1px solid #dee2e6;
 }
 
 .timed-activities {
     padding: 4px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     overflow-y: auto;
-    min-height: 60px;
+    flex: 1;
 }
 
-/* Activity styling */
-.activity {
-    margin: 2px 0;
-    padding: 6px 8px;
-    border-radius: 4px;
-    color: white;
-    font-size: 0.75rem;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    cursor: pointer;
-    transition: filter 0.2s;
-    height: 32px;
-    min-height: 32px;
-    display: flex;
-    align-items: center;
+/* View-specific styles */
+.business-week .calendar-days,
+.business-week .calendar-dates {
+    grid-template-columns: repeat(5, 1fr) !important;
 }
 
-.activity:hover {
-    filter: brightness(1.1);
+.day-view .calendar-days,
+.day-view .calendar-dates {
+    grid-template-columns: 1fr !important;
 }
 
-.activity-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.activity .title {
-    font-weight: 500;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.activity .location {
-    font-size: 0.7rem;
-    opacity: 0.9;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.week-view .calendar-days,
+.week-view .calendar-dates {
+    grid-template-columns: repeat(7, 1fr) !important;
 }
 
 /* Multi-day event styling */
