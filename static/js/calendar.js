@@ -7,13 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const view = this.dataset.view;
             currentView = view;
             
-            // Update active button state
             document.querySelectorAll('[data-view]').forEach(btn => {
                 btn.classList.remove('active');
             });
             this.classList.add('active');
             
-            // Update calendar header days
             updateCalendarHeader();
             updateCalendar();
         });
@@ -74,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const month = currentDate.getMonth();
         fetchActivities(year, month);
 
-        // Update month/year display
         const monthYear = currentDate.toLocaleString('fr-FR', { 
             month: 'long', 
             year: 'numeric' 
@@ -199,9 +196,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (position === 'start' || position === 'single') {
+            let timeDisplay = '';
+            if (!activity.is_all_day && activity.time) {
+                timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
+            }
+
             activityDiv.innerHTML = `
                 <div class="activity-content">
                     <div class="title">${activity.title}</div>
+                    ${timeDisplay ? `<div class="time">${timeDisplay}</div>` : ''}
                     ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
                     ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
                 </div>
@@ -329,18 +332,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             ${!activity.is_all_day ? `
                                 <div class="mb-2 text-white">
-                                    <strong class="text-white">Time:</strong> ${activity.time || ''}
+                                    <strong class="text-white">Heure:</strong> ${activity.time || ''}
                                     ${activity.end_time ? ` - ${activity.end_time}` : ''}
                                 </div>
                             ` : ''}
                             ${activity.location ? `
                                 <div class="mb-2 text-white">
-                                    <strong class="text-white">Location:</strong> ${activity.location}
+                                    <strong class="text-white">Lieu:</strong> ${activity.location}
                                 </div>
                             ` : ''}
                             ${activity.categories.length > 0 ? `
                                 <div class="mb-2 text-white">
-                                    <strong class="text-white">Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}
+                                    <strong class="text-white">Catégories:</strong> ${activity.categories.map(c => c.name).join(', ')}
                                 </div>
                             ` : ''}
                             ${activity.notes ? `
@@ -351,13 +354,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             ` : ''}
                             ${activity.is_recurring ? `
                                 <div class="mb-2 text-white">
-                                    <strong class="text-white">Recurring:</strong> ${activity.recurrence_type}
-                                    (until ${activity.recurrence_end_date})
+                                    <strong class="text-white">Récurrence:</strong> ${
+                                        activity.recurrence_type === 'daily' ? 'Quotidien' :
+                                        activity.recurrence_type === 'weekly' ? 'Hebdomadaire' :
+                                        activity.recurrence_type === 'monthly' ? 'Mensuel' :
+                                        'Annuel'
+                                    }
+                                    (jusqu'au ${activity.recurrence_end_date})
                                 </div>
                             ` : ''}
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                         </div>
                     </div>
                 </div>
