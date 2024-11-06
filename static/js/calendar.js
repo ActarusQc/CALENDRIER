@@ -63,13 +63,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         
+        // Add empty cells for days before the first day of the month
         for (let i = 0; i < firstDay.getDay(); i++) {
             calendarDates.appendChild(createDateCell());
         }
         
+        // Add cells for each day of the month
         for (let date = 1; date <= lastDay.getDate(); date++) {
             const cellDate = new Date(year, month, date);
             calendarDates.appendChild(createDateCell(cellDate));
+        }
+
+        // Add empty cells for remaining days to complete the grid
+        const remainingDays = (7 - ((firstDay.getDay() + lastDay.getDate()) % 7)) % 7;
+        for (let i = 0; i < remainingDays; i++) {
+            calendarDates.appendChild(createDateCell());
         }
     }
 
@@ -151,60 +159,97 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/activities');
             const activities = await response.json();
             
+            // Clear existing activities
             document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
             document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
             
+            // Calculate view range
             const startDate = new Date(year, month, 1);
             const endDate = new Date(year, month + 1, 0);
             
-            // Sort activities by start date and all-day status
-            activities.sort((a, b) => {
-                if (a.is_all_day !== b.is_all_day) {
-                    return a.is_all_day ? -1 : 1;
-                }
-                return new Date(a.date) - new Date(b.date);
-            });
+            // Group activities by date and type
+            const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
             
-            activities.forEach(activity => {
-                displayActivity(activity, startDate, endDate);
+            // Display activities in their respective containers
+            Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
+                const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
+                const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                
+                if (allDayContainer && timedContainer) {
+                    dateActivities.allDay.forEach(activity => {
+                        displayActivity(activity, startDate, endDate);
+                    });
+                    
+                    dateActivities.timed.forEach(activity => {
+                        displayActivity(activity, startDate, endDate);
+                    });
+                }
             });
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
     }
 
+    function groupActivitiesByDate(activities, startDate, endDate) {
+        const grouped = {};
+        
+        activities.forEach(activity => {
+            const activityStartDate = new Date(activity.date);
+            const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
+            
+            let currentDate = new Date(Math.max(activityStartDate, startDate));
+            const viewEndDate = new Date(Math.min(activityEndDate, endDate));
+            
+            while (currentDate <= viewEndDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                
+                if (!grouped[dateStr]) {
+                    grouped[dateStr] = {
+                        allDay: [],
+                        timed: []
+                    };
+                }
+                
+                // Add to appropriate array only once per date
+                const array = activity.is_all_day ? grouped[dateStr].allDay : grouped[dateStr].timed;
+                if (!array.some(a => a.id === activity.id)) {
+                    array.push({
+                        ...activity,
+                        displayDate: new Date(currentDate)
+                    });
+                }
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        });
+        
+        return grouped;
+    }
+
     function displayActivity(activity, startDate, endDate) {
         const activityStartDate = new Date(activity.date);
         const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
+        const displayDate = activity.displayDate || activityStartDate;
         
-        if (activityStartDate > endDate || activityEndDate < startDate) {
-            return;
-        }
+        const dateStr = displayDate.toISOString().split('T')[0];
+        const container = activity.is_all_day ?
+            document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+            document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
         
-        let currentDate = new Date(Math.max(activityStartDate, startDate));
-        const viewEndDate = new Date(Math.min(activityEndDate, endDate));
-        
-        while (currentDate <= viewEndDate) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            const container = activity.is_all_day ?
-                document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-            
-            if (container) {
-                let position = 'middle';
-                if (currentDate.getTime() === activityStartDate.getTime()) {
+        if (container) {
+            let position = 'single';
+            if (activityEndDate > activityStartDate) {
+                if (displayDate.getTime() === activityStartDate.getTime()) {
                     position = 'start';
-                } else if (currentDate.getTime() === activityEndDate.getTime()) {
+                } else if (displayDate.getTime() === activityEndDate.getTime()) {
                     position = 'end';
-                }
-                
-                if (!activity.is_all_day || currentDate.getTime() === activityStartDate.getTime()) {
-                    const activityElement = createActivityElement(activity, position);
-                    container.appendChild(activityElement);
+                } else {
+                    position = 'middle';
                 }
             }
             
-            currentDate.setDate(currentDate.getDate() + 1);
+            const activityElement = createActivityElement(activity, position);
+            container.appendChild(activityElement);
         }
     }
 
@@ -218,13 +263,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const isMultiDay = endDate > startDate;
         
         if (isMultiDay && !activity.is_recurring) {
-            activityDiv.classList.add('multi-day');
-            activityDiv.classList.add(position);
+            activityDiv.classList.add('multi-day', position);
             activityDiv.style.backgroundColor = categoryColor;
+            
+            // Add box shadow for depth effect
+            activityDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         } else {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
+        // Only show content for start position or single-day events
         if (position === 'start' || position === 'single') {
             let timeDisplay = '';
             if (!activity.is_all_day && activity.time) {
