@@ -316,6 +316,72 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function showActivityDetails(activity) {
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="activityDetailsModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-white">${activity.title}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2">
+                                <strong>Date:</strong> ${activity.date}
+                                ${activity.end_date ? `- ${activity.end_date}` : ''}
+                            </div>
+                            ${!activity.is_all_day ? `
+                                <div class="mb-2">
+                                    <strong>Time:</strong> ${activity.time || ''}
+                                    ${activity.end_time ? ` - ${activity.end_time}` : ''}
+                                </div>
+                            ` : ''}
+                            ${activity.location ? `
+                                <div class="mb-2">
+                                    <strong>Location:</strong> ${activity.location}
+                                </div>
+                            ` : ''}
+                            ${activity.categories.length > 0 ? `
+                                <div class="mb-2">
+                                    <strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}
+                                </div>
+                            ` : ''}
+                            ${activity.notes ? `
+                                <div class="mb-2">
+                                    <strong>Notes:</strong><br>
+                                    ${activity.notes}
+                                </div>
+                            ` : ''}
+                            ${activity.is_recurring ? `
+                                <div class="mb-2">
+                                    <strong>Recurring:</strong> ${activity.recurrence_type}
+                                    (until ${activity.recurrence_end_date})
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove any existing modal
+        const existingModal = document.getElementById('activityDetailsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add new modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('activityDetailsModal'));
+        modal.show();
+    }
+
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
