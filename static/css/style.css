@@ -9,78 +9,87 @@
     width: auto;
 }
 
-/* Calendar grid layout */
-.calendar-grid {
-    display: grid;
-    gap: 0;
-    background-color: white;
-    border: 1px solid #dee2e6;
+/* Calendar Container */
+.calendar-container {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    border: 1px solid #dee2e6;
+    background: white;
+}
+
+/* Calendar Days Header */
 .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background-color: var(--theme-purple);
+    background: var(--theme-purple);
     color: white;
-    text-align: center;
-    font-weight: bold;
-    font-size: 0.9rem;
     border-bottom: 1px solid #dee2e6;
 }
 
 .calendar-days > div {
-    padding: 8px;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-right: 1px solid rgba(255,255,255,0.1);
 }
 
+/* Calendar Dates Grid */
 .calendar-dates {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background-color: white;
-    min-height: 600px;
+    grid-auto-rows: minmax(120px, auto);
+    background: white;
 }
 
+/* Calendar Date Cell */
 .calendar-date {
-    min-height: 120px;
-    padding: 0;
-    background-color: white;
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
-    display: flex;
-    flex-direction: column;
+    padding: 0;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    min-height: 120px;
+    background: white;
     position: relative;
 }
 
 .calendar-date.other-month {
-    background-color: #f8f9fa;
+    background: #f8f9fa;
 }
 
-/* Date number styling */
+/* Date Number */
 .date-number {
-    padding: 4px 8px;
+    padding: 8px;
     font-size: 0.85rem;
     color: var(--theme-purple);
-    border-bottom: 1px solid #dee2e6;
     text-decoration: none;
-    display: block;
-    z-index: 2;
-    position: relative;
+    border-bottom: 1px solid #dee2e6;
     background: transparent;
+    z-index: 3;
 }
 
 .other-month .date-number {
     color: #adb5bd;
 }
 
-/* Activity sections */
+/* Activity Containers */
 .all-day-activities {
     padding: 4px;
-    background-color: white;
-    border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    border-bottom: 1px solid #dee2e6;
     min-height: 32px;
+    background: white;
 }
 
 .timed-activities {
@@ -89,74 +98,69 @@
     flex-direction: column;
     gap: 2px;
     overflow-y: auto;
-    flex: 1;
 }
 
-/* View-specific styles */
-.business-week .calendar-days,
-.business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr) !important;
+/* Activity Items */
+.activity {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: white;
+    margin: 1px 0;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    height: 24px;
+    display: flex;
+    align-items: center;
 }
 
-.day-view .calendar-days,
-.day-view .calendar-dates {
-    grid-template-columns: 1fr !important;
-}
-
-.week-view .calendar-days,
-.week-view .calendar-dates {
-    grid-template-columns: repeat(7, 1fr) !important;
-}
-
-/* Multi-day event styling */
+/* Multi-day Events */
 .activity.multi-day {
     position: absolute;
     left: 0;
     right: -1px;
-    margin: 0;
-    padding: 6px 8px;
     z-index: 2;
+    margin: 0;
     height: 32px !important;
     min-height: 32px !important;
-    display: flex;
-    align-items: center;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.activity.multi-day .activity-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.activity.multi-day .title {
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 4px 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
     margin-left: 4px;
-    padding-left: 8px;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
     margin-left: -1px;
     margin-right: -1px;
-    padding-left: 4px;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
     margin-right: 4px;
-    padding-right: 8px;
+}
+
+/* Calendar Views */
+.business-week .calendar-days,
+.business-week .calendar-dates {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.week-view .calendar-days,
+.week-view .calendar-dates {
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.day-view .calendar-days,
+.day-view .calendar-dates {
+    grid-template-columns: 1fr;
 }
 
 /* Calendar header */
@@ -178,6 +182,18 @@
     background-color: var(--theme-purple);
     color: white;
     border-color: var(--theme-purple);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .calendar-days > div {
+        padding: 8px 4px;
+        font-size: 0.8rem;
+    }
+    
+    .calendar-date {
+        min-height: 100px;
+    }
 }
 
 /* Print styles */
