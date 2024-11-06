@@ -203,8 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             activityDiv.innerHTML = `
                 <div class="activity-content">
-                    <div class="title">${activity.title}</div>
                     ${timeDisplay ? `<div class="time">${timeDisplay}</div>` : ''}
+                    <div class="title">${activity.title}</div>
                     ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
                     ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
                 </div>
@@ -312,6 +312,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const activityElement = createActivityElement(activity, position);
+            if (position !== 'single') {
+                activityElement.style.zIndex = '1';
+            }
             container.appendChild(activityElement);
         }
     }
