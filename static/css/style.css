@@ -13,7 +13,7 @@
 .calendar-grid {
     display: grid;
     gap: 0;
-    background-color: white;
+    background-color: #dee2e6;
     border: 1px solid #dee2e6;
 }
 
@@ -62,9 +62,10 @@
     background-color: white;
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
-    position: relative;
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow: visible;
 }
 
 /* Date number styling */
@@ -87,20 +88,15 @@
 /* Activities sections */
 .all-day-activities {
     padding: 4px;
-    background-color: white;
+    min-height: 40px;
+    position: relative;
+    border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
     gap: 2px;
-}
-
-.all-day-activities:has(.activity) {
-    border-bottom: 1px solid #dee2e6;
-    min-height: fit-content;
-}
-
-.all-day-activities:empty {
-    min-height: 0;
-    border-bottom: none;
+    z-index: 5;
+    overflow-y: auto;
+    max-height: 120px;
 }
 
 .timed-activities {
@@ -122,9 +118,8 @@
     cursor: pointer;
     transition: filter 0.2s;
     position: relative;
-    height: 24px;
-    display: flex;
-    align-items: center;
+    flex-shrink: 0;
+    min-height: 24px;
 }
 
 .activity:hover {
@@ -167,9 +162,9 @@
 }
 
 .activity.multi-day.start {
+    left: 6px;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-left: 4px;
 }
 
 .activity.multi-day.middle {
@@ -179,9 +174,20 @@
 }
 
 .activity.multi-day.end {
+    right: 6px;
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    margin-right: 4px;
+}
+
+/* All-day event specific styling */
+.all-day-activities .activity {
+    position: relative;
+    height: 24px;
+    margin: 1px 0;
+}
+
+.all-day-activities .activity:not(:last-child) {
+    margin-bottom: 2px;
 }
 
 /* Calendar header */
