@@ -63,18 +63,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         
-        // Add empty cells for days before the first day of the month
         for (let i = 0; i < firstDay.getDay(); i++) {
             calendarDates.appendChild(createDateCell());
         }
         
-        // Add cells for each day of the month
         for (let date = 1; date <= lastDay.getDate(); date++) {
             const cellDate = new Date(year, month, date);
             calendarDates.appendChild(createDateCell(cellDate));
         }
 
-        // Add empty cells for remaining days to complete the grid
         const remainingDays = (7 - ((firstDay.getDay() + lastDay.getDate()) % 7)) % 7;
         for (let i = 0; i < remainingDays; i++) {
             calendarDates.appendChild(createDateCell());
@@ -159,36 +156,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/activities');
             const activities = await response.json();
             
-            // Clear existing activities
             document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
             document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
             
-            // Calculate view range
             const startDate = new Date(year, month, 1);
             const endDate = new Date(year, month + 1, 0);
             
-            // Sort activities by date and duration (longer events first)
             activities.sort((a, b) => {
                 const aDuration = a.end_date ? (new Date(a.end_date) - new Date(a.date)) : 0;
                 const bDuration = b.end_date ? (new Date(b.end_date) - new Date(b.date)) : 0;
                 return bDuration - aDuration;
             });
             
-            // Group activities by date and type
             const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
             
-            // Display activities in their respective containers
             Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
                 const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
                 const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (allDayContainer && timedContainer) {
-                    // Process all-day events first
                     dateActivities.allDay.forEach(activity => {
                         displayActivity(activity, startDate, endDate);
                     });
                     
-                    // Then process timed events
                     dateActivities.timed.forEach(activity => {
                         displayActivity(activity, startDate, endDate);
                     });
@@ -219,7 +209,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 }
                 
-                // Add to appropriate array only once per date
                 const array = activity.is_all_day ? grouped[dateStr].allDay : grouped[dateStr].timed;
                 if (!array.some(a => a.id === activity.id)) {
                     array.push({
@@ -275,12 +264,16 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.classList.add('multi-day');
             activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
-            activityDiv.style.zIndex = '1';
+            
+            const container = document.querySelector(`div.all-day-activities[data-date="${activity.displayDate.toISOString().split('T')[0]}"]`);
+            if (container) {
+                const existingEvents = container.querySelectorAll('.activity.multi-day');
+                activityDiv.style.top = `${existingEvents.length * 32}px`;
+            }
         } else {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
-        // Add content only for start or single events
         if (position === 'start' || position === 'single') {
             activityDiv.innerHTML = `
                 <div class="activity-content">
@@ -358,7 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Set up navigation buttons
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
@@ -369,7 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCalendar();
     });
 
-    // Initialize calendar
     document.querySelector('[data-view="month"]').classList.add('active');
     updateCalendar();
 });
