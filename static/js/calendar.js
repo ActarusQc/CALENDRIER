@@ -59,9 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const daysContainer = document.querySelector('.calendar-days');
         daysContainer.innerHTML = '';
         
+        const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        
         switch(currentView) {
             case 'business-week':
-                ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].forEach(day => {
+                dayNames.slice(1, 6).forEach(day => {
                     const div = document.createElement('div');
                     div.textContent = day;
                     daysContainer.appendChild(div);
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 daysContainer.appendChild(div);
                 break;
             default:
-                ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'].forEach(day => {
+                dayNames.forEach(day => {
                     const div = document.createElement('div');
                     div.textContent = day;
                     daysContainer.appendChild(div);
@@ -89,9 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('currentMonth').textContent = monthYear;
     }
 
-    function createDateCell(date) {
+    function createDateCell(date, isOtherMonth = false) {
         const cell = document.createElement('div');
-        cell.className = 'calendar-date';
+        cell.className = 'calendar-date' + (isOtherMonth ? ' other-month' : '');
         
         if (date) {
             const dateDiv = document.createElement('a');
@@ -129,15 +131,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         
-        // Fill in empty cells before first day
-        for (let i = 0; i < firstDay.getDay(); i++) {
-            calendarDates.appendChild(createDateCell());
+        // Add days from previous month
+        const prevMonth = new Date(year, month, 0);
+        const daysFromPrevMonth = firstDay.getDay();
+        for (let i = daysFromPrevMonth - 1; i >= 0; i--) {
+            const prevDate = new Date(prevMonth);
+            prevDate.setDate(prevMonth.getDate() - i);
+            calendarDates.appendChild(createDateCell(prevDate, true));
         }
         
         // Fill in days of the month
         for (let date = 1; date <= lastDay.getDate(); date++) {
             const cellDate = new Date(year, month, date);
             calendarDates.appendChild(createDateCell(cellDate));
+        }
+        
+        // Add days from next month
+        const remainingDays = 42 - (daysFromPrevMonth + lastDay.getDate()); // 42 = 6 rows × 7 days
+        for (let i = 1; i <= remainingDays; i++) {
+            const nextDate = new Date(year, month + 1, i);
+            calendarDates.appendChild(createDateCell(nextDate, true));
         }
     }
 
@@ -152,7 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < 7; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
-            calendarDates.appendChild(createDateCell(date));
+            const isOtherMonth = date.getMonth() !== currentDate.getMonth();
+            calendarDates.appendChild(createDateCell(date, isOtherMonth));
         }
     }
 
@@ -168,7 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
-            calendarDates.appendChild(createDateCell(date));
+            const isOtherMonth = date.getMonth() !== currentDate.getMonth();
+            calendarDates.appendChild(createDateCell(date, isOtherMonth));
         }
     }
 
@@ -177,7 +192,8 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarDates.innerHTML = '';
         calendarDates.style.gridTemplateColumns = '1fr';
         
-        calendarDates.appendChild(createDateCell(currentDate));
+        const isOtherMonth = currentDate.getMonth() !== new Date().getMonth();
+        calendarDates.appendChild(createDateCell(currentDate, isOtherMonth));
     }
 
     async function fetchActivities(year, month) {
@@ -225,9 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allDayContainers.forEach(container => {
             const events = container.querySelectorAll('.activity');
             if (events.length > 0) {
-                container.style.height = `${events.length * 28}px`;
-            } else {
-                container.style.height = 'auto';
+                container.style.minHeight = `${events.length * 28}px`;
             }
         });
     }
@@ -297,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
-        if (position === 'start' || position === 'single') {
+        if (position === 'start' || position === 'single' || !isMultiDay) {
             let timeDisplay = '';
             if (!activity.is_all_day && activity.time) {
                 timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
@@ -315,83 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
         activityDiv.addEventListener('click', () => showActivityDetails(activity));
         
         return activityDiv;
-    }
-
-    function showActivityDetails(activity) {
-        const modalDiv = document.createElement('div');
-        modalDiv.className = 'modal fade';
-        modalDiv.innerHTML = `
-            <div class="modal-dialog">
-                <div class="modal-content" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-                    <div class="modal-header border-bottom border-light border-opacity-25">
-                        <h5 class="modal-title text-white fw-bold">${activity.title}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="text-white">
-                            <div class="mb-3">
-                                <strong>Date:</strong> ${activity.date}
-                                ${activity.end_date ? ` - ${activity.end_date}` : ''}
-                            </div>
-                            ${!activity.is_all_day && activity.time ? `
-                                <div class="mb-3">
-                                    <strong>Heure:</strong> ${activity.time}
-                                    ${activity.end_time ? ` - ${activity.end_time}` : ''}
-                                </div>
-                            ` : ''}
-                            ${activity.is_all_day ? `
-                                <div class="mb-3">
-                                    <strong>Type:</strong> Toute la journée
-                                </div>
-                            ` : ''}
-                            ${activity.location ? `
-                                <div class="mb-3">
-                                    <strong>Lieu:</strong> ${activity.location}
-                                </div>
-                            ` : ''}
-                            ${activity.categories.length > 0 ? `
-                                <div class="mb-3">
-                                    <strong>Catégories:</strong>
-                                    <div class="d-flex flex-wrap gap-2 mt-1">
-                                        ${activity.categories.map(cat => `
-                                            <span class="badge" style="background-color: ${cat.color}">${cat.name}</span>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-                            ${activity.is_recurring ? `
-                                <div class="mb-3">
-                                    <strong>Récurrence:</strong> 
-                                    ${activity.recurrence_type === 'daily' ? 'Quotidien' :
-                                      activity.recurrence_type === 'weekly' ? 'Hebdomadaire' :
-                                      activity.recurrence_type === 'monthly' ? 'Mensuel' :
-                                      'Annuel'}
-                                    ${activity.recurrence_end_date ? ` jusqu'au ${activity.recurrence_end_date}` : ''}
-                                </div>
-                            ` : ''}
-                            ${activity.notes ? `
-                                <div class="mb-3">
-                                    <strong>Notes:</strong>
-                                    <div class="mt-1">${activity.notes}</div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modalDiv);
-        
-        const modal = new bootstrap.Modal(modalDiv);
-        modal.show();
-        
-        modalDiv.addEventListener('hidden.bs.modal', function () {
-            document.body.removeChild(modalDiv);
-        });
     }
 
     // Initialize calendar

@@ -63,8 +63,12 @@
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
     position: relative;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+}
+
+.calendar-date.other-month {
+    background-color: #f8f9fa;
 }
 
 /* Date number styling */
@@ -76,6 +80,12 @@
     border-bottom: 1px solid #dee2e6;
     text-decoration: none;
     display: block;
+    position: relative;
+    z-index: 2;
+}
+
+.other-month .date-number {
+    color: #adb5bd;
 }
 
 .date-number:hover {
@@ -88,32 +98,31 @@
 .all-day-activities {
     padding: 4px;
     background-color: white;
+    border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    min-height: auto;
-    border-bottom: 1px solid #dee2e6;
+    gap: 4px;  /* Increased gap between activities */
+    min-height: 32px;
 }
 
 .all-day-activities:empty {
-    min-height: 0;
-    padding: 0;
-    border-bottom: none;
+    min-height: 32px;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .timed-activities {
-    flex: 1;
     padding: 4px;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;  /* Increased gap between activities */
+    overflow-y: auto;
+    min-height: 60px;
 }
 
 /* Activity styling */
 .activity {
     margin: 2px 0;
-    padding: 4px 8px;
+    padding: 6px 8px;  /* Increased vertical padding */
     border-radius: 4px;
     color: white;
     font-size: 0.75rem;
@@ -122,7 +131,7 @@
     text-overflow: ellipsis;
     cursor: pointer;
     transition: filter 0.2s;
-    height: 24px;
+    height: 28px;  /* Increased height */
     display: flex;
     align-items: center;
 }
@@ -162,9 +171,9 @@
     left: 0;
     right: -1px;
     margin: 0;
-    padding: 4px 8px;
-    z-index: 10;
-    height: 28px;
+    padding: 6px 8px;  /* Increased vertical padding */
+    z-index: 1;
+    height: 32px;  /* Increased height */
     display: flex;
     align-items: center;
     border: none;
@@ -190,24 +199,6 @@
     border-bottom-right-radius: 4px;
     margin-right: 4px;
     padding-right: 8px;
-}
-
-/* All-day event container */
-.all-day-events-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.all-day-event {
-    background-color: var(--event-color);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    margin: 0;
-    height: 24px;
-    display: flex;
-    align-items: center;
 }
 
 /* Calendar header */
