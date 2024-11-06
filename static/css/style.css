@@ -66,6 +66,7 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
+    overflow: visible;
 }
 
 /* Date number styling */
@@ -87,11 +88,14 @@
 
 /* Activities sections */
 .all-day-activities {
-    padding: 4px;
+    padding: 0;
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
+    position: relative;
+    min-height: 32px;
+    overflow: visible;
 }
 
 .timed-activities {
@@ -125,30 +129,39 @@
 
 /* Multi-day event styling */
 .activity.multi-day {
-    margin: 2px 0;
+    margin: 0;
     padding: 4px 8px;
-    height: 28px;
+    height: 32px;
     display: flex;
     align-items: center;
     background-color: inherit;
     border-radius: 0;
+    position: relative;
+    z-index: 1;
+    border: none;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
     margin-right: -1px;
+    padding-right: 9px;
+    z-index: 3;
 }
 
 .activity.multi-day.middle {
-    border-radius: 0;
-    margin: 2px -1px;
+    margin: 0 -1px;
+    padding-left: 9px;
+    padding-right: 9px;
+    z-index: 2;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
     margin-left: -1px;
+    padding-left: 9px;
+    z-index: 3;
 }
 
 /* Print styles */
