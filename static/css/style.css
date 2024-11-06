@@ -22,16 +22,38 @@
     grid-template-columns: repeat(7, 1fr);
     background-color: var(--theme-purple);
     color: white;
-    padding: 8px 0;
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
+}
+
+.calendar-days > div {
+    padding: 8px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .calendar-dates {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     background-color: white;
+}
+
+/* Business week specific styles */
+.business-week .calendar-days,
+.business-week .calendar-dates {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+/* Day view specific styles */
+.day-view .calendar-days,
+.day-view .calendar-dates {
+    grid-template-columns: 1fr;
+}
+
+/* Week view specific styles */
+.week-view .calendar-days,
+.week-view .calendar-dates {
+    grid-template-columns: repeat(7, 1fr);
 }
 
 .calendar-date {
@@ -42,6 +64,8 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow: visible;
 }
 
 /* Date number styling */
@@ -61,78 +85,109 @@
     cursor: pointer;
 }
 
-/* Activities container */
+/* Activities sections */
 .all-day-activities {
     padding: 4px;
+    min-height: 40px;
+    position: relative;
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    z-index: 5;
+    overflow-y: auto;
+    max-height: 120px;
 }
 
 .timed-activities {
     flex: 1;
     padding: 4px;
+    overflow-y: auto;
+}
+
+/* Activity styling */
+.activity {
+    margin: 2px 0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.75rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: filter 0.2s;
+    position: relative;
+    flex-shrink: 0;
+    min-height: 24px;
+}
+
+.activity:hover {
+    filter: brightness(1.1);
+}
+
+.activity-content {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-/* Activity styling */
-.activity {
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: white;
-    font-size: 0.75rem;
-    cursor: pointer;
-    margin-bottom: 2px;
-    min-height: 24px;
-}
-
-.activity-content {
-    overflow: hidden;
-}
-
 .activity .title {
     font-weight: 500;
-    white-space: nowrap;
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.activity .time {
+.activity .location {
     font-size: 0.7rem;
     opacity: 0.9;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Multi-day event styling */
 .activity.multi-day {
-    margin: 2px 0;
+    left: 0;
+    right: -1px;
+    margin: 0;
+    padding: 4px 8px;
+    z-index: 10;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    border: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .activity.multi-day.start {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    left: 6px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
+    margin-left: -1px;
+    margin-right: -1px;
 }
 
 .activity.multi-day.end {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    right: 6px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
-/* View-specific styles */
-.business-week .calendar-days,
-.business-week .calendar-dates {
-    grid-template-columns: repeat(5, 1fr);
+/* All-day event specific styling */
+.all-day-activities .activity {
+    position: relative;
+    height: 24px;
+    margin: 1px 0;
 }
 
-.day-view .calendar-days,
-.day-view .calendar-dates {
-    grid-template-columns: 1fr;
+.all-day-activities .activity:not(:last-child) {
+    margin-bottom: 2px;
 }
 
 /* Calendar header */
