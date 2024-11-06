@@ -1,6 +1,7 @@
 :root {
     --theme-purple: #6f42c1;
     --theme-light-purple: #e9ecef;
+    --theme-light-blue: #e3f2fd;
 }
 
 .navbar-logo {
@@ -86,7 +87,7 @@
     flex-direction: column;
     gap: 1px;
     position: relative;
-    min-height: 32px;
+    background-color: var(--theme-light-blue);
     z-index: 1;
 }
 
@@ -104,6 +105,9 @@
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    height: 24px;
+    display: flex;
+    align-items: center;
 }
 
 .activity:hover {
@@ -121,7 +125,7 @@
 .activity.multi-day {
     margin: 0;
     padding: 4px 8px;
-    height: 32px;
+    height: 24px;
     border-radius: 0;
     position: relative;
     z-index: 1;
