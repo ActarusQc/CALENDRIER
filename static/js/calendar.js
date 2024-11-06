@@ -145,10 +145,10 @@ document.addEventListener('DOMContentLoaded', function() {
             allDayDiv.setAttribute('data-date', formattedDate);
             cell.appendChild(allDayDiv);
             
-            const activitiesDiv = document.createElement('div');
-            activitiesDiv.className = 'timed-activities';
-            activitiesDiv.setAttribute('data-date', formattedDate);
-            cell.appendChild(activitiesDiv);
+            const timedDiv = document.createElement('div');
+            timedDiv.className = 'timed-activities';
+            timedDiv.setAttribute('data-date', formattedDate);
+            cell.appendChild(timedDiv);
         }
         
         return cell;
@@ -167,6 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const startDate = new Date(year, month, 1);
             const endDate = new Date(year, month + 1, 0);
             
+            // Sort activities by date and duration (longer events first)
+            activities.sort((a, b) => {
+                const aDuration = a.end_date ? (new Date(a.end_date) - new Date(a.date)) : 0;
+                const bDuration = b.end_date ? (new Date(b.end_date) - new Date(b.date)) : 0;
+                return bDuration - aDuration;
+            });
+            
             // Group activities by date and type
             const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
             
@@ -176,10 +183,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (allDayContainer && timedContainer) {
+                    // Process all-day events first
                     dateActivities.allDay.forEach(activity => {
                         displayActivity(activity, startDate, endDate);
                     });
                     
+                    // Then process timed events
                     dateActivities.timed.forEach(activity => {
                         displayActivity(activity, startDate, endDate);
                     });
