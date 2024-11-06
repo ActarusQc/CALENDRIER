@@ -263,22 +263,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const isMultiDay = endDate > startDate;
         
         if (isMultiDay && !activity.is_recurring) {
-            activityDiv.classList.add('multi-day', position);
+            activityDiv.classList.add('multi-day');
+            activityDiv.classList.add(position);
             activityDiv.style.backgroundColor = categoryColor;
-            
-            // Add box shadow for depth effect
-            activityDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            activityDiv.style.zIndex = '1';
         } else {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
-        // Only show content for start position or single-day events
+        // Add content only for start or single events
         if (position === 'start' || position === 'single') {
-            let timeDisplay = '';
-            if (!activity.is_all_day && activity.time) {
-                timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
-            }
-            
             activityDiv.innerHTML = `
                 <div class="activity-content">
                     <div class="title">${activity.title}</div>
