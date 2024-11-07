@@ -12,6 +12,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
         modal.show();
     }
+
+    // Add event listener for "Add new event" button
+    document.querySelector('[href="{{ url_for(\'admin\') }}"]').addEventListener('click', function(e) {
+        e.preventDefault();
+        // Clear form fields
+        document.getElementById('activityId').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('date').value = '';
+        document.getElementById('end_date').value = '';
+        document.getElementById('time').value = '';
+        document.getElementById('end_time').value = '';
+        document.getElementById('is_all_day').checked = false;
+        document.getElementById('is_recurring').checked = false;
+        document.getElementById('notes').value = '';
+        document.getElementById('location').value = '';
+        
+        // Uncheck all category checkboxes
+        document.querySelectorAll('input[name="categories"]').forEach(cb => cb.checked = false);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
+    });
 });
 
 async function loadLocationsAndCategories() {
