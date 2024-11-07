@@ -61,7 +61,7 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
-    overflow: visible; /* Allow overflow for multi-day events */
+    overflow: visible;
 }
 
 .date-number {
@@ -85,18 +85,18 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     position: relative;
-    min-height: 48px;  /* Increased fixed height */
-    height: 48px;      /* Force consistent height */
+    min-height: auto;
+    height: auto;
     z-index: 1;
-    overflow: visible; /* Allow overflow for multi-day events */
 }
 
 .activity {
     margin: 2px 0;
     padding: 4px 8px;
     min-height: 28px;
+    height: auto;
     display: flex;
     align-items: center;
     border-radius: 4px;
@@ -104,6 +104,7 @@
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 .activity:hover {
@@ -122,20 +123,19 @@
     margin: 0;
     padding: 4px 8px;
     min-height: 28px;
-    height: 28px;      /* Fixed height */
+    height: 28px;
     display: flex;
     align-items: center;
     border-radius: 0;
-    position: absolute; /* Position absolutely for proper stacking */
-    left: 0;
-    right: 0;
+    position: relative;
+    width: 100%;
     z-index: 1;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-right: -2px; /* Extend slightly to cover gap */
+    margin-right: -2px;
 }
 
 .activity.multi-day.middle {
@@ -153,79 +153,80 @@
 .admin-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 2.5rem;
 }
 
 .admin-header {
     background-color: #2b3035;
-    padding: 2.5rem;
-    border-radius: 1rem;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    padding: 3rem;
+    border-radius: 1.25rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
 
 .admin-header h2 {
     color: white;
-    font-size: 2.25rem;
+    font-size: 2.5rem;
     font-weight: 600;
-    margin-bottom: 2.5rem;
+    margin-bottom: 3rem;
 }
 
 .admin-nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 1.75rem;
     background-color: #343a40;
-    padding: 2rem;
-    border-radius: 0.75rem;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    padding: 2.5rem;
+    border-radius: 1rem;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .admin-nav .btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.75rem;
+    gap: 1rem;
+    padding: 1.25rem 2rem;
     font-weight: 500;
-    border-radius: 0.5rem;
-    min-width: 220px;
+    border-radius: 0.75rem;
+    min-width: 240px;
     justify-content: center;
-    font-size: 1rem;
-    transition: all 0.2s ease;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .admin-nav .btn i {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
 }
 
 .admin-nav .btn.active {
     background-color: var(--theme-purple);
     border-color: var(--theme-purple);
     color: white;
-    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+    box-shadow: 0 6px 16px rgba(111, 66, 193, 0.4);
+    transform: translateY(-2px);
 }
 
 .admin-nav .btn:not(.active):hover {
-    background-color: rgba(255,255,255,0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background-color: rgba(255,255,255,0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
 .admin-content {
     background-color: #2b3035;
-    border-radius: 1rem;
-    padding: 2.5rem;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-radius: 1.25rem;
+    padding: 3rem;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
 
 .admin-table {
     background-color: #343a40;
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 2rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    margin-bottom: 2.5rem;
 }
 
 .admin-table th {
