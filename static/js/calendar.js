@@ -20,360 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCalendar();
         });
     });
-
-    function updateCalendarHeader() {
-        const daysContainer = document.querySelector('.calendar-days');
-        daysContainer.innerHTML = '';
-        
-        switch(currentView) {
-            case 'business-week':
-                ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].forEach(day => {
-                    const div = document.createElement('div');
-                    div.textContent = day;
-                    daysContainer.appendChild(div);
-                });
-                break;
-            case 'day':
-                const dayName = currentDate.toLocaleString('fr-FR', { weekday: 'long' });
-                const div = document.createElement('div');
-                div.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-                daysContainer.appendChild(div);
-                break;
-            default:
-                ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'].forEach(day => {
-                    const div = document.createElement('div');
-                    div.textContent = day;
-                    daysContainer.appendChild(div);
-                });
-        }
-    }
-
-    function updateCalendar() {
-        const calendarGrid = document.querySelector('.calendar-grid');
-        calendarGrid.className = 'calendar-grid ' + currentView;
-        
-        updateCalendarHeader();
-        
-        const calendarDates = document.getElementById('calendarDates');
-        calendarDates.innerHTML = '';
-        
-        switch(currentView) {
-            case 'month':
-                renderMonthView();
-                break;
-            case 'week':
-                renderWeekView();
-                break;
-            case 'business-week':
-                renderBusinessWeekView();
-                break;
-            case 'day':
-                renderDayView();
-                break;
-        }
-
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        fetchActivities(year, month);
-
-        const monthYear = currentDate.toLocaleString('fr-FR', { 
-            month: 'long', 
-            year: 'numeric' 
-        }).replace(/^./, str => str.toUpperCase());
-        
-        document.getElementById('currentMonth').textContent = monthYear;
-    }
-
-    function renderMonthView() {
-        const calendarDates = document.getElementById('calendarDates');
-        calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
-        
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        
-        for (let i = 0; i < firstDay.getDay(); i++) {
-            calendarDates.appendChild(createDateCell());
-        }
-        
-        for (let date = 1; date <= lastDay.getDate(); date++) {
-            const cellDate = new Date(year, month, date);
-            calendarDates.appendChild(createDateCell(cellDate));
-        }
-
-        const remainingDays = (7 - ((firstDay.getDay() + lastDay.getDate()) % 7)) % 7;
-        for (let i = 0; i < remainingDays; i++) {
-            calendarDates.appendChild(createDateCell());
-        }
-    }
-
-    function renderWeekView() {
-        const calendarDates = document.getElementById('calendarDates');
-        calendarDates.innerHTML = '';
-        calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
-        
-        const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-        
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(startOfWeek);
-            date.setDate(startOfWeek.getDate() + i);
-            const dateCell = createDateCell(date);
-            calendarDates.appendChild(dateCell);
-        }
-    }
-
-    function renderBusinessWeekView() {
-        const calendarDates = document.getElementById('calendarDates');
-        calendarDates.innerHTML = '';
-        calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
-        
-        const startOfWeek = new Date(currentDate);
-        const day = startOfWeek.getDay();
-        const diff = day === 0 ? -6 : 1 - day;
-        startOfWeek.setDate(startOfWeek.getDate() + diff);
-        
-        for (let i = 0; i < 5; i++) {
-            const date = new Date(startOfWeek);
-            date.setDate(startOfWeek.getDate() + i);
-            const dateCell = createDateCell(date);
-            calendarDates.appendChild(dateCell);
-        }
-    }
-
-    function renderDayView() {
-        const calendarDates = document.getElementById('calendarDates');
-        calendarDates.innerHTML = '';
-        calendarDates.style.gridTemplateColumns = '1fr';
-        
-        const dateCell = createDateCell(currentDate);
-        calendarDates.appendChild(dateCell);
-    }
-
-    function createDateCell(date) {
-        const cell = document.createElement('div');
-        cell.className = 'calendar-date';
-        
-        if (date) {
-            const dateDiv = document.createElement('a');
-            dateDiv.href = '#';
-            dateDiv.className = 'date-number';
-            dateDiv.textContent = date.getDate();
-            dateDiv.addEventListener('click', (e) => {
-                e.preventDefault();
-                const formattedDate = date.toISOString().split('T')[0];
-                showAddActivityModal(formattedDate);
-            });
-            cell.appendChild(dateDiv);
-            
-            const allDayDiv = document.createElement('div');
-            allDayDiv.className = 'all-day-activities';
-            const formattedDate = date.toISOString().split('T')[0];
-            allDayDiv.setAttribute('data-date', formattedDate);
-            cell.appendChild(allDayDiv);
-            
-            const timedDiv = document.createElement('div');
-            timedDiv.className = 'timed-activities';
-            timedDiv.setAttribute('data-date', formattedDate);
-            cell.appendChild(timedDiv);
-        }
-        
-        return cell;
-    }
-
-    function showAddActivityModal(date) {
-        document.getElementById('date').value = date;
-        document.getElementById('activityId').value = '';
-        document.getElementById('title').value = '';
-        document.getElementById('time').value = '';
-        document.getElementById('end_time').value = '';
-        document.getElementById('is_all_day').checked = false;
-        document.getElementById('location').value = '';
-        document.getElementById('notes').value = '';
-        document.getElementById('is_recurring').checked = false;
-        document.getElementById('recurrenceFields').style.display = 'none';
-        
-        // Clear categories
-        document.querySelectorAll('input[name="categories"]').forEach(cb => cb.checked = false);
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
-        modal.show();
-    }
-
-    function createActivityElement(activity, position) {
-        const activityDiv = document.createElement('div');
-        activityDiv.className = 'activity';
-        
-        const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
-        const startDate = new Date(activity.date);
-        const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-        const isMultiDay = endDate > startDate;
-        
-        if (isMultiDay && !activity.is_recurring) {
-            activityDiv.classList.add('multi-day');
-            activityDiv.classList.add(position);
-            activityDiv.style.backgroundColor = categoryColor;
-        } else {
-            activityDiv.style.backgroundColor = categoryColor;
-        }
-        
-        if (position === 'start' || position === 'single') {
-            let timeDisplay = '';
-            if (!activity.is_all_day && activity.time) {
-                timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
-            }
-
-            activityDiv.innerHTML = `
-                <div class="activity-content">
-                    ${timeDisplay ? `<div class="time">${timeDisplay}</div>` : ''}
-                    <div class="title">${activity.title}</div>
-                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                    ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
-                </div>
-            `;
-        }
-        
-        activityDiv.addEventListener('click', () => showActivityDetails(activity));
-        
-        return activityDiv;
-    }
-
-    async function fetchActivities(year, month) {
-        try {
-            const response = await fetch('/api/activities');
-            const activities = await response.json();
-            
-            document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
-            document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
-            
-            const startDate = new Date(year, month, 1);
-            const endDate = new Date(year, month + 1, 0);
-            
-            activities.sort((a, b) => {
-                const aDuration = a.end_date ? (new Date(a.end_date) - new Date(a.date)) : 0;
-                const bDuration = b.end_date ? (new Date(b.end_date) - new Date(b.date)) : 0;
-                return bDuration - aDuration;
-            });
-            
-            const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
-            
-            Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
-                const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
-                const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                
-                if (allDayContainer && timedContainer) {
-                    dateActivities.allDay.forEach(activity => {
-                        displayActivity(activity, startDate, endDate);
-                    });
-                    
-                    dateActivities.timed.forEach(activity => {
-                        displayActivity(activity, startDate, endDate);
-                    });
-                }
-            });
-        } catch (error) {
-            console.error('Error fetching activities:', error);
-        }
-    }
-
-    function groupActivitiesByDate(activities, startDate, endDate) {
-        const grouped = {};
-        
-        activities.forEach(activity => {
-            const activityStartDate = new Date(activity.date);
-            const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
-            
-            let currentDate = new Date(Math.max(activityStartDate, startDate));
-            const viewEndDate = new Date(Math.min(activityEndDate, endDate));
-            
-            while (currentDate <= viewEndDate) {
-                const dateStr = currentDate.toISOString().split('T')[0];
-                
-                if (!grouped[dateStr]) {
-                    grouped[dateStr] = {
-                        allDay: [],
-                        timed: []
-                    };
-                }
-                
-                const array = activity.is_all_day ? grouped[dateStr].allDay : grouped[dateStr].timed;
-                if (!array.some(a => a.id === activity.id)) {
-                    array.push({
-                        ...activity,
-                        displayDate: new Date(currentDate)
-                    });
-                }
-                
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-        });
-        
-        return grouped;
-    }
-
-    function displayActivity(activity, startDate, endDate) {
-        const activityStartDate = new Date(activity.date);
-        const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
-        const displayDate = activity.displayDate || activityStartDate;
-        
-        const dateStr = displayDate.toISOString().split('T')[0];
-        const container = activity.is_all_day ?
-            document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-            document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-        
-        if (container) {
-            let position = 'single';
-            if (activityEndDate > activityStartDate) {
-                if (displayDate.getTime() === activityStartDate.getTime()) {
-                    position = 'start';
-                } else if (displayDate.getTime() === activityEndDate.getTime()) {
-                    position = 'end';
-                } else {
-                    position = 'middle';
-                }
-            }
-            
-            const activityElement = createActivityElement(activity, position);
-            if (position !== 'single') {
-                activityElement.style.zIndex = '1';
-            }
-            container.appendChild(activityElement);
-        }
-    }
-
-    async function loadLocationsAndCategories() {
-        try {
-            // Load locations
-            const locationsResponse = await fetch('/api/locations');
-            const locations = await locationsResponse.json();
-            const locationSelect = document.getElementById('location');
-            locationSelect.innerHTML = `<option value="">${window.translations.select_location}</option>`;
-            locations.forEach(location => {
-                locationSelect.innerHTML += `<option value="${location.id}">${location.name}</option>`;
-            });
-
-            // Load categories
-            const categoriesResponse = await fetch('/api/categories');
-            const categories = await categoriesResponse.json();
-            const categoriesContainer = document.getElementById('categoriesContainer');
-            categoriesContainer.innerHTML = '';
-            categories.forEach(category => {
-                categoriesContainer.innerHTML += `
-                    <div class="form-check mb-2">
-                        <input type="checkbox" class="form-check-input" id="category_${category.id}" 
-                               name="categories" value="${category.id}">
-                        <label class="form-check-label text-white" for="category_${category.id}">
-                            ${category.name}
-                        </label>
-                    </div>
-                `;
-            });
-        } catch (error) {
-            console.error('Error loading locations and categories:', error);
-        }
-    }
+    // ...
 
     function setupForm() {
         const allDayCheckbox = document.getElementById('is_all_day');
@@ -455,11 +102,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
             modal.hide();
-            
-            // Refresh calendar view
+
+            // Refresh calendar after saving
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            fetchActivities(year, month);
+            await fetchActivities(year, month);
         } catch (error) {
             console.error('Error saving activity:', error);
             alert('Error saving activity: ' + error.message);
@@ -467,61 +114,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showActivityDetails(activity) {
+        // Create modal HTML
         const modalHTML = `
             <div class="modal fade" id="activityDetailsModal" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title text-white">${activity.title}</h5>
+                            <h5 class="modal-title">${activity.title}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body text-white">
-                            <div class="mb-2 text-white">
-                                <strong class="text-white">Date:</strong> ${activity.date}
-                                ${activity.end_date ? `- ${activity.end_date}` : ''}
-                            </div>
-                            ${!activity.is_all_day ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Heure:</strong> ${activity.time || ''}
-                                    ${activity.end_time ? ` - ${activity.end_time}` : ''}
-                                </div>
-                            ` : ''}
-                            ${activity.location ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Lieu:</strong> ${activity.location}
-                                </div>
-                            ` : ''}
-                            ${activity.categories.length > 0 ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Catégories:</strong> ${activity.categories.map(c => c.name).join(', ')}
-                                </div>
-                            ` : ''}
-                            ${activity.notes ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Notes:</strong><br>
-                                    ${activity.notes}
-                                </div>
-                            ` : ''}
-                            ${activity.is_recurring ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Récurrence:</strong> ${
-                                        activity.recurrence_type === 'daily' ? 'Quotidien' :
-                                        activity.recurrence_type === 'weekly' ? 'Hebdomadaire' :
-                                        activity.recurrence_type === 'monthly' ? 'Mensuel' :
-                                        'Annuel'
-                                    }
-                                    (jusqu'au ${activity.recurrence_end_date})
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <div class="modal-body">
+                            <p><strong>Date:</strong> ${activity.date}</p>
+                            ${activity.time ? `<p><strong>Time:</strong> ${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}</p>` : ''}
+                            ${activity.location ? `<p><strong>Location:</strong> ${activity.location}</p>` : ''}
+                            ${activity.categories.length > 0 ? `<p><strong>Categories:</strong> ${activity.categories.map(c => c.name).join(', ')}</p>` : ''}
+                            ${activity.notes ? `<p><strong>Notes:</strong> ${activity.notes}</p>` : ''}
+                            ${activity.is_recurring ? `<p><strong>Recurring:</strong> ${activity.recurrence_type} until ${activity.recurrence_end_date}</p>` : ''}
                         </div>
                     </div>
                 </div>
             </div>
         `;
 
+        // Remove any existing modal
         const existingModal = document.getElementById('activityDetailsModal');
         if (existingModal) {
             existingModal.remove();
