@@ -31,15 +31,17 @@ async function loadLocationsAndCategories() {
         const categoriesContainer = document.getElementById('categoriesContainer');
         categoriesContainer.innerHTML = '';
         categories.forEach(category => {
-            categoriesContainer.innerHTML += `
-                <div class="form-check mb-2">
-                    <input type="checkbox" class="form-check-input" id="category_${category.id}" 
-                           name="categories" value="${category.id}">
-                    <label class="form-check-label text-white" for="category_${category.id}">
-                        ${category.name}
-                    </label>
-                </div>
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'form-check mb-2';
+            categoryDiv.innerHTML = `
+                <input type="checkbox" class="form-check-input" id="category_${category.id}" 
+                       name="categories" value="${category.id}">
+                <label class="form-check-label text-white" for="category_${category.id}">
+                    <span class="color-dot" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${category.color}; margin-right: 8px;"></span>
+                    ${category.name}
+                </label>
             `;
+            categoriesContainer.appendChild(categoryDiv);
         });
     } catch (error) {
         console.error('Error loading locations and categories:', error);
@@ -82,6 +84,78 @@ function setupForm() {
     document.getElementById('activityModal').addEventListener('show.bs.modal', function () {
         loadLocationsAndCategories();
     });
+}
+
+async function loadActivities() {
+    try {
+        const response = await fetch('/api/activities');
+        const activities = await response.json();
+        
+        const tbody = document.getElementById('activitiesList');
+        tbody.innerHTML = '';
+        
+        activities.sort((a, b) => new Date(b.date) - new Date(a.date))
+            .forEach(activity => {
+                const tr = document.createElement('tr');
+                const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+                const dateStr = formatDate(activity.date);
+                const timeStr = formatTime(activity);
+                
+                tr.innerHTML = `
+                    <td class="align-middle">${dateStr}</td>
+                    <td class="align-middle">${timeStr}</td>
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center">
+                            <div class="color-dot me-2" style="background-color: ${categoryColor}; width: 12px; height: 12px; border-radius: 50%;"></div>
+                            <div>
+                                <div class="fw-bold">${activity.title}</div>
+                                ${activity.is_recurring ? '<small class="text-muted"><i class="bi bi-arrow-repeat"></i> Recurring</small>' : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle">${activity.location || ''}</td>
+                    <td class="align-middle">
+                        <div class="d-flex flex-wrap gap-1">
+                            ${activity.categories.map(c => `
+                                <span class="badge" style="background-color: ${c.color}">${c.name}</span>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editActivity(${activity.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteActivity(${activity.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+    } catch (error) {
+        console.error('Error loading activities:', error);
+        alert('Error loading activities: ' + error.message);
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function formatTime(activity) {
+    if (activity.is_all_day) return 'Toute la journée';
+    let timeStr = activity.time || '';
+    if (activity.end_time) {
+        timeStr += ` - ${activity.end_time}`;
+    }
+    return timeStr;
 }
 
 async function saveActivity() {
@@ -135,42 +209,6 @@ async function saveActivity() {
     } catch (error) {
         console.error('Error saving activity:', error);
         alert('Error saving activity: ' + error.message);
-    }
-}
-
-async function loadActivities() {
-    try {
-        const response = await fetch('/api/activities');
-        const activities = await response.json();
-        
-        const tbody = document.getElementById('activitiesList');
-        tbody.innerHTML = '';
-        
-        activities.sort((a, b) => new Date(a.date) - new Date(b.date))
-            .forEach(activity => {
-                const tr = document.createElement('tr');
-                const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
-                tr.innerHTML = `
-                    <td>${activity.date}</td>
-                    <td>${activity.is_all_day ? 'All day' : (activity.time + (activity.end_time ? ' - ' + activity.end_time : ''))}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="color-dot" style="background-color: ${categoryColor}; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px;"></div>
-                            ${activity.title}
-                        </div>
-                    </td>
-                    <td>${activity.location || ''}</td>
-                    <td>${activity.categories.map(c => c.name).join(', ')}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editActivity(${activity.id})">${window.translations.edit}</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteActivity(${activity.id})">${window.translations.delete}</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-    } catch (error) {
-        console.error('Error loading activities:', error);
-        alert('Error loading activities: ' + error.message);
     }
 }
 

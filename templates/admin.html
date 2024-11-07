@@ -1,131 +1,158 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h2>{{ trans.activity_management }}</h2>
-        <div class="btn-group">
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                {{ trans.view_calendar }}
-            </a>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
-                {{ trans.add_new_activity }}
-            </button>
-            {% if current_user.can_manage_users() %}
-                <a href="{{ url_for('manage_users') }}" class="btn btn-secondary">{{ trans.manage_users }}</a>
-            {% endif %}
-            <a href="{{ url_for('manage_locations_categories') }}" class="btn btn-secondary">
-                {{ trans.manage_locations_categories }}
-            </a>
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">{{ trans.activity_management }}</h1>
+            <nav class="nav nav-pills">
+                <a href="{{ url_for('index') }}" class="nav-link">
+                    <i class="bi bi-calendar3"></i> {{ trans.view_calendar }}
+                </a>
+                <a href="{{ url_for('admin') }}" class="nav-link active">
+                    <i class="bi bi-plus-circle"></i> {{ trans.add_new_activity }}
+                </a>
+                {% if current_user.can_manage_users() %}
+                <a href="{{ url_for('manage_users') }}" class="nav-link">
+                    <i class="bi bi-people"></i> {{ trans.manage_users }}
+                </a>
+                {% endif %}
+                <a href="{{ url_for('manage_locations_categories') }}" class="nav-link">
+                    <i class="bi bi-gear"></i> {{ trans.manage_locations_categories }}
+                </a>
+            </nav>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>{{ trans.date }}</th>
-                        <th>{{ trans.time }}</th>
-                        <th>{{ trans.title }}</th>
-                        <th>{{ trans.location }}</th>
-                        <th>{{ trans.categories }}</th>
-                        <th>{{ trans.actions }}</th>
-                    </tr>
-                </thead>
-                <tbody id="activitiesList"></tbody>
-            </table>
+    <!-- Activities Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ trans.date }}</th>
+                                    <th>{{ trans.time }}</th>
+                                    <th>{{ trans.title }}</th>
+                                    <th>{{ trans.location }}</th>
+                                    <th>{{ trans.categories }}</th>
+                                    <th>{{ trans.actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activitiesList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Activity Modal -->
 <div class="modal fade" id="activityModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title text-white">{{ trans.add_edit_activity }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="activityForm">
+                <form id="activityForm" class="row g-3">
                     <input type="hidden" id="activityId">
-                    <div class="mb-3">
+                    
+                    <!-- Title -->
+                    <div class="col-12">
                         <label class="form-label text-white">{{ trans.title }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.title }}</small>
                         <input type="text" class="form-control bg-dark text-white" id="title" required>
                     </div>
-                    <!-- Start date and time section -->
-                    <div class="mb-3">
+
+                    <!-- Dates Section -->
+                    <div class="col-md-6">
                         <label class="form-label text-white">{{ trans.date }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.date }}</small>
                         <input type="date" class="form-control bg-dark text-white" id="date" required>
                     </div>
-                    <!-- End date section -->
-                    <div class="mb-3">
+
+                    <div class="col-md-6">
                         <label class="form-label text-white">{{ trans.end_date }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
                         <input type="date" class="form-control bg-dark text-white" id="end_date">
                     </div>
-                    <!-- Time and all-day section -->
-                    <div class="mb-3">
+
+                    <!-- Time Section -->
+                    <div class="col-12">
                         <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="is_all_day" name="is_all_day">
                             <label class="form-check-label text-white" for="is_all_day">{{ trans.all_day_event }}</label>
                         </div>
-                        <div id="timeField">
-                            <label class="form-label text-white">{{ trans.time }}</label>
-                            <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
-                            <input type="time" class="form-control bg-dark text-white" id="time" name="time">
-                        </div>
-                        <div id="endTimeField" class="mt-3">
-                            <label class="form-label text-white">{{ trans.end_time }}</label>
-                            <small class="text-muted d-block mb-2">{{ helpers.end_time }}</small>
-                            <input type="time" class="form-control bg-dark text-white" id="end_time" name="end_time">
-                        </div>
                     </div>
-                    <!-- Recurring event section -->
-                    <div class="mb-3">
+
+                    <div class="col-md-6" id="timeField">
+                        <label class="form-label text-white">{{ trans.time }}</label>
+                        <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
+                        <input type="time" class="form-control bg-dark text-white" id="time" name="time">
+                    </div>
+
+                    <div class="col-md-6" id="endTimeField">
+                        <label class="form-label text-white">{{ trans.end_time }}</label>
+                        <small class="text-muted d-block mb-2">{{ helpers.end_time }}</small>
+                        <input type="time" class="form-control bg-dark text-white" id="end_time" name="end_time">
+                    </div>
+
+                    <!-- Recurring Section -->
+                    <div class="col-12">
                         <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="is_recurring" name="is_recurring">
                             <label class="form-check-label text-white" for="is_recurring">{{ trans.recurring_activity }}</label>
                         </div>
-                        <div id="recurrenceFields" style="display: none;">
-                            <label class="form-label text-white">{{ trans.recurrence_type }}</label>
-                            <small class="text-muted d-block mb-2">{{ helpers.recurrence_type }}</small>
-                            <select class="form-control bg-dark text-white" id="recurrence_type" name="recurrence_type">
-                                <option value="daily">{{ trans.daily }}</option>
-                                <option value="weekly">{{ trans.weekly }}</option>
-                                <option value="monthly">{{ trans.monthly }}</option>
-                                <option value="annually">{{ trans.annually }}</option>
-                            </select>
-                            <div class="mt-3">
+                    </div>
+
+                    <div id="recurrenceFields" style="display: none;" class="col-12">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-white">{{ trans.recurrence_type }}</label>
+                                <small class="text-muted d-block mb-2">{{ helpers.recurrence_type }}</small>
+                                <select class="form-control bg-dark text-white" id="recurrence_type" name="recurrence_type">
+                                    <option value="daily">{{ trans.daily }}</option>
+                                    <option value="weekly">{{ trans.weekly }}</option>
+                                    <option value="monthly">{{ trans.monthly }}</option>
+                                    <option value="annually">{{ trans.annually }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label text-white">{{ trans.end_date }}</label>
                                 <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
                                 <input type="date" class="form-control bg-dark text-white" id="recurrence_end_date" name="recurrence_end_date">
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3">
+
+                    <!-- Location and Categories -->
+                    <div class="col-md-6">
                         <label class="form-label text-white">{{ trans.location }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.location }}</small>
                         <select class="form-control bg-dark text-white" id="location">
                             <option value="">{{ trans.select_location }}</option>
                         </select>
                     </div>
-                    <div class="mb-3">
+
+                    <div class="col-md-6">
                         <label class="form-label text-white">{{ trans.categories }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.categories }}</small>
-                        <div id="categoriesContainer" class="border rounded p-3">
+                        <div id="categoriesContainer" class="border rounded p-3 bg-dark">
                             <!-- Categories will be dynamically added here -->
                         </div>
                     </div>
-                    <div class="mb-3">
+
+                    <!-- Notes -->
+                    <div class="col-12">
                         <label class="form-label text-white">{{ trans.notes }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.notes }}</small>
-                        <textarea class="form-control bg-dark text-white" id="notes"></textarea>
+                        <textarea class="form-control bg-dark text-white" id="notes" rows="3"></textarea>
                     </div>
                 </form>
             </div>
