@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
     let currentView = 'month';
 
+    // Setup form and load initial data
+    loadLocationsAndCategories();
+    setupForm();
+
     document.querySelectorAll('[data-view]').forEach(button => {
         button.addEventListener('click', function() {
             const view = this.dataset.view;
@@ -179,9 +183,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAddActivityModal(date) {
-        // Redirect to admin page with the date parameter if user has permission
-        // The actual permission check will happen server-side
-        window.location.href = `/admin?selected_date=${date}`;
+        document.getElementById('date').value = date;
+        document.getElementById('activityId').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('time').value = '';
+        document.getElementById('end_time').value = '';
+        document.getElementById('is_all_day').checked = false;
+        document.getElementById('location').value = '';
+        document.getElementById('notes').value = '';
+        document.getElementById('is_recurring').checked = false;
+        document.getElementById('recurrenceFields').style.display = 'none';
+        
+        // Clear categories
+        document.querySelectorAll('input[name="categories"]').forEach(cb => cb.checked = false);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
     }
 
     function createActivityElement(activity, position) {
@@ -325,6 +343,129 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function loadLocationsAndCategories() {
+        try {
+            // Load locations
+            const locationsResponse = await fetch('/api/locations');
+            const locations = await locationsResponse.json();
+            const locationSelect = document.getElementById('location');
+            locationSelect.innerHTML = `<option value="">${window.translations.select_location}</option>`;
+            locations.forEach(location => {
+                locationSelect.innerHTML += `<option value="${location.id}">${location.name}</option>`;
+            });
+
+            // Load categories
+            const categoriesResponse = await fetch('/api/categories');
+            const categories = await categoriesResponse.json();
+            const categoriesContainer = document.getElementById('categoriesContainer');
+            categoriesContainer.innerHTML = '';
+            categories.forEach(category => {
+                categoriesContainer.innerHTML += `
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="category_${category.id}" 
+                               name="categories" value="${category.id}">
+                        <label class="form-check-label text-white" for="category_${category.id}">
+                            ${category.name}
+                        </label>
+                    </div>
+                `;
+            });
+        } catch (error) {
+            console.error('Error loading locations and categories:', error);
+        }
+    }
+
+    function setupForm() {
+        const allDayCheckbox = document.getElementById('is_all_day');
+        const timeField = document.getElementById('timeField');
+        const endTimeField = document.getElementById('endTimeField');
+        const recurringCheckbox = document.getElementById('is_recurring');
+        const recurrenceFields = document.getElementById('recurrenceFields');
+        
+        if (allDayCheckbox && timeField && endTimeField) {
+            // Set initial state
+            timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
+            endTimeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
+            
+            allDayCheckbox.addEventListener('change', function() {
+                timeField.style.display = this.checked ? 'none' : 'block';
+                endTimeField.style.display = this.checked ? 'none' : 'block';
+                if (this.checked) {
+                    document.getElementById('time').value = '';
+                    document.getElementById('end_time').value = '';
+                }
+            });
+        }
+
+        if (recurringCheckbox && recurrenceFields) {
+            recurringCheckbox.addEventListener('change', function() {
+                recurrenceFields.style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    document.getElementById('recurrence_type').value = '';
+                    document.getElementById('recurrence_end_date').value = '';
+                }
+            });
+        }
+    }
+
+    async function saveActivity() {
+        try {
+            const activity = {
+                title: document.getElementById('title').value.trim(),
+                date: document.getElementById('date').value,
+                is_all_day: document.getElementById('is_all_day')?.checked || false,
+                time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('time').value,
+                end_date: document.getElementById('end_date').value || null,
+                end_time: document.getElementById('is_all_day')?.checked ? null : document.getElementById('end_time').value,
+                location_id: document.getElementById('location').value || null,
+                category_ids: Array.from(document.querySelectorAll('input[name="categories"]:checked')).map(cb => parseInt(cb.value)),
+                notes: document.getElementById('notes').value.trim(),
+                is_recurring: document.getElementById('is_recurring').checked,
+                recurrence_type: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_type').value : null,
+                recurrence_end_date: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_end_date').value : null
+            };
+
+            if (!activity.title || !activity.date) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Add validation for end date
+            if (activity.end_date && activity.date > activity.end_date) {
+                alert('End date cannot be before start date');
+                return;
+            }
+
+            const activityId = document.getElementById('activityId').value;
+            const url = activityId ? `/api/activities/${activityId}` : '/api/activities';
+            const method = activityId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(activity)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save activity');
+            }
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('activityModal'));
+            modal.hide();
+            
+            // Refresh calendar view
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            fetchActivities(year, month);
+        } catch (error) {
+            console.error('Error saving activity:', error);
+            alert('Error saving activity: ' + error.message);
+        }
+    }
+
     function showActivityDetails(activity) {
         const modalHTML = `
             <div class="modal fade" id="activityDetailsModal" tabindex="-1">
@@ -387,11 +528,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-
         const modal = new bootstrap.Modal(document.getElementById('activityDetailsModal'));
         modal.show();
     }
 
+    // Initial calendar render
+    updateCalendar();
+
+    // Navigation event listeners
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
@@ -401,7 +545,4 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDate.setMonth(currentDate.getMonth() + 1);
         updateCalendar();
     });
-
-    document.querySelector('[data-view="month"]').classList.add('active');
-    updateCalendar();
 });
