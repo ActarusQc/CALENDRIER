@@ -8,7 +8,7 @@
             <a href="{{ url_for('index') }}" class="btn btn-secondary">
                 {{ trans.view_calendar }}
             </a>
-            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+            <a href="{{ url_for('admin') }}" class="btn {% if request.endpoint == 'admin' %}btn-primary{% else %}btn-secondary{% endif %}">
                 {{ trans.add_new_activity }}
             </a>
             {% if current_user.can_manage_users() %}

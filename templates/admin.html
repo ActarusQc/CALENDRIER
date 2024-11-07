@@ -1,50 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="mb-3">{{ trans.activity_management }}</h1>
-            <nav class="nav nav-pills">
-                <a href="{{ url_for('index') }}" class="nav-link">
-                    <i class="bi bi-calendar3"></i> {{ trans.view_calendar }}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>{{ trans.activity_management }}</h2>
+        <div class="btn-group">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                {{ trans.view_calendar }}
+            </a>
+            <a href="{{ url_for('admin') }}" class="btn {% if request.endpoint == 'admin' %}btn-primary{% else %}btn-secondary{% endif %}">
+                {{ trans.add_new_activity }}
+            </a>
+            {% if current_user.can_manage_users() %}
+                <a href="{{ url_for('manage_users') }}" class="btn {% if request.endpoint == 'manage_users' %}btn-primary{% else %}btn-secondary{% endif %}">
+                    {{ trans.manage_users }}
                 </a>
-                <a href="{{ url_for('admin') }}" class="nav-link active">
-                    <i class="bi bi-plus-circle"></i> {{ trans.add_new_activity }}
-                </a>
-                {% if current_user.can_manage_users() %}
-                <a href="{{ url_for('manage_users') }}" class="nav-link">
-                    <i class="bi bi-people"></i> {{ trans.manage_users }}
-                </a>
-                {% endif %}
-                <a href="{{ url_for('manage_locations_categories') }}" class="nav-link">
-                    <i class="bi bi-gear"></i> {{ trans.manage_locations_categories }}
-                </a>
-            </nav>
+            {% endif %}
+            <a href="{{ url_for('manage_locations_categories') }}" class="btn {% if request.endpoint == 'manage_locations_categories' %}btn-primary{% else %}btn-secondary{% endif %}">
+                {{ trans.manage_locations_categories }}
+            </a>
         </div>
     </div>
+</div>
 
-    <!-- Activities Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>{{ trans.date }}</th>
-                                    <th>{{ trans.time }}</th>
-                                    <th>{{ trans.title }}</th>
-                                    <th>{{ trans.location }}</th>
-                                    <th>{{ trans.categories }}</th>
-                                    <th>{{ trans.actions }}</th>
-                                </tr>
-                            </thead>
-                            <tbody id="activitiesList"></tbody>
-                        </table>
-                    </div>
+<!-- Activities Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>{{ trans.date }}</th>
+                                <th>{{ trans.time }}</th>
+                                <th>{{ trans.title }}</th>
+                                <th>{{ trans.location }}</th>
+                                <th>{{ trans.categories }}</th>
+                                <th>{{ trans.actions }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activitiesList"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
