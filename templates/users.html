@@ -1,56 +1,66 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
+<div class="admin-container">
+    <div class="admin-header">
         <h2>{{ trans.activity_management }}</h2>
-        <div class="btn-group">
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <div class="admin-nav">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-calendar3"></i>
                 {{ trans.view_calendar }}
             </a>
-            <a href="{{ url_for('admin') }}" class="btn {% if request.endpoint == 'admin' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('admin') }}" class="btn {% if request.endpoint == 'admin' %}btn-primary active{% else %}btn-outline-secondary{% endif %}">
+                <i class="bi bi-plus-circle"></i>
                 {{ trans.add_new_activity }}
             </a>
             {% if current_user.can_manage_users() %}
-                <a href="{{ url_for('manage_users') }}" class="btn {% if request.endpoint == 'manage_users' %}btn-primary{% else %}btn-secondary{% endif %}">
+                <a href="{{ url_for('manage_users') }}" class="btn {% if request.endpoint == 'manage_users' %}btn-primary active{% else %}btn-outline-secondary{% endif %}">
+                    <i class="bi bi-people"></i>
                     {{ trans.manage_users }}
                 </a>
             {% endif %}
-            <a href="{{ url_for('manage_locations_categories') }}" class="btn {% if request.endpoint == 'manage_locations_categories' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('manage_locations_categories') }}" class="btn {% if request.endpoint == 'manage_locations_categories' %}btn-primary active{% else %}btn-outline-secondary{% endif %}">
+                <i class="bi bi-gear"></i>
                 {{ trans.manage_locations_categories }}
             </a>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>{{ trans.username }}</th>
-                        <th>{{ trans.email }}</th>
-                        <th>{{ trans.role }}</th>
-                        <th>{{ trans.actions }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.role }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="editUser({{ user.id }})">{{ trans.edit }}</button>
-                            {% if user.username != 'admin' %}
-                            <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }})">{{ trans.delete }}</button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="admin-content">
+        <div class="admin-table">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>{{ trans.username }}</th>
+                            <th>{{ trans.email }}</th>
+                            <th>{{ trans.role }}</th>
+                            <th>{{ trans.actions }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editUser({{ user.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    {% if user.username != 'admin' %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -60,43 +70,43 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{ trans.add_edit_user }}</h5>
+                <h5 class="modal-title text-white">{{ trans.add_edit_user }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="errorAlert" class="alert alert-danger d-none"></div>
-                <form id="userForm">
+                <form id="userForm" class="admin-form">
                     <input type="hidden" id="userId" name="userId">
                     <div class="mb-3">
-                        <label for="username" class="form-label">{{ trans.username }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.username }}</small>
+                        <label class="form-label">{{ trans.username }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.username }}</small>
                         <input type="text" class="form-control" id="username" name="username" required>
                     </div>
                     <div class="mb-3">
-                        <label for="email" class="form-label">{{ trans.email }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.email }}</small>
+                        <label class="form-label">{{ trans.email }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.email }}</small>
                         <input type="email" class="form-control" id="email" name="email" required>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">{{ trans.password }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.password }}</small>
+                        <label class="form-label">{{ trans.password }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.password }}</small>
                         <input type="password" class="form-control" id="password" name="password">
-                        <small class="text-muted">{{ trans.leave_empty_if_no_change }}</small>
+                        <small class="form-text">{{ trans.leave_empty_if_no_change }}</small>
                     </div>
                     <div class="mb-3">
-                        <label for="role" class="form-label">{{ trans.role }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.role }}</small>
+                        <label class="form-label">{{ trans.role }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.role }}</small>
                         <select class="form-control" id="role" name="role" required>
                             <option value="reader">{{ trans.reader }}</option>
                             <option value="creator">{{ trans.creator }}</option>
                             <option value="admin">{{ trans.admin }}</option>
                         </select>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
-                        <button type="submit" class="btn btn-primary">{{ trans.save }}</button>
-                    </div>
                 </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
+                <button type="submit" class="btn btn-primary" form="userForm">{{ trans.save }}</button>
             </div>
         </div>
     </div>
@@ -105,7 +115,6 @@
 
 {% block scripts %}
 <script>
-// Pass translations to JavaScript
 window.translations = {{ trans|tojson|safe }};
 </script>
 <script src="{{ url_for('static', filename='js/users.js') }}"></script>
