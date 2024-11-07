@@ -1,48 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
+<div class="admin-container">
+    <div class="admin-header">
         <h2>{{ trans.activity_management }}</h2>
-        <div class="btn-group">
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <div class="admin-nav">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-calendar3"></i>
                 {{ trans.view_calendar }}
             </a>
-            <a href="{{ url_for('admin') }}" class="btn {% if request.endpoint == 'admin' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('admin') }}" class="btn {% if request.endpoint == 'admin' %}btn-primary active{% else %}btn-outline-secondary{% endif %}">
+                <i class="bi bi-plus-circle"></i>
                 {{ trans.add_new_activity }}
             </a>
             {% if current_user.can_manage_users() %}
-                <a href="{{ url_for('manage_users') }}" class="btn {% if request.endpoint == 'manage_users' %}btn-primary{% else %}btn-secondary{% endif %}">
+                <a href="{{ url_for('manage_users') }}" class="btn {% if request.endpoint == 'manage_users' %}btn-primary active{% else %}btn-outline-secondary{% endif %}">
+                    <i class="bi bi-people"></i>
                     {{ trans.manage_users }}
                 </a>
             {% endif %}
-            <a href="{{ url_for('manage_locations_categories') }}" class="btn {% if request.endpoint == 'manage_locations_categories' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('manage_locations_categories') }}" class="btn {% if request.endpoint == 'manage_locations_categories' %}btn-primary active{% else %}btn-outline-secondary{% endif %}">
+                <i class="bi bi-gear"></i>
                 {{ trans.manage_locations_categories }}
             </a>
         </div>
     </div>
-</div>
 
-<!-- Activities Table -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>{{ trans.date }}</th>
-                                <th>{{ trans.time }}</th>
-                                <th>{{ trans.title }}</th>
-                                <th>{{ trans.location }}</th>
-                                <th>{{ trans.categories }}</th>
-                                <th>{{ trans.actions }}</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activitiesList"></tbody>
-                    </table>
-                </div>
+    <div class="admin-content">
+        <div class="admin-table">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{{ trans.date }}</th>
+                            <th>{{ trans.time }}</th>
+                            <th>{{ trans.title }}</th>
+                            <th>{{ trans.location }}</th>
+                            <th>{{ trans.categories }}</th>
+                            <th>{{ trans.actions }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activitiesList"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -57,63 +56,63 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="activityForm" class="row g-3">
+                <form id="activityForm" class="admin-form row g-3">
                     <input type="hidden" id="activityId">
                     
                     <!-- Title -->
                     <div class="col-12">
-                        <label class="form-label text-white">{{ trans.title }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.title }}</small>
-                        <input type="text" class="form-control bg-dark text-white" id="title" required>
+                        <label class="form-label">{{ trans.title }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.title }}</small>
+                        <input type="text" class="form-control" id="title" required>
                     </div>
 
                     <!-- Dates Section -->
                     <div class="col-md-6">
-                        <label class="form-label text-white">{{ trans.date }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.date }}</small>
-                        <input type="date" class="form-control bg-dark text-white" id="date" required>
+                        <label class="form-label">{{ trans.date }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.date }}</small>
+                        <input type="date" class="form-control" id="date" required>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label text-white">{{ trans.end_date }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
-                        <input type="date" class="form-control bg-dark text-white" id="end_date">
+                        <label class="form-label">{{ trans.end_date }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.end_date }}</small>
+                        <input type="date" class="form-control" id="end_date">
                     </div>
 
                     <!-- Time Section -->
                     <div class="col-12">
                         <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="is_all_day" name="is_all_day">
-                            <label class="form-check-label text-white" for="is_all_day">{{ trans.all_day_event }}</label>
+                            <label class="form-check-label" for="is_all_day">{{ trans.all_day_event }}</label>
                         </div>
                     </div>
 
                     <div class="col-md-6" id="timeField">
-                        <label class="form-label text-white">{{ trans.time }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.time }}</small>
-                        <input type="time" class="form-control bg-dark text-white" id="time" name="time">
+                        <label class="form-label">{{ trans.time }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.time }}</small>
+                        <input type="time" class="form-control" id="time" name="time">
                     </div>
 
                     <div class="col-md-6" id="endTimeField">
-                        <label class="form-label text-white">{{ trans.end_time }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.end_time }}</small>
-                        <input type="time" class="form-control bg-dark text-white" id="end_time" name="end_time">
+                        <label class="form-label">{{ trans.end_time }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.end_time }}</small>
+                        <input type="time" class="form-control" id="end_time" name="end_time">
                     </div>
 
                     <!-- Recurring Section -->
                     <div class="col-12">
                         <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="is_recurring" name="is_recurring">
-                            <label class="form-check-label text-white" for="is_recurring">{{ trans.recurring_activity }}</label>
+                            <label class="form-check-label" for="is_recurring">{{ trans.recurring_activity }}</label>
                         </div>
                     </div>
 
                     <div id="recurrenceFields" style="display: none;" class="col-12">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-white">{{ trans.recurrence_type }}</label>
-                                <small class="text-muted d-block mb-2">{{ helpers.recurrence_type }}</small>
-                                <select class="form-control bg-dark text-white" id="recurrence_type" name="recurrence_type">
+                                <label class="form-label">{{ trans.recurrence_type }}</label>
+                                <small class="form-text d-block mb-2">{{ helpers.recurrence_type }}</small>
+                                <select class="form-control" id="recurrence_type" name="recurrence_type">
                                     <option value="daily">{{ trans.daily }}</option>
                                     <option value="weekly">{{ trans.weekly }}</option>
                                     <option value="monthly">{{ trans.monthly }}</option>
@@ -121,40 +120,40 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-white">{{ trans.end_date }}</label>
-                                <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
-                                <input type="date" class="form-control bg-dark text-white" id="recurrence_end_date" name="recurrence_end_date">
+                                <label class="form-label">{{ trans.end_date }}</label>
+                                <small class="form-text d-block mb-2">{{ helpers.end_date }}</small>
+                                <input type="date" class="form-control" id="recurrence_end_date" name="recurrence_end_date">
                             </div>
                         </div>
                     </div>
 
                     <!-- Location and Categories -->
                     <div class="col-md-6">
-                        <label class="form-label text-white">{{ trans.location }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.location }}</small>
-                        <select class="form-control bg-dark text-white" id="location">
+                        <label class="form-label">{{ trans.location }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.location }}</small>
+                        <select class="form-control" id="location">
                             <option value="">{{ trans.select_location }}</option>
                         </select>
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label text-white">{{ trans.categories }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.categories }}</small>
-                        <div id="categoriesContainer" class="border rounded p-3 bg-dark">
+                        <label class="form-label">{{ trans.categories }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.categories }}</small>
+                        <div id="categoriesContainer" class="border rounded p-3">
                             <!-- Categories will be dynamically added here -->
                         </div>
                     </div>
 
                     <!-- Notes -->
                     <div class="col-12">
-                        <label class="form-label text-white">{{ trans.notes }}</label>
-                        <small class="text-muted d-block mb-2">{{ helpers.notes }}</small>
-                        <textarea class="form-control bg-dark text-white" id="notes" rows="3"></textarea>
+                        <label class="form-label">{{ trans.notes }}</label>
+                        <small class="form-text d-block mb-2">{{ helpers.notes }}</small>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ trans.close }}</button>
                 <button type="button" class="btn btn-primary" onclick="saveActivity()">{{ trans.save }}</button>
             </div>
         </div>

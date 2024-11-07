@@ -160,6 +160,7 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .date-number {
@@ -231,24 +232,24 @@
     border-radius: 0;
     position: relative;
     z-index: 1;
-    margin-right: -2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-right: -2px;
+    margin-right: -1px;
 }
 
 .activity.multi-day.middle {
-    margin-left: -2px;
-    margin-right: -2px;
+    margin-left: -1px;
+    margin-right: -1px;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    margin-left: -2px;
+    margin-left: -1px;
 }
 
 .activity.multi-day .time {
@@ -296,69 +297,100 @@
 }
 
 /* Admin Interface Updates */
+.admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
 .admin-header {
-    padding: 1.5rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: #2b3035;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
     margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-header h2 {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     font-weight: 600;
+    color: white;
 }
 
 .admin-nav {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 .admin-nav .btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
 }
 
 .admin-nav .btn i {
     font-size: 1.1rem;
 }
 
-.admin-card {
-    background-color: #2b3035;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.admin-card .card-header {
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.admin-card .card-body {
-    padding: 1.5rem;
-}
-
-.form-control {
-    background-color: #343a40;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.admin-nav .btn.active {
+    background-color: var(--theme-purple);
+    border-color: var(--theme-purple);
     color: white;
 }
 
-.form-control:focus {
+.admin-content {
+    background-color: #2b3035;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table {
+    background-color: #343a40;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.admin-table th {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: white;
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.admin-table td {
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-form .form-label {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.admin-form .form-control {
+    background-color: #343a40;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 0.5rem;
+    padding: 0.625rem 1rem;
+}
+
+.admin-form .form-control:focus {
     background-color: #343a40;
     border-color: var(--theme-purple);
     color: white;
     box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
 }
 
-.form-label {
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.form-text {
+.admin-form .form-text {
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.875rem;
     margin-top: 0.25rem;
