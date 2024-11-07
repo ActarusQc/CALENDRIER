@@ -2,11 +2,24 @@
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col-md-12">
-        <h2>{{ trans.user_management }}</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
-            {{ trans.add_new_user }}
-        </button>
+    <div class="col-md-8">
+        <h2>{{ trans.activity_management }}</h2>
+        <div class="btn-group">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                {{ trans.view_calendar }}
+            </a>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                {{ trans.add_new_activity }}
+            </a>
+            {% if current_user.can_manage_users() %}
+                <a href="{{ url_for('manage_users') }}" class="btn {% if request.endpoint == 'manage_users' %}btn-primary{% else %}btn-secondary{% endif %}">
+                    {{ trans.manage_users }}
+                </a>
+            {% endif %}
+            <a href="{{ url_for('manage_locations_categories') }}" class="btn {% if request.endpoint == 'manage_locations_categories' %}btn-primary{% else %}btn-secondary{% endif %}">
+                {{ trans.manage_locations_categories }}
+            </a>
+        </div>
     </div>
 </div>
 
