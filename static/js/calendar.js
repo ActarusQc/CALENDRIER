@@ -178,6 +178,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return cell;
     }
 
+    function showAddActivityModal(date) {
+        // Redirect to admin page with the date parameter if user has permission
+        // The actual permission check will happen server-side
+        window.location.href = `/admin?selected_date=${date}`;
+    }
+
     function createActivityElement(activity, position) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
