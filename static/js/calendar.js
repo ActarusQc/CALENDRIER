@@ -20,7 +20,158 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCalendar();
         });
     });
-    // ...
+
+    async function fetchActivities(year, month) {
+        try {
+            const response = await fetch('/api/activities');
+            const activities = await response.json();
+            renderCalendar(activities);
+        } catch (error) {
+            console.error('Error fetching activities:', error);
+        }
+    }
+
+    function updateCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        updateCalendarHeader();
+        fetchActivities(year, month);
+    }
+
+    function updateCalendarHeader() {
+        const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        document.getElementById('currentMonth').textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    }
+
+    function renderCalendar(activities) {
+        const datesContainer = document.getElementById('calendarDates');
+        datesContainer.innerHTML = '';
+        
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startingDay = firstDay.getDay();
+        
+        // Previous month's days
+        for (let i = 0; i < startingDay; i++) {
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'calendar-date other-month';
+            datesContainer.appendChild(dateDiv);
+        }
+        
+        // Current month's days
+        for (let date = 1; date <= lastDay.getDate(); date++) {
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'calendar-date';
+            
+            // Add date number with link
+            const dateNumber = document.createElement('a');
+            dateNumber.className = 'date-number';
+            dateNumber.textContent = date;
+            dateNumber.href = '#';
+            dateNumber.onclick = (e) => {
+                e.preventDefault();
+                document.getElementById('date').value = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+                modal.show();
+            };
+            dateDiv.appendChild(dateNumber);
+            
+            // Container for all-day activities
+            const allDayContainer = document.createElement('div');
+            allDayContainer.className = 'all-day-activities';
+            dateDiv.appendChild(allDayContainer);
+            
+            // Container for timed activities
+            const timedContainer = document.createElement('div');
+            timedContainer.className = 'timed-activities';
+            dateDiv.appendChild(timedContainer);
+            
+            // Add activities for this date
+            const currentDate = new Date(year, month, date);
+            const dateString = currentDate.toISOString().split('T')[0];
+            
+            activities.forEach(activity => {
+                if (activity.date === dateString || 
+                    (activity.end_date && activity.date <= dateString && activity.end_date >= dateString)) {
+                    const activityElement = createActivityElement(activity);
+                    if (activity.is_all_day) {
+                        allDayContainer.appendChild(activityElement);
+                    } else {
+                        timedContainer.appendChild(activityElement);
+                    }
+                }
+            });
+            
+            datesContainer.appendChild(dateDiv);
+        }
+    }
+
+    function createActivityElement(activity) {
+        const activityDiv = document.createElement('div');
+        activityDiv.className = 'activity';
+        activityDiv.style.backgroundColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'activity-content';
+        
+        if (activity.time && !activity.is_all_day) {
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'time';
+            timeSpan.textContent = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
+            contentDiv.appendChild(timeSpan);
+        }
+        
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'title';
+        titleDiv.textContent = activity.title;
+        contentDiv.appendChild(titleDiv);
+        
+        if (activity.location) {
+            const locationDiv = document.createElement('div');
+            locationDiv.className = 'location';
+            locationDiv.textContent = activity.location;
+            contentDiv.appendChild(locationDiv);
+        }
+        
+        activityDiv.appendChild(contentDiv);
+        activityDiv.addEventListener('click', () => showActivityDetails(activity));
+        
+        return activityDiv;
+    }
+
+    async function loadLocationsAndCategories() {
+        try {
+            // Load locations
+            const locationsResponse = await fetch('/api/locations');
+            const locations = await locationsResponse.json();
+            const locationSelect = document.getElementById('location');
+            locationSelect.innerHTML = `<option value="">${window.translations.select_location}</option>`;
+            locations.forEach(location => {
+                locationSelect.innerHTML += `<option value="${location.id}">${location.name}</option>`;
+            });
+
+            // Load categories
+            const categoriesResponse = await fetch('/api/categories');
+            const categories = await categoriesResponse.json();
+            const categoriesContainer = document.getElementById('categoriesContainer');
+            categoriesContainer.innerHTML = '';
+            categories.forEach(category => {
+                categoriesContainer.innerHTML += `
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="category_${category.id}" 
+                               name="categories" value="${category.id}">
+                        <label class="form-check-label text-white" for="category_${category.id}">
+                            ${category.name}
+                        </label>
+                    </div>
+                `;
+            });
+        } catch (error) {
+            console.error('Error loading locations and categories:', error);
+        }
+    }
 
     function setupForm() {
         const allDayCheckbox = document.getElementById('is_all_day');
@@ -120,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">${activity.title}</h5>
+                            <h5 class="modal-title text-white">${activity.title}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
