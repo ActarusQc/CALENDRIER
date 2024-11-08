@@ -30,6 +30,24 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
+def init_admin_user():
+    with app.app_context():
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin'),
+                role='admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+init_admin_user()
+
+with app.app_context():
+    db.create_all()
+
 def generate_recurring_dates(start_date, recurrence_type, end_date):
     dates = []
     current_date = start_date
@@ -436,205 +454,6 @@ def delete_location(location_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/users')
-@login_required
-def get_users():
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    users = User.query.all()
-    return jsonify([{
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'role': user.role
-    } for user in users])
-
-@app.route('/api/users/<int:user_id>')
-@login_required
-def get_user(user_id):
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    user = User.query.get_or_404(user_id)
-    return jsonify({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'role': user.role
-    })
-
-@app.route('/api/users/<int:user_id>', methods=['PUT'])
-@login_required
-def update_user(user_id):
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    user = User.query.get_or_404(user_id)
-    data = request.json
-    
-    if not data.get('username') or not data.get('email') or not data.get('role'):
-        return jsonify({'error': 'Missing required fields'}), 400
-    
-    try:
-        username_exists = User.query.filter(
-            User.username == data['username'],
-            User.id != user_id
-        ).first()
-        email_exists = User.query.filter(
-            User.email == data['email'],
-            User.id != user_id
-        ).first()
-        
-        if username_exists:
-            return jsonify({'error': 'Username already exists'}), 400
-        if email_exists:
-            return jsonify({'error': 'Email already exists'}), 400
-        
-        user.username = data['username']
-        user.email = data['email']
-        user.role = data['role']
-        
-        if data.get('password'):
-            user.password_hash = generate_password_hash(data['password'])
-        
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/users', methods=['POST'])
-@login_required
-def create_user():
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    data = request.json
-    if not data.get('username') or not data.get('email') or not data.get('password') or not data.get('role'):
-        return jsonify({'error': 'Missing required fields'}), 400
-    
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'error': 'Username already exists'}), 400
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'error': 'Email already exists'}), 400
-    
-    try:
-        user = User(
-            username=data['username'],
-            email=data['email'],
-            password_hash=generate_password_hash(data['password']),
-            role=data['role']
-        )
-        db.session.add(user)
-        db.session.commit()
-        return jsonify({'success': True, 'id': user.id})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/users/<int:user_id>', methods=['DELETE'])
-@login_required
-def delete_user(user_id):
-    if not current_user.can_manage_users():
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    if user_id == current_user.id:
-        return jsonify({'error': 'Cannot delete your own account'}), 400
-    
-    user = User.query.get_or_404(user_id)
-    if user.username == 'admin':
-        return jsonify({'error': 'Cannot delete admin user'}), 400
-    
-    try:
-        db.session.delete(user)
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-def init_db():
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
-        
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin'),
-                role='admin'
-            )
-            db.session.add(admin)
-            
-            categories = {
-                'Cours de langue': '#FF6B6B',
-                'Activités sociales': '#4ECDC4',
-                'Activités physiques': '#45B7D1',
-                'Ateliers': '#96CEB4'
-            }
-            
-            for name, color in categories.items():
-                if not Category.query.filter_by(name=name).first():
-                    category = Category(name=name, color=color)
-                    db.session.add(category)
-            
-            locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
-            for location_name in locations:
-                if not Location.query.filter_by(name=location_name).first():
-                    location = Location(name=location_name)
-                    db.session.add(location)
-            
-            db.session.commit()
-
-            categories = Category.query.all()
-            locations = Location.query.all()
-            
-            activity1 = Activity(
-                title="French Language Class",
-                date=datetime(2024, 11, 4, 9, 0),
-                time="09:00",
-                end_time="10:30",
-                location_id=1,
-                is_all_day=False,
-                notes="Beginner level French class"
-            )
-            activity1.categories = [categories[0]]
-            
-            activity2 = Activity(
-                title="Cultural Festival",
-                date=datetime(2024, 11, 5),
-                is_all_day=True,
-                location_id=1,
-                notes="Annual cultural celebration"
-            )
-            activity2.categories = [categories[1]]
-            
-            activity3 = Activity(
-                title="Sports Week",
-                date=datetime(2024, 11, 6),
-                end_date=datetime(2024, 11, 8),
-                is_all_day=True,
-                location_id=3,
-                notes="Three days of sports activities"
-            )
-            activity3.categories = [categories[2]]
-            
-            activity4 = Activity(
-                title="Cooking Workshop",
-                date=datetime(2024, 11, 7, 14, 0),
-                time="14:00",
-                end_time="16:00",
-                location_id=4,
-                is_all_day=False,
-                notes="Learn to cook traditional dishes"
-            )
-            activity4.categories = [categories[3]]
-            
-            db.session.add_all([activity1, activity2, activity3, activity4])
-            db.session.commit()
-
-init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
