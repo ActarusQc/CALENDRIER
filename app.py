@@ -30,24 +30,6 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
-def init_admin_user():
-    with app.app_context():
-        # Delete existing admin user if exists
-        admin = User.query.filter_by(username='admin').first()
-        if admin:
-            db.session.delete(admin)
-            db.session.commit()
-            
-        # Create new admin user with proper password hash
-        admin = User(
-            username='admin',
-            email='admin@example.com',
-            password_hash=generate_password_hash('admin', method='scrypt'),
-            role='admin'
-        )
-        db.session.add(admin)
-        db.session.commit()
-
 def generate_recurring_dates(start_date, recurrence_type, end_date):
     dates = []
     current_date = start_date
@@ -68,11 +50,6 @@ def generate_recurring_dates(start_date, recurrence_type, end_date):
             current_date = current_date.replace(year=current_date.year + 1)
     
     return dates
-
-# Create tables and initialize admin user
-with app.app_context():
-    db.create_all()
-    init_admin_user()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -134,7 +111,6 @@ def manage_users():
     users = User.query.all()
     return render_template('users.html', users=users, trans=trans, helpers=helpers)
 
-# Activity API Routes
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
     activities = Activity.query.all()
@@ -142,41 +118,41 @@ def get_activities():
         'id': activity.id,
         'title': activity.title,
         'date': activity.date.strftime('%Y-%m-%d'),
-        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
         'time': activity.time,
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
         'end_time': activity.end_time,
-        'is_all_day': activity.is_all_day,
         'location': activity.location_obj.name if activity.location_obj else None,
         'location_id': activity.location_id,
+        'categories': [{
+            'name': category.name,
+            'color': category.color
+        } for category in activity.categories],
+        'category_ids': [category.id for category in activity.categories],
         'notes': activity.notes,
         'is_recurring': activity.is_recurring,
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
-        'categories': [{
-            'id': category.id,
-            'name': category.name,
-            'color': category.color
-        } for category in activity.categories],
-        'category_ids': [category.id for category in activity.categories]
+        'is_all_day': activity.is_all_day
     } for activity in activities])
 
-@app.route('/api/activities/<int:id>', methods=['GET'])
-def get_activity(id):
-    activity = Activity.query.get_or_404(id)
+@app.route('/api/activities/<int:activity_id>', methods=['GET'])
+@login_required
+def get_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
     return jsonify({
         'id': activity.id,
         'title': activity.title,
         'date': activity.date.strftime('%Y-%m-%d'),
-        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
         'time': activity.time,
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
         'end_time': activity.end_time,
-        'is_all_day': activity.is_all_day,
         'location_id': activity.location_id,
+        'category_ids': [c.id for c in activity.categories],
         'notes': activity.notes,
+        'is_all_day': activity.is_all_day,
         'is_recurring': activity.is_recurring,
         'recurrence_type': activity.recurrence_type,
-        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
-        'category_ids': [category.id for category in activity.categories]
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
     })
 
 @app.route('/api/activities', methods=['POST'])
@@ -185,69 +161,480 @@ def create_activity():
     if not current_user.can_manage_activities():
         return jsonify({'error': 'Unauthorized'}), 403
     
-    data = request.get_json()
-    activity = Activity(
-        title=data['title'],
-        date=datetime.strptime(data['date'], '%Y-%m-%d'),
-        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None,
-        time=data.get('time'),
-        end_time=data.get('end_time'),
-        is_all_day=data.get('is_all_day', False),
-        location_id=data.get('location_id'),
-        notes=data.get('notes'),
-        is_recurring=data.get('is_recurring', False),
-        recurrence_type=data.get('recurrence_type'),
-        recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+    data = request.json
+    try:
+        base_activity = Activity(
+            title=data['title'],
+            date=datetime.strptime(data['date'], '%Y-%m-%d'),
+            time=None if data.get('is_all_day') else data.get('time'),
+            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None,
+            end_time=None if data.get('is_all_day') else data.get('end_time'),
+            is_all_day=data.get('is_all_day', False),
+            location_id=data.get('location_id'),
+            notes=data.get('notes', ''),
+            is_recurring=data.get('is_recurring', False),
+            recurrence_type=data.get('recurrence_type'),
+            recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+        )
+        
+        if data.get('category_ids'):
+            categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+            base_activity.categories = categories
+        
+        activities_to_create = [base_activity]
+        
+        if data.get('is_recurring') and data.get('recurrence_type') and data.get('recurrence_end_date'):
+            start_date = datetime.strptime(data['date'], '%Y-%m-%d')
+            end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d')
+            
+            recurring_dates = generate_recurring_dates(start_date, data['recurrence_type'], end_date)
+            
+            for date in recurring_dates[1:]:
+                recurring_activity = Activity(
+                    title=data['title'],
+                    date=date,
+                    time=data.get('time'),
+                    end_date=date + (base_activity.end_date - base_activity.date) if base_activity.end_date else None,
+                    end_time=data.get('end_time'),
+                    is_all_day=data.get('is_all_day', False),
+                    location_id=data.get('location_id'),
+                    notes=data.get('notes', ''),
+                    is_recurring=True,
+                    recurrence_type=data.get('recurrence_type'),
+                    recurrence_end_date=end_date
+                )
+                recurring_activity.categories = categories if data.get('category_ids') else []
+                activities_to_create.append(recurring_activity)
+        
+        for activity in activities_to_create:
+            db.session.add(activity)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'id': base_activity.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activities/<int:activity_id>', methods=['PUT'])
+@login_required
+def update_activity(activity_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(activity_id)
+    data = request.json
+    
+    try:
+        activity.title = data['title']
+        activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
+        activity.is_all_day = data.get('is_all_day', False)
+        activity.time = None if data.get('is_all_day') else data.get('time')
+        activity.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None
+        activity.end_time = None if data.get('is_all_day') else data.get('end_time')
+        activity.location_id = data.get('location_id')
+        activity.notes = data.get('notes', '')
+        activity.is_recurring = data.get('is_recurring', False)
+        activity.recurrence_type = data.get('recurrence_type')
+        activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+        
+        if data.get('category_ids'):
+            categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+            activity.categories = categories
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
+@login_required
+def delete_activity(activity_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(activity_id)
+    try:
+        db.session.delete(activity)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/categories', methods=['GET'])
+@login_required
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([{
+        'id': category.id,
+        'name': category.name,
+        'color': category.color
+    } for category in categories])
+
+@app.route('/api/categories/<int:category_id>', methods=['GET'])
+@login_required
+def get_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    return jsonify({
+        'id': category.id,
+        'name': category.name,
+        'color': category.color
+    })
+
+@app.route('/api/categories', methods=['POST'])
+@login_required
+def create_category():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    if not data.get('name'):
+        return jsonify({'error': 'Category name is required'}), 400
+    
+    if Category.query.filter_by(name=data['name']).first():
+        return jsonify({'error': 'Category already exists'}), 400
+    
+    category = Category(
+        name=data['name'],
+        color=data.get('color', '#6f42c1')
     )
+    db.session.add(category)
     
-    if data.get('category_ids'):
-        categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
-        activity.categories = categories
-    
-    db.session.add(activity)
-    db.session.commit()
-    return jsonify({'message': 'Activity created successfully'}), 201
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'id': category.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activities/<int:id>', methods=['PUT'])
+@app.route('/api/categories/<int:category_id>', methods=['PUT'])
 @login_required
-def update_activity(id):
+def update_category(category_id):
     if not current_user.can_manage_activities():
         return jsonify({'error': 'Unauthorized'}), 403
     
-    activity = Activity.query.get_or_404(id)
-    data = request.get_json()
+    category = Category.query.get_or_404(category_id)
+    data = request.json
     
-    activity.title = data['title']
-    activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
-    activity.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None
-    activity.time = data.get('time')
-    activity.end_time = data.get('end_time')
-    activity.is_all_day = data.get('is_all_day', False)
-    activity.location_id = data.get('location_id')
-    activity.notes = data.get('notes')
-    activity.is_recurring = data.get('is_recurring', False)
-    activity.recurrence_type = data.get('recurrence_type')
-    activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+    if not data.get('name'):
+        return jsonify({'error': 'Category name is required'}), 400
     
-    if data.get('category_ids'):
-        categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
-        activity.categories = categories
+    existing = Category.query.filter(
+        Category.name == data['name'],
+        Category.id != category_id
+    ).first()
     
-    db.session.commit()
-    return jsonify({'message': 'Activity updated successfully'})
+    if existing:
+        return jsonify({'error': 'Category name already exists'}), 400
+    
+    try:
+        category.name = data['name']
+        category.color = data.get('color', '#6f42c1')
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activities/<int:id>', methods=['DELETE'])
+@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
 @login_required
-def delete_activity(id):
+def delete_category(category_id):
     if not current_user.can_manage_activities():
         return jsonify({'error': 'Unauthorized'}), 403
     
-    activity = Activity.query.get_or_404(id)
-    db.session.delete(activity)
-    db.session.commit()
-    return jsonify({'message': 'Activity deleted successfully'})
+    category = Category.query.get_or_404(category_id)
+    
+    if category.activities:
+        return jsonify({'error': 'Cannot delete a category that has associated activities'}), 400
+    
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
-# Keep all original route functions for categories and locations
+@app.route('/api/locations', methods=['GET'])
+@login_required
+def get_locations():
+    locations = Location.query.all()
+    return jsonify([{
+        'id': location.id,
+        'name': location.name
+    } for location in locations])
+
+@app.route('/api/locations/<int:location_id>', methods=['GET'])
+@login_required
+def get_location(location_id):
+    location = Location.query.get_or_404(location_id)
+    return jsonify({'id': location.id, 'name': location.name})
+
+@app.route('/api/locations', methods=['POST'])
+@login_required
+def create_location():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    if not data.get('name'):
+        return jsonify({'error': 'Location name is required'}), 400
+    
+    if Location.query.filter_by(name=data['name']).first():
+        return jsonify({'error': 'Location already exists'}), 400
+    
+    location = Location(name=data['name'])
+    db.session.add(location)
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'id': location.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/locations/<int:location_id>', methods=['PUT'])
+@login_required
+def update_location(location_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    location = Location.query.get_or_404(location_id)
+    data = request.json
+    
+    if not data.get('name'):
+        return jsonify({'error': 'Location name is required'}), 400
+    
+    if Location.query.filter(Location.name == data['name'], Location.id != location_id).first():
+        return jsonify({'error': 'Location name already exists'}), 400
+    
+    location.name = data['name']
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/locations/<int:location_id>', methods=['DELETE'])
+@login_required
+def delete_location(location_id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    location = Location.query.get_or_404(location_id)
+    
+    if location.activities:
+        return jsonify({'error': 'Cannot delete a location that has associated activities'}), 400
+    
+    try:
+        db.session.delete(location)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users')
+@login_required
+def get_users():
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    users = User.query.all()
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    } for user in users])
+
+@app.route('/api/users/<int:user_id>')
+@login_required
+def get_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
+
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@login_required
+def update_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    data = request.json
+    
+    if not data.get('username') or not data.get('email') or not data.get('role'):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    try:
+        username_exists = User.query.filter(
+            User.username == data['username'],
+            User.id != user_id
+        ).first()
+        email_exists = User.query.filter(
+            User.email == data['email'],
+            User.id != user_id
+        ).first()
+        
+        if username_exists:
+            return jsonify({'error': 'Username already exists'}), 400
+        if email_exists:
+            return jsonify({'error': 'Email already exists'}), 400
+        
+        user.username = data['username']
+        user.email = data['email']
+        user.role = data['role']
+        
+        if data.get('password'):
+            user.password_hash = generate_password_hash(data['password'])
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users', methods=['POST'])
+@login_required
+def create_user():
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    if not data.get('username') or not data.get('email') or not data.get('password') or not data.get('role'):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    try:
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            password_hash=generate_password_hash(data['password']),
+            role=data['role']
+        )
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'success': True, 'id': user.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    if not current_user.can_manage_users():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+    
+    user = User.query.get_or_404(user_id)
+    if user.username == 'admin':
+        return jsonify({'error': 'Cannot delete admin user'}), 400
+    
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+def init_db():
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                password_hash=generate_password_hash('admin'),
+                role='admin'
+            )
+            db.session.add(admin)
+            
+            categories = {
+                'Cours de langue': '#FF6B6B',
+                'Activités sociales': '#4ECDC4',
+                'Activités physiques': '#45B7D1',
+                'Ateliers': '#96CEB4'
+            }
+            
+            for name, color in categories.items():
+                if not Category.query.filter_by(name=name).first():
+                    category = Category(name=name, color=color)
+                    db.session.add(category)
+            
+            locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
+            for location_name in locations:
+                if not Location.query.filter_by(name=location_name).first():
+                    location = Location(name=location_name)
+                    db.session.add(location)
+            
+            db.session.commit()
+
+            categories = Category.query.all()
+            locations = Location.query.all()
+            
+            activity1 = Activity(
+                title="French Language Class",
+                date=datetime(2024, 11, 4, 9, 0),
+                time="09:00",
+                end_time="10:30",
+                location_id=1,
+                is_all_day=False,
+                notes="Beginner level French class"
+            )
+            activity1.categories = [categories[0]]
+            
+            activity2 = Activity(
+                title="Cultural Festival",
+                date=datetime(2024, 11, 5),
+                is_all_day=True,
+                location_id=1,
+                notes="Annual cultural celebration"
+            )
+            activity2.categories = [categories[1]]
+            
+            activity3 = Activity(
+                title="Sports Week",
+                date=datetime(2024, 11, 6),
+                end_date=datetime(2024, 11, 8),
+                is_all_day=True,
+                location_id=3,
+                notes="Three days of sports activities"
+            )
+            activity3.categories = [categories[2]]
+            
+            activity4 = Activity(
+                title="Cooking Workshop",
+                date=datetime(2024, 11, 7, 14, 0),
+                time="14:00",
+                end_time="16:00",
+                location_id=4,
+                is_all_day=False,
+                notes="Learn to cook traditional dishes"
+            )
+            activity4.categories = [categories[3]]
+            
+            db.session.add_all([activity1, activity2, activity3, activity4])
+            db.session.commit()
+
+init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
