@@ -168,15 +168,15 @@
     color: white;
     font-size: 2.25rem;
     font-weight: 600;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
 }
 
 .admin-nav {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
+    flex-wrap: nowrap;  /* Prevent wrapping */
+    gap: 0.5rem;        /* Reduce gap between buttons */
     background-color: #343a40;
-    padding: 2rem;
+    padding: 1rem;      /* Reduce padding */
     border-radius: 0.75rem;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -184,20 +184,19 @@
 .admin-nav .btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.75rem;
+    gap: 0.5rem;        /* Reduce gap between icon and text */
+    padding: 0.5rem 1rem; /* Reduce padding */
     font-weight: 500;
     border-radius: 0.5rem;
-    min-width: 220px;
+    min-width: auto;    /* Remove min-width */
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.875rem; /* Slightly smaller font */
     transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
+    white-space: nowrap;  /* Prevent text wrapping */
 }
 
 .admin-nav .btn i {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
 }
 
 .admin-nav .btn.active {
@@ -209,8 +208,8 @@
 
 .admin-nav .btn:not(.active):hover {
     background-color: rgba(255,255,255,0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .admin-content {
