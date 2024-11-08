@@ -134,9 +134,120 @@ def manage_users():
     users = User.query.all()
     return render_template('users.html', users=users, trans=trans, helpers=helpers)
 
-# Rest of the original routes are preserved (get_activities, create_activity, etc.)
+# Activity API Routes
+@app.route('/api/activities', methods=['GET'])
+def get_activities():
+    activities = Activity.query.all()
+    return jsonify([{
+        'id': activity.id,
+        'title': activity.title,
+        'date': activity.date.strftime('%Y-%m-%d'),
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
+        'time': activity.time,
+        'end_time': activity.end_time,
+        'is_all_day': activity.is_all_day,
+        'location': activity.location_obj.name if activity.location_obj else None,
+        'location_id': activity.location_id,
+        'notes': activity.notes,
+        'is_recurring': activity.is_recurring,
+        'recurrence_type': activity.recurrence_type,
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
+        'categories': [{
+            'id': category.id,
+            'name': category.name,
+            'color': category.color
+        } for category in activity.categories],
+        'category_ids': [category.id for category in activity.categories]
+    } for activity in activities])
 
-# Kept all original route functions for activities, categories, and locations from the original file
+@app.route('/api/activities/<int:id>', methods=['GET'])
+def get_activity(id):
+    activity = Activity.query.get_or_404(id)
+    return jsonify({
+        'id': activity.id,
+        'title': activity.title,
+        'date': activity.date.strftime('%Y-%m-%d'),
+        'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
+        'time': activity.time,
+        'end_time': activity.end_time,
+        'is_all_day': activity.is_all_day,
+        'location_id': activity.location_id,
+        'notes': activity.notes,
+        'is_recurring': activity.is_recurring,
+        'recurrence_type': activity.recurrence_type,
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
+        'category_ids': [category.id for category in activity.categories]
+    })
+
+@app.route('/api/activities', methods=['POST'])
+@login_required
+def create_activity():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    activity = Activity(
+        title=data['title'],
+        date=datetime.strptime(data['date'], '%Y-%m-%d'),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None,
+        time=data.get('time'),
+        end_time=data.get('end_time'),
+        is_all_day=data.get('is_all_day', False),
+        location_id=data.get('location_id'),
+        notes=data.get('notes'),
+        is_recurring=data.get('is_recurring', False),
+        recurrence_type=data.get('recurrence_type'),
+        recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+    )
+    
+    if data.get('category_ids'):
+        categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+        activity.categories = categories
+    
+    db.session.add(activity)
+    db.session.commit()
+    return jsonify({'message': 'Activity created successfully'}), 201
+
+@app.route('/api/activities/<int:id>', methods=['PUT'])
+@login_required
+def update_activity(id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(id)
+    data = request.get_json()
+    
+    activity.title = data['title']
+    activity.date = datetime.strptime(data['date'], '%Y-%m-%d')
+    activity.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d') if data.get('end_date') else None
+    activity.time = data.get('time')
+    activity.end_time = data.get('end_time')
+    activity.is_all_day = data.get('is_all_day', False)
+    activity.location_id = data.get('location_id')
+    activity.notes = data.get('notes')
+    activity.is_recurring = data.get('is_recurring', False)
+    activity.recurrence_type = data.get('recurrence_type')
+    activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+    
+    if data.get('category_ids'):
+        categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
+        activity.categories = categories
+    
+    db.session.commit()
+    return jsonify({'message': 'Activity updated successfully'})
+
+@app.route('/api/activities/<int:id>', methods=['DELETE'])
+@login_required
+def delete_activity(id):
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    activity = Activity.query.get_or_404(id)
+    db.session.delete(activity)
+    db.session.commit()
+    return jsonify({'message': 'Activity deleted successfully'})
+
+# Keep all original route functions for categories and locations
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
