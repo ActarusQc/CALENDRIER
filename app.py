@@ -7,6 +7,7 @@ from email_notifier import mail, EmailNotifier
 from translations import translations, form_helpers
 from functools import wraps
 from database import db
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "a secret key"
@@ -263,7 +264,6 @@ def delete_activity(activity_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/categories', methods=['GET'])
-@login_required
 def get_categories():
     categories = Category.query.all()
     return jsonify([{
@@ -586,7 +586,7 @@ def init_db():
                     db.session.add(location)
             
             db.session.commit()
-
+            
             categories = Category.query.all()
             locations = Location.query.all()
             
@@ -634,7 +634,15 @@ def init_db():
             db.session.add_all([activity1, activity2, activity3, activity4])
             db.session.commit()
 
-init_db()
-
 if __name__ == '__main__':
+    with app.app_context():
+        # Verify database connection using SQLAlchemy text()
+        try:
+            db.session.execute(text('SELECT 1'))
+            print("Database connection successful!")
+        except Exception as e:
+            print(f"Database connection failed: {e}")
+            exit(1)
+    
+    # Run the Flask application
     app.run(host='0.0.0.0', port=5000, debug=True)
