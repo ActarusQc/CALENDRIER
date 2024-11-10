@@ -87,10 +87,11 @@
     flex-direction: column;
     gap: 2px;
     position: relative;
-    min-height: 48px;  /* Increased fixed height */
-    height: 48px;      /* Force consistent height */
+    min-height: 48px;
+    height: 48px;
     z-index: 1;
-    overflow: visible; /* Allow overflow for multi-day events */
+    overflow: visible;
+    background-color: #f8f9fa;  /* Light grey background */
 }
 
 .activity {
