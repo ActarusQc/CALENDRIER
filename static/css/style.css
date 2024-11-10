@@ -19,7 +19,7 @@
 .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background-color: var(--theme-purple);
+    background-color: #023E73;  /* Updated color for day names */
     color: white;
     text-align: center;
     font-weight: bold;
@@ -67,8 +67,8 @@
 .date-number {
     padding: 4px 6px;
     font-size: 0.85rem;
-    color: var(--theme-purple);
-    background-color: #f8f9fa;
+    color: white;  /* Changed to white for better contrast */
+    background-color: #4E8BBF;  /* Updated color for date numbers */
     border-bottom: 1px solid #dee2e6;
     text-decoration: none;
     display: block;
@@ -91,7 +91,7 @@
     height: 48px;
     z-index: 1;
     overflow: visible;
-    background-color: #f8f9fa;  /* Light grey background */
+    background-color: #9AB5D9;  /* Updated color for all-day events section */
 }
 
 .activity {
