@@ -318,10 +318,56 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const activityElement = createActivityElement(activity, position);
-            if (position !== 'single') {
-                activityElement.style.zIndex = '1';
+            
+            // Handle stacking for all-day events
+            if (activity.is_all_day) {
+                const existingEvents = container.querySelectorAll('.activity');
+                const stackIndex = existingEvents.length;
+                
+                if (position !== 'single') {
+                    activityElement.style.position = 'relative';
+                    activityElement.style.marginTop = `${stackIndex * 2}px`;
+                }
+                
+                // Increase container height if needed
+                if (stackIndex > 0) {
+                    const newHeight = (stackIndex + 1) * 32; // 28px height + 4px margin
+                    container.style.minHeight = `${newHeight}px`;
+                    
+                    // Adjust parent cell height
+                    const parentCell = container.closest('.calendar-date');
+                    if (parentCell) {
+                        const currentHeight = parseInt(parentCell.style.minHeight || '120');
+                        const requiredHeight = newHeight + 60; // Add padding for other elements
+                        if (requiredHeight > currentHeight) {
+                            parentCell.style.minHeight = `${requiredHeight}px`;
+                        }
+                    }
+                }
+            } else {
+                // Handle timed events
+                const existingEvents = container.querySelectorAll('.activity');
+                const stackIndex = existingEvents.length;
+                
+                // Add slight indent for overlapping timed events
+                activityElement.style.marginLeft = `${stackIndex * 4}px`;
+                activityElement.style.width = `calc(100% - ${stackIndex * 4}px)`;
             }
+            
             container.appendChild(activityElement);
+            
+            // Adjust cell height for timed events if needed
+            if (!activity.is_all_day) {
+                const parentCell = container.closest('.calendar-date');
+                if (parentCell) {
+                    const allEventsHeight = container.scrollHeight;
+                    const minRequiredHeight = allEventsHeight + 60; // Add padding
+                    const currentHeight = parseInt(parentCell.style.minHeight || '120');
+                    if (minRequiredHeight > currentHeight) {
+                        parentCell.style.minHeight = `${minRequiredHeight}px`;
+                    }
+                }
+            }
         }
     }
 
