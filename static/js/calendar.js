@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Updated to show time and location for all multi-day event segments
-        if (position === 'start' || position === 'single' || position === 'middle' || position === 'end') {
+        if (position === 'multi-day' || position === 'single' || position === 'start' || position === 'middle' || position === 'end') {
             let timeDisplay = '';
             if (!activity.is_all_day && activity.time) {
                 timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
@@ -389,68 +389,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const activityStartDate = new Date(activity.date);
         const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
         const displayDate = activity.displayDate || activityStartDate;
-        
         const dateStr = displayDate.toISOString().split('T')[0];
+        
+        // Only display multi-day activities on their start date
+        if (activityEndDate > activityStartDate && displayDate > activityStartDate) {
+            return; // Skip duplicate displays
+        }
+        
         const container = activity.is_all_day ?
             document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
             document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
         
         if (container) {
-            let position = 'single';
+            const activityElement = createActivityElement(activity, 'multi-day');
+            
             if (activityEndDate > activityStartDate) {
-                if (displayDate.getTime() === activityStartDate.getTime()) {
-                    position = 'start';
-                } else if (displayDate.getTime() === activityEndDate.getTime()) {
-                    position = 'end';
-                } else {
-                    position = 'middle';
-                }
-            }
-            
-            const activityElement = createActivityElement(activity, position);
-            
-            if (activity.is_all_day) {
-                const existingEvents = container.querySelectorAll('.activity');
-                const stackIndex = existingEvents.length;
-                
-                if (position !== 'single') {
-                    activityElement.style.position = 'relative';
-                    activityElement.style.marginTop = `${stackIndex * 2}px`;
-                }
-                
-                if (stackIndex > 0) {
-                    const newHeight = (stackIndex + 1) * 32;
-                    container.style.minHeight = `${newHeight}px`;
-                    
-                    const parentCell = container.closest('.calendar-date');
-                    if (parentCell) {
-                        const currentHeight = parseInt(parentCell.style.minHeight || '120');
-                        const requiredHeight = newHeight + 60;
-                        if (requiredHeight > currentHeight) {
-                            parentCell.style.minHeight = `${requiredHeight}px`;
-                        }
-                    }
-                }
-            } else {
-                const existingEvents = container.querySelectorAll('.activity');
-                const stackIndex = existingEvents.length;
-                activityElement.style.marginLeft = `${stackIndex * 4}px`;
-                activityElement.style.width = `calc(100% - ${stackIndex * 4}px)`;
+                const days = Math.ceil((activityEndDate - activityStartDate) / (1000 * 60 * 60 * 24)) + 1;
+                activityElement.style.width = `calc(${days * 100}% + ${days}px)`;
+                activityElement.style.zIndex = 1;
             }
             
             container.appendChild(activityElement);
-            
-            if (!activity.is_all_day) {
-                const parentCell = container.closest('.calendar-date');
-                if (parentCell) {
-                    const allEventsHeight = container.scrollHeight;
-                    const minRequiredHeight = allEventsHeight + 60;
-                    const currentHeight = parseInt(parentCell.style.minHeight || '120');
-                    if (minRequiredHeight > currentHeight) {
-                        parentCell.style.minHeight = `${minRequiredHeight}px`;
-                    }
-                }
-            }
         }
     }
 
