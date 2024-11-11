@@ -91,11 +91,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function shouldDisplayActivity(activity) {
-        if (activeCategories.has('all')) return true;
+        console.log('Checking activity:', activity.title);
+        console.log('Active categories:', Array.from(activeCategories));
+        
+        if (activeCategories.has('all')) {
+            console.log('Show all is active, displaying activity');
+            return true;
+        }
+        
+        if (!activity.categories || activity.categories.length === 0) {
+            console.log('Activity has no categories, skipping');
+            return false;
+        }
         
         // Ensure we're comparing strings consistently
-        const activityCategoryIds = activity.categories.map(cat => cat.id.toString());
-        return activityCategoryIds.some(id => activeCategories.has(id));
+        const activityCategoryIds = activity.categories.map(cat => String(cat.id));
+        console.log('Activity category IDs:', activityCategoryIds);
+        
+        const hasMatchingCategory = activityCategoryIds.some(id => activeCategories.has(id));
+        console.log('Has matching category:', hasMatchingCategory);
+        
+        return hasMatchingCategory;
     }
 
     function updateCalendarHeader() {
