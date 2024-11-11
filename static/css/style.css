@@ -92,8 +92,8 @@
     flex-direction: column;
     gap: 2px;
     position: relative;
-    min-height: 0; /* Remove fixed height */
-    height: auto; /* Allow height to grow */
+    min-height: 0;
+    height: auto;
     z-index: 1;
     overflow: visible;
     background-color: #9AB5D9;
@@ -106,7 +106,7 @@
     flex-direction: column;
     gap: 2px;
     position: relative;
-    height: auto; /* Allow height to grow */
+    height: auto;
     min-height: 60px;
     overflow: visible;
     z-index: 2;
@@ -139,7 +139,6 @@
     height: auto;
     position: absolute;
     left: 0;
-    z-index: 1;
     border-radius: 4px;
 }
 

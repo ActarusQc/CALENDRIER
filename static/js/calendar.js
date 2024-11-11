@@ -406,7 +406,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (activityEndDate > activityStartDate) {
                 const days = Math.ceil((activityEndDate - activityStartDate) / (1000 * 60 * 60 * 24)) + 1;
                 activityElement.style.width = `calc(${days * 100}% + ${days}px)`;
-                activityElement.style.zIndex = 1;
+                // Set z-index inversely proportional to duration - longer events go behind
+                const duration = activityEndDate - activityStartDate;
+                activityElement.style.zIndex = Math.max(1, 100 - Math.floor(duration / (1000 * 60 * 60 * 24)));
             }
             
             container.appendChild(activityElement);
