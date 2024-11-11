@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = 'btn category-btn';
+                button.className = 'btn category-btn me-2';
                 button.setAttribute('data-category', category.id);
                 button.style.backgroundColor = category.color;
                 button.textContent = category.name;
@@ -91,27 +91,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function shouldDisplayActivity(activity) {
-        console.log('Checking activity:', activity.title);
-        console.log('Active categories:', Array.from(activeCategories));
-        
         if (activeCategories.has('all')) {
-            console.log('Show all is active, displaying activity');
             return true;
         }
         
-        if (!activity.categories || activity.categories.length === 0) {
-            console.log('Activity has no categories, skipping');
+        if (!activity.category_ids || activity.category_ids.length === 0) {
             return false;
         }
         
-        // Ensure we're comparing strings consistently
-        const activityCategoryIds = activity.categories.map(cat => String(cat.id));
-        console.log('Activity category IDs:', activityCategoryIds);
-        
-        const hasMatchingCategory = activityCategoryIds.some(id => activeCategories.has(id));
-        console.log('Has matching category:', hasMatchingCategory);
-        
-        return hasMatchingCategory;
+        // Convert all IDs to strings for consistent comparison
+        const activityCategoryIds = activity.category_ids.map(String);
+        return activityCategoryIds.some(id => activeCategories.has(id));
     }
 
     function updateCalendarHeader() {
