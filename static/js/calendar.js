@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
     let currentView = 'month';
+    let activeCategories = new Set(['all']); // Track active category filters
+
+    // Initialize category filters
+    loadCategoryFilters();
 
     document.querySelectorAll('[data-view]').forEach(button => {
         button.addEventListener('click', function() {
@@ -16,6 +20,74 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCalendar();
         });
     });
+
+    async function loadCategoryFilters() {
+        try {
+            const response = await fetch('/api/categories');
+            const categories = await response.json();
+            
+            const filterContainer = document.getElementById('categoryFilters');
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'btn category-btn me-2';
+                button.setAttribute('data-category', category.id);
+                button.style.backgroundColor = category.color;
+                button.textContent = category.name;
+                button.addEventListener('click', () => toggleCategoryFilter(category.id));
+                filterContainer.appendChild(button);
+            });
+
+            // Add event listener for "Show All" button
+            document.querySelector('.show-all-btn').addEventListener('click', () => {
+                resetCategoryFilters();
+            });
+        } catch (error) {
+            console.error('Error loading category filters:', error);
+        }
+    }
+
+    function toggleCategoryFilter(categoryId) {
+        const button = document.querySelector(`[data-category="${categoryId}"]`);
+        
+        if (activeCategories.has('all')) {
+            activeCategories.clear(); // Clear the "all" state
+            document.querySelector('.show-all-btn').classList.remove('active');
+        }
+
+        if (activeCategories.has(categoryId)) {
+            activeCategories.delete(categoryId);
+            button.classList.remove('active');
+        } else {
+            activeCategories.add(categoryId);
+            button.classList.add('active');
+        }
+
+        // If no categories are selected, revert to "Show All"
+        if (activeCategories.size === 0) {
+            resetCategoryFilters();
+        }
+
+        updateCalendar(); // Refresh the calendar view
+    }
+
+    function resetCategoryFilters() {
+        activeCategories.clear();
+        activeCategories.add('all');
+        
+        // Update button states
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector('.show-all-btn').classList.add('active');
+        
+        updateCalendar();
+    }
+
+    function shouldDisplayActivity(activity) {
+        if (activeCategories.has('all')) return true;
+        
+        return activity.categories.some(category => activeCategories.has(category.id.toString()));
+    }
 
     function updateCalendarHeader() {
         const daysContainer = document.querySelector('.calendar-days');
@@ -179,8 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showAddActivityModal(date) {
-        // Redirect to admin page with the date parameter if user has permission
-        // The actual permission check will happen server-side
         window.location.href = `/admin?selected_date=${date}`;
     }
 
@@ -247,11 +317,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (allDayContainer && timedContainer) {
                     dateActivities.allDay.forEach(activity => {
-                        displayActivity(activity, startDate, endDate);
+                        if (shouldDisplayActivity(activity)) {
+                            displayActivity(activity);
+                        }
                     });
                     
                     dateActivities.timed.forEach(activity => {
-                        displayActivity(activity, startDate, endDate);
+                        if (shouldDisplayActivity(activity)) {
+                            displayActivity(activity);
+                        }
                     });
                 }
             });
@@ -295,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return grouped;
     }
 
-    function displayActivity(activity, startDate, endDate) {
+    function displayActivity(activity) {
         const activityStartDate = new Date(activity.date);
         const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
         const displayDate = activity.displayDate || activityStartDate;
@@ -319,7 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const activityElement = createActivityElement(activity, position);
             
-            // Handle stacking for all-day events
             if (activity.is_all_day) {
                 const existingEvents = container.querySelectorAll('.activity');
                 const stackIndex = existingEvents.length;
@@ -329,39 +402,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     activityElement.style.marginTop = `${stackIndex * 2}px`;
                 }
                 
-                // Increase container height if needed
                 if (stackIndex > 0) {
-                    const newHeight = (stackIndex + 1) * 32; // 28px height + 4px margin
+                    const newHeight = (stackIndex + 1) * 32;
                     container.style.minHeight = `${newHeight}px`;
                     
-                    // Adjust parent cell height
                     const parentCell = container.closest('.calendar-date');
                     if (parentCell) {
                         const currentHeight = parseInt(parentCell.style.minHeight || '120');
-                        const requiredHeight = newHeight + 60; // Add padding for other elements
+                        const requiredHeight = newHeight + 60;
                         if (requiredHeight > currentHeight) {
                             parentCell.style.minHeight = `${requiredHeight}px`;
                         }
                     }
                 }
             } else {
-                // Handle timed events
                 const existingEvents = container.querySelectorAll('.activity');
                 const stackIndex = existingEvents.length;
-                
-                // Add slight indent for overlapping timed events
                 activityElement.style.marginLeft = `${stackIndex * 4}px`;
                 activityElement.style.width = `calc(100% - ${stackIndex * 4}px)`;
             }
             
             container.appendChild(activityElement);
             
-            // Adjust cell height for timed events if needed
             if (!activity.is_all_day) {
                 const parentCell = container.closest('.calendar-date');
                 if (parentCell) {
                     const allEventsHeight = container.scrollHeight;
-                    const minRequiredHeight = allEventsHeight + 60; // Add padding
+                    const minRequiredHeight = allEventsHeight + 60;
                     const currentHeight = parseInt(parentCell.style.minHeight || '120');
                     if (minRequiredHeight > currentHeight) {
                         parentCell.style.minHeight = `${minRequiredHeight}px`;

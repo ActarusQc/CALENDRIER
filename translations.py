@@ -59,6 +59,7 @@ translations = {
         'add_edit_location': 'Add/Edit Location',
         'view_calendar': 'View Calendar',
         'all_day_event': 'All-day event',
+        'show_all': 'Show All',
         'days_of_week': {
             'sunday': 'Sunday',
             'monday': 'Monday',
@@ -129,6 +130,7 @@ translations = {
         'add_edit_location': 'Ajouter/Modifier un lieu',
         'view_calendar': 'Voir calendrier',
         'all_day_event': 'Événement toute la journée',
+        'show_all': 'Tout afficher',
         'days_of_week': {
             'sunday': 'Dimanche',
             'monday': 'Lundi',

@@ -169,7 +169,50 @@
     margin-left: -1px;
 }
 
-/* Admin Interface Updates */
+/* Category Filter Styles */
+.category-filters {
+    padding: 1rem;
+    background-color: #2b3035;
+    border-radius: 0.75rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.category-filters .btn {
+    padding: 0.375rem 0.75rem;
+    margin: 0.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.category-filters .btn.active {
+    background-color: var(--theme-purple);
+    border-color: var(--theme-purple);
+    color: white;
+    box-shadow: 0 2px 4px rgba(111, 66, 193, 0.3);
+}
+
+.category-filters .show-all-btn {
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.category-filters .show-all-btn:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+.category-filters .category-btn {
+    border: none;
+    color: white;
+}
+
+.category-filters .category-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
 .admin-container {
     max-width: 1400px;
     margin: 0 auto;
