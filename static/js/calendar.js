@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.className = 'btn category-btn me-2';
                 button.setAttribute('data-category', category.id);
                 button.style.backgroundColor = category.color;
+                button.style.color = 'white';
                 button.textContent = category.name;
                 button.addEventListener('click', () => toggleCategoryFilter(category.id));
                 filterContainer.appendChild(button);
@@ -269,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = `/admin?selected_date=${date}`;
     }
 
-    function createActivityElement(activity, position) {
+    function createActivityElement(activity) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
         
@@ -278,30 +279,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
         const isMultiDay = endDate > startDate;
         
-        if (isMultiDay && !activity.is_recurring) {
+        if (isMultiDay) {
             activityDiv.classList.add('multi-day');
-            activityDiv.classList.add(position);
-            activityDiv.style.backgroundColor = categoryColor;
-        } else {
-            activityDiv.style.backgroundColor = categoryColor;
+            const duration = endDate - startDate;
+            const durationDays = Math.ceil(duration / (1000 * 60 * 60 * 24));
+            activityDiv.style.zIndex = Math.max(1, 100 - durationDays);
         }
         
-        // Updated to show time and location for all multi-day event segments
-        if (position === 'multi-day' || position === 'single' || position === 'start' || position === 'middle' || position === 'end') {
-            let timeDisplay = '';
-            if (!activity.is_all_day && activity.time) {
-                timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
-            }
-
-            activityDiv.innerHTML = `
-                <div class="activity-content">
-                    ${timeDisplay ? `<div class="time">${timeDisplay}</div>` : ''}
-                    <div class="title">${activity.title}</div>
-                    ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                    ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
-                </div>
-            `;
+        activityDiv.style.backgroundColor = categoryColor;
+        
+        let timeDisplay = '';
+        if (!activity.is_all_day && activity.time) {
+            timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
         }
+
+        activityDiv.innerHTML = `
+            <div class="activity-content">
+                ${timeDisplay ? `<div class="time">${timeDisplay}</div>` : ''}
+                <div class="title">${activity.title}</div>
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
+            </div>
+        `;
         
         activityDiv.addEventListener('click', () => showActivityDetails(activity));
         
@@ -313,37 +312,39 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/activities');
             const activities = await response.json();
             
+            // Clear existing activities
             document.querySelectorAll('.all-day-activities').forEach(container => container.innerHTML = '');
             document.querySelectorAll('.timed-activities').forEach(container => container.innerHTML = '');
+            
+            // Sort activities by duration and start time
+            activities.sort((a, b) => {
+                // First sort by duration (longer events go behind)
+                const aDuration = a.end_date ? (new Date(a.end_date) - new Date(a.date)) : 0;
+                const bDuration = b.end_date ? (new Date(b.end_date) - new Date(b.date)) : 0;
+                if (aDuration !== bDuration) {
+                    return aDuration - bDuration; // Shorter duration first
+                }
+                // Then sort by start time
+                return new Date(a.date) - new Date(b.date);
+            });
             
             const startDate = new Date(year, month, 1);
             const endDate = new Date(year, month + 1, 0);
             
-            activities.sort((a, b) => {
-                const aDuration = a.end_date ? (new Date(a.end_date) - new Date(a.date)) : 0;
-                const bDuration = b.end_date ? (new Date(b.end_date) - new Date(b.date)) : 0;
-                return bDuration - aDuration;
-            });
-            
             const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
             
             Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
-                const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
-                const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                dateActivities.allDay.forEach(activity => {
+                    if (shouldDisplayActivity(activity)) {
+                        displayActivity(activity);
+                    }
+                });
                 
-                if (allDayContainer && timedContainer) {
-                    dateActivities.allDay.forEach(activity => {
-                        if (shouldDisplayActivity(activity)) {
-                            displayActivity(activity);
-                        }
-                    });
-                    
-                    dateActivities.timed.forEach(activity => {
-                        if (shouldDisplayActivity(activity)) {
-                            displayActivity(activity);
-                        }
-                    });
-                }
+                dateActivities.timed.forEach(activity => {
+                    if (shouldDisplayActivity(activity)) {
+                        displayActivity(activity);
+                    }
+                });
             });
         } catch (error) {
             console.error('Error fetching activities:', error);
@@ -388,27 +389,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayActivity(activity) {
         const activityStartDate = new Date(activity.date);
         const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
-        const displayDate = activity.displayDate || activityStartDate;
-        const dateStr = displayDate.toISOString().split('T')[0];
-        
-        // Only display multi-day activities on their start date
-        if (activityEndDate > activityStartDate && displayDate > activityStartDate) {
-            return; // Skip duplicate displays
-        }
+        const dateStr = activityStartDate.toISOString().split('T')[0];
         
         const container = activity.is_all_day ?
             document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
             document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
         
         if (container) {
-            const activityElement = createActivityElement(activity, 'multi-day');
+            const activityElement = createActivityElement(activity);
             
             if (activityEndDate > activityStartDate) {
                 const days = Math.ceil((activityEndDate - activityStartDate) / (1000 * 60 * 60 * 24)) + 1;
                 activityElement.style.width = `calc(${days * 100}% + ${days}px)`;
-                // Set z-index inversely proportional to duration - longer events go behind
-                const duration = activityEndDate - activityStartDate;
-                activityElement.style.zIndex = Math.max(1, 100 - Math.floor(duration / (1000 * 60 * 60 * 24)));
             }
             
             container.appendChild(activityElement);
@@ -482,6 +474,11 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
     }
 
+    // Initial calendar update
+    updateCalendarHeader();
+    updateCalendar();
+
+    // Event handlers for month navigation
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendar();
@@ -493,5 +490,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.querySelector('[data-view="month"]').classList.add('active');
-    updateCalendar();
 });
