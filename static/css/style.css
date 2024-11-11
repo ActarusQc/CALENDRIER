@@ -131,42 +131,40 @@
     z-index: 2;
 }
 
-.activity-content {
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
 .activity.multi-day {
     margin: 0;
     padding: 4px 8px;
     min-height: 28px;
-    height: 28px;
+    height: auto;
     position: absolute;
-    width: calc(100% + 1px); /* Add 1px to cover the border gap */
+    width: calc(100% + 1px);
     left: 0;
     z-index: 10;
+    border: none;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
     margin-right: -1px;
-    width: calc(100% + 1px);
 }
 
 .activity.multi-day.middle {
+    border-radius: 0;
     margin-left: -1px;
     margin-right: -1px;
-    width: calc(100% + 2px);
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
     margin-left: -1px;
+}
+
+.activity-content {
     width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Category Filter Styles */

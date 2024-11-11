@@ -286,7 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
             activityDiv.style.backgroundColor = categoryColor;
         }
         
-        if (position === 'start' || position === 'single') {
+        // Updated to show time and location for all multi-day event segments
+        if (position === 'start' || position === 'single' || position === 'middle' || position === 'end') {
             let timeDisplay = '';
             if (!activity.is_all_day && activity.time) {
                 timeDisplay = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
