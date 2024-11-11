@@ -27,9 +27,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const categories = await response.json();
             
             const filterContainer = document.getElementById('categoryFilters');
+            filterContainer.innerHTML = ''; // Clear existing filters
+            
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = 'btn category-btn me-2';
+                button.className = 'btn category-btn';
                 button.setAttribute('data-category', category.id);
                 button.style.backgroundColor = category.color;
                 button.textContent = category.name;
@@ -38,9 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Add event listener for "Show All" button
-            document.querySelector('.show-all-btn').addEventListener('click', () => {
-                resetCategoryFilters();
-            });
+            document.querySelector('.show-all-btn').addEventListener('click', resetCategoryFilters);
         } catch (error) {
             console.error('Error loading category filters:', error);
         }
@@ -48,23 +48,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function toggleCategoryFilter(categoryId) {
         const button = document.querySelector(`[data-category="${categoryId}"]`);
-        
-        if (activeCategories.has('all')) {
-            activeCategories.clear(); // Clear the "all" state
-            document.querySelector('.show-all-btn').classList.remove('active');
-        }
+        if (!button) return;
 
-        if (activeCategories.has(categoryId)) {
-            activeCategories.delete(categoryId);
-            button.classList.remove('active');
-        } else {
+        categoryId = categoryId.toString(); // Ensure consistent type
+
+        if (activeCategories.has('all')) {
+            // If "Show All" is active, clear it and add only this category
+            activeCategories.clear();
+            document.querySelector('.show-all-btn').classList.remove('active');
             activeCategories.add(categoryId);
             button.classList.add('active');
-        }
-
-        // If no categories are selected, revert to "Show All"
-        if (activeCategories.size === 0) {
-            resetCategoryFilters();
+        } else if (activeCategories.has(categoryId)) {
+            // If category is already active, remove it
+            activeCategories.delete(categoryId);
+            button.classList.remove('active');
+            
+            // If no categories are selected, revert to "Show All"
+            if (activeCategories.size === 0) {
+                resetCategoryFilters();
+                return;
+            }
+        } else {
+            // Add the category
+            activeCategories.add(categoryId);
+            button.classList.add('active');
         }
 
         updateCalendar(); // Refresh the calendar view
@@ -86,7 +93,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
         
-        return activity.categories.some(category => activeCategories.has(category.id.toString()));
+        // Ensure we're comparing strings consistently
+        const activityCategoryIds = activity.categories.map(cat => cat.id.toString());
+        return activityCategoryIds.some(id => activeCategories.has(id));
     }
 
     function updateCalendarHeader() {
