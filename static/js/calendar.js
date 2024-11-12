@@ -425,15 +425,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const modalHTML = `
                 <div class="modal fade" id="activityDetailsModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title"></h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-content bg-dark text-white">
+                            <div class="modal-header border-secondary">
+                                <h5 class="modal-title text-white"></h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
                                 <div class="activity-details"></div>
                             </div>
-                            <div class="modal-footer">
+                            <div class="modal-footer border-secondary">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                             </div>
                         </div>
@@ -486,36 +486,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
         modalBody.innerHTML = `
             <div class="mb-3">
-                <strong>Date:</strong><br>
+                <strong class="text-white">Date:</strong><br>
                 ${dateStr}
             </div>
             ${timeStr ? `
                 <div class="mb-3">
-                    <strong>Horaire:</strong><br>
+                    <strong class="text-white">Horaire:</strong><br>
                     ${timeStr}
                 </div>
             ` : ''}
             ${activity.location ? `
                 <div class="mb-3">
-                    <strong>Lieu:</strong><br>
+                    <strong class="text-white">Lieu:</strong><br>
                     ${activity.location}
                 </div>
             ` : ''}
             ${categoryStr ? `
                 <div class="mb-3">
-                    <strong>Catégories:</strong><br>
+                    <strong class="text-white">Catégories:</strong><br>
                     ${categoryStr}
                 </div>
             ` : ''}
             ${activity.notes ? `
                 <div class="mb-3">
-                    <strong>Notes:</strong><br>
+                    <strong class="text-white">Notes:</strong><br>
                     ${activity.notes}
                 </div>
             ` : ''}
             ${activity.is_recurring ? `
                 <div class="mb-3">
-                    <strong>Récurrence:</strong><br>
+                    <strong class="text-white">Récurrence:</strong><br>
                     <i class="bi bi-arrow-repeat"></i> ${activity.recurrence_type}
                 </div>
             ` : ''}
