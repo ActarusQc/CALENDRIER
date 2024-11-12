@@ -78,8 +78,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!button) return;
 
+        // Remove "Show All" first if clicking a specific category
+        if (categoryStr !== 'all' && activeCategories.has('all')) {
+            activeCategories.clear();
+            document.querySelector('[data-category="all"]').classList.remove('active');
+        }
+
+        // Handle "Show All" click
         if (categoryStr === 'all') {
-            // Clicking "Show All" button
             activeCategories.clear();
             activeCategories.add('all');
             
@@ -91,14 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            // Clicking a specific category button
-            if (activeCategories.has('all')) {
-                // Remove "Show All" when selecting specific category
-                activeCategories.clear();
-                document.querySelector('[data-category="all"]').classList.remove('active');
-            }
-
-            // Toggle the clicked category
+            // Toggle the specific category
             if (activeCategories.has(categoryStr)) {
                 activeCategories.delete(categoryStr);
                 button.classList.remove('active');
@@ -120,17 +119,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function shouldDisplayActivity(activity) {
         // Always show if "Show All" is active
-        if (activeCategories.has('all')) return true;
-        
-        // Don't show activities without categories when filtering
-        if (!activity.categories || !Array.isArray(activity.categories) || activity.categories.length === 0) {
-            return false;
+        if (activeCategories.has('all')) {
+            return true;
         }
         
-        // Show if activity has at least one category that matches active filters
+        // Ensure activity has categories array
+        if (!activity.categories || !Array.isArray(activity.categories)) {
+            return false;
+        }
+
+        // Check if any of the activity's categories match the active filters
         return activity.categories.some(category => {
-            // Ensure category.id is converted to string for comparison
-            return category && category.id && activeCategories.has(category.id.toString());
+            if (!category || typeof category.id === 'undefined') {
+                return false;
+            }
+            // Convert category ID to string for comparison
+            const categoryId = category.id.toString();
+            return activeCategories.has(categoryId);
         });
     }
 
