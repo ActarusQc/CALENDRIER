@@ -38,7 +38,6 @@
 
 /* Multi-day Activity Styles */
 .activity.multi-day {
-    position: relative;
     margin: 0;
     padding: var(--activity-padding) 8px;
     height: auto;
@@ -47,7 +46,8 @@
     transition: height var(--transition-duration) ease,
                 opacity var(--transition-duration) ease,
                 transform var(--transition-duration) ease;
-    z-index: 1;
+    z-index: 2;
+    position: relative;
 }
 
 .activity.multi-day.start {
@@ -56,18 +56,15 @@
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     margin: 0;
-    padding-right: 10px;
+    padding: var(--activity-padding) 8px;
     z-index: 3;
-    position: relative;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
     margin: 0;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: var(--activity-padding) 8px;
     z-index: 2;
-    position: relative;
 }
 
 .activity.multi-day.end {
@@ -76,9 +73,8 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     margin: 0;
-    padding-left: 10px;
+    padding: var(--activity-padding) 8px;
     z-index: 2;
-    position: relative;
 }
 
 /* Activity Content Styles */
@@ -260,6 +256,7 @@
                 margin var(--transition-duration) ease,
                 padding var(--transition-duration) ease,
                 opacity var(--transition-duration) ease;
+    box-sizing: border-box;
 }
 
 .activity.multi-day {
