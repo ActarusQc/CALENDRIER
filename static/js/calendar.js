@@ -272,6 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function createActivityElement(activity, date) {
         const activityDiv = document.createElement('div');
         activityDiv.className = 'activity';
+        activityDiv.setAttribute('data-activity-id', activity.id);
         
         const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
         const startDate = new Date(activity.date);
@@ -298,6 +299,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             activityDiv.classList.add('multi-day', position);
+            
+            // Add data attributes for multi-day event coordination
+            activityDiv.setAttribute('data-event-start', startDate.toISOString().split('T')[0]);
+            activityDiv.setAttribute('data-event-end', endDate.toISOString().split('T')[0]);
             
             // Calculate width for multi-day events
             if (position === 'start') {
@@ -349,241 +354,99 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
             
-            // First pass: Calculate heights for all-day sections
+            // First pass: Add all events to get natural heights
             Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
                 const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
                 if (allDayContainer && dateActivities.allDay.length > 0) {
-                    // Add class to indicate container has events
                     allDayContainer.classList.add('has-events');
-                    
-                    // Calculate required height based on number of events
-                    const totalEvents = dateActivities.allDay.filter(activity => shouldDisplayActivity(activity)).length;
-                    if (totalEvents > 0) {
-                        const baseHeight = 32; // Base height for container
-                        const eventHeight = 28; // Height of each event including margin
-                        const padding = 8; // Additional padding
-                        const newHeight = baseHeight + (eventHeight * totalEvents) + padding;
-                        allDayContainer.style.minHeight = `${newHeight}px`;
-                    }
-                }
-            });
-            
-            // Second pass: Add events to containers
-            Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
-                const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
-                const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                
-                if (allDayContainer && timedContainer) {
-                    // Handle all-day events first
-                    const processedMultiDayEvents = new Set();
                     
                     dateActivities.allDay.forEach((activity) => {
                         if (shouldDisplayActivity(activity)) {
-                            // For multi-day events, only process once
-                            const activityId = activity.id;
-                            if (!processedMultiDayEvents.has(activityId)) {
-                                const activityElement = createActivityElement(activity, dateStr);
-                                allDayContainer.appendChild(activityElement);
-                                processedMultiDayEvents.add(activityId);
-                            }
+                            const activityElement = createActivityElement(activity, dateStr);
+                            allDayContainer.appendChild(activityElement);
                         }
                     });
+                }
+            });
+
+            // Second pass: Normalize heights for multi-day events
+            const multiDayEvents = new Set();
+            document.querySelectorAll('.activity.multi-day').forEach(eventElement => {
+                const eventId = eventElement.getAttribute('data-activity-id');
+                if (!multiDayEvents.has(eventId)) {
+                    multiDayEvents.add(eventId);
                     
-                    // Handle timed events with overlap prevention
-                    const timeSlots = [];
+                    const startDate = eventElement.getAttribute('data-event-start');
+                    const endDate = eventElement.getAttribute('data-event-end');
                     
+                    // Find all segments of this multi-day event
+                    const segments = document.querySelectorAll(`.activity[data-activity-id="${eventId}"]`);
+                    
+                    // Find the maximum natural height among all segments
+                    let maxHeight = 0;
+                    segments.forEach(segment => {
+                        const naturalHeight = segment.offsetHeight;
+                        maxHeight = Math.max(maxHeight, naturalHeight);
+                    });
+                    
+                    // Apply the maximum height to all segments
+                    segments.forEach(segment => {
+                        segment.style.height = `${maxHeight}px`;
+                    });
+                }
+            });
+            
+            // Handle timed events
+            Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
+                const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                if (timedContainer) {
                     dateActivities.timed.forEach((activity) => {
                         if (shouldDisplayActivity(activity)) {
                             const activityElement = createActivityElement(activity, dateStr);
-                            
-                            // Check for overlapping events
-                            const startTime = activity.time || '00:00';
-                            const endTime = activity.end_time || '23:59';
-                            
-                            let overlapCount = 0;
-                            for (const slot of timeSlots) {
-                                if (isTimeOverlapping(startTime, endTime, slot.start, slot.end)) {
-                                    overlapCount++;
-                                }
-                            }
-                            
-                            // Add overlap classes if needed
-                            if (overlapCount > 0) {
-                                activityElement.classList.add(`overlapped-${Math.min(overlapCount, 3)}`);
-                            }
-                            
-                            // Store the time slot
-                            timeSlots.push({ start: startTime, end: endTime });
-                            
                             timedContainer.appendChild(activityElement);
                         }
                     });
                 }
             });
+            
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
     }
 
-    // Helper function to check if two time slots overlap
-    function isTimeOverlapping(start1, end1, start2, end2) {
-        return start1 < end2 && end1 > start2;
-    }
-
     function groupActivitiesByDate(activities, startDate, endDate) {
-        const grouped = {};
+        const groupedActivities = {};
         
+        // Initialize empty arrays for each date
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            groupedActivities[dateStr] = {
+                allDay: [],
+                timed: []
+            };
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        // Group activities by date
         activities.forEach(activity => {
-            const activityStartDate = new Date(activity.date);
-            const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
+            const activityStart = new Date(activity.date);
+            const activityEnd = activity.end_date ? new Date(activity.end_date) : activityStart;
             
-            let currentDate = new Date(Math.max(activityStartDate, startDate));
-            const viewEndDate = new Date(Math.min(activityEndDate, endDate));
-            
-            while (currentDate <= viewEndDate) {
-                const dateStr = currentDate.toISOString().split('T')[0];
-                
-                if (!grouped[dateStr]) {
-                    grouped[dateStr] = {
-                        allDay: [],
-                        timed: []
-                    };
-                }
-                
-                // Check if this is a multi-day event
-                const isMultiDay = activityEndDate > activityStartDate;
-                
-                // Determine if this should be treated as an all-day event
-                const isAllDay = activity.is_all_day || isMultiDay;
-                
-                // Create a copy of the activity for this date
-                const activityCopy = { ...activity };
-                
-                // Add to appropriate array
-                if (isAllDay) {
-                    // Don't add duplicate all-day events
-                    if (!grouped[dateStr].allDay.some(a => a.id === activity.id)) {
-                        grouped[dateStr].allDay.push(activityCopy);
+            let current = new Date(activityStart);
+            while (current <= activityEnd) {
+                const dateStr = current.toISOString().split('T')[0];
+                if (groupedActivities[dateStr]) {
+                    if (activity.is_all_day) {
+                        groupedActivities[dateStr].allDay.push(activity);
+                    } else {
+                        groupedActivities[dateStr].timed.push(activity);
                     }
-                } else {
-                    grouped[dateStr].timed.push(activityCopy);
                 }
-                
-                currentDate.setDate(currentDate.getDate() + 1);
+                current.setDate(current.getDate() + 1);
             }
         });
         
-        return grouped;
+        return groupedActivities;
     }
-
-    function displayActivity(activity) {
-        const activityStartDate = new Date(activity.date);
-        const activityEndDate = activity.end_date ? new Date(activity.end_date) : activityStartDate;
-        const displayDate = activity.displayDate || activityStartDate;
-        const dateStr = displayDate.toISOString().split('T')[0];
-        
-        // Only display multi-day activities on their start date
-        if (activityEndDate > activityStartDate && displayDate > activityStartDate) {
-            return; // Skip duplicate displays
-        }
-        
-        const container = activity.is_all_day ?
-            document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-            document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-        
-        if (container) {
-            const activityElement = createActivityElement(activity, 'multi-day');
-            
-            if (activityEndDate > activityStartDate) {
-                const days = Math.ceil((activityEndDate - activityStartDate) / (1000 * 60 * 60 * 24)) + 1;
-                activityElement.style.width = `calc(${days * 100}% + ${days}px)`;
-                // Set z-index inversely proportional to duration - longer events go behind
-                const duration = activityEndDate - activityStartDate;
-                activityElement.style.zIndex = Math.max(1, 100 - Math.floor(duration / (1000 * 60 * 60 * 24)));
-            }
-            
-            container.appendChild(activityElement);
-        }
-    }
-
-    function showActivityDetails(activity) {
-        const modalHTML = `
-            <div class="modal fade" id="activityDetailsModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title text-white">${activity.title}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body text-white">
-                            <div class="mb-2 text-white">
-                                <strong class="text-white">Date:</strong> ${activity.date}
-                                ${activity.end_date ? `- ${activity.end_date}` : ''}
-                            </div>
-                            ${!activity.is_all_day ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Heure:</strong> ${activity.time || ''}
-                                    ${activity.end_time ? ` - ${activity.end_time}` : ''}
-                                </div>
-                            ` : ''}
-                            ${activity.location ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Lieu:</strong> ${activity.location}
-                                </div>
-                            ` : ''}
-                            ${activity.categories.length > 0 ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Catégories:</strong> ${activity.categories.map(c => c.name).join(', ')}
-                                </div>
-                            ` : ''}
-                            ${activity.notes ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Notes:</strong><br>
-                                    ${activity.notes}
-                                </div>
-                            ` : ''}
-                            ${activity.is_recurring ? `
-                                <div class="mb-2 text-white">
-                                    <strong class="text-white">Récurrence:</strong> ${
-                                        activity.recurrence_type === 'daily' ? 'Quotidien' :
-                                        activity.recurrence_type === 'weekly' ? 'Hebdomadaire' :
-                                        activity.recurrence_type === 'monthly' ? 'Mensuel' :
-                                        'Annuel'
-                                    }
-                                    (jusqu'au ${activity.recurrence_end_date})
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const existingModal = document.getElementById('activityDetailsModal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-        const modal = new bootstrap.Modal(document.getElementById('activityDetailsModal'));
-        modal.show();
-    }
-
-    // Add navigation event listeners
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        updateCalendar();
-    });
-
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        updateCalendar();
-    });
-
-    // Initial calendar render
-    updateCalendar();
 });
