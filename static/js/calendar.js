@@ -33,101 +33,61 @@ document.addEventListener('DOMContentLoaded', function() {
             const categories = await response.json();
             
             const filterContainer = document.getElementById('categoryFilters');
-            filterContainer.innerHTML = ''; // Clear existing filters
+            filterContainer.innerHTML = '';
             
-            // Add single "Show All" button
-            const showAllBtn = document.createElement('button');
-            showAllBtn.className = 'btn btn-outline-secondary btn-sm me-2';
-            showAllBtn.dataset.category = 'all';
-            showAllBtn.textContent = window.translations?.show_all || 'Show All';
-            showAllBtn.addEventListener('click', () => toggleCategoryFilter('all'));
-            
-            // Set initial active state
-            if (activeCategories.has('all')) {
-                showAllBtn.classList.add('active');
-            }
-            
-            filterContainer.appendChild(showAllBtn);
-            
-            // Add category buttons
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = 'btn btn-sm me-2';
-                button.dataset.category = category.id.toString();
+                button.className = 'btn category-btn me-2';
+                button.setAttribute('data-category', category.id);
                 button.style.backgroundColor = category.color;
-                button.style.color = 'white';
                 button.textContent = category.name;
-                
-                // Set initial active state
-                if (activeCategories.has(category.id.toString())) {
-                    button.classList.add('active');
-                }
-                
-                button.addEventListener('click', () => toggleCategoryFilter(category.id.toString()));
+                button.addEventListener('click', () => toggleCategoryFilter(category.id));
                 filterContainer.appendChild(button);
             });
+
+            document.querySelector('.show-all-btn').addEventListener('click', resetCategoryFilters);
         } catch (error) {
             console.error('Error loading category filters:', error);
         }
     }
 
     function toggleCategoryFilter(categoryId) {
-        const categoryStr = categoryId.toString();
-        const button = document.querySelector(`[data-category="${categoryStr}"]`);
-        
+        const button = document.querySelector(`[data-category="${categoryId}"]`);
         if (!button) return;
-        
-        if (categoryStr === 'all') {
-            // When clicking 'Show All'
-            activeCategories = new Set(['all']);
-            // Update button states
-            document.querySelectorAll('[data-category]').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.category === 'all') {
-                    btn.classList.add('active');
-                }
-            });
-        } else {
-            // Remove 'all' if it exists when selecting a specific category
-            activeCategories.delete('all');
-            document.querySelector('[data-category="all"]').classList.remove('active');
-            
-            // Toggle the specific category
-            if (activeCategories.has(categoryStr)) {
-                activeCategories.delete(categoryStr);
-                button.classList.remove('active');
-            } else {
-                activeCategories.add(categoryStr);
-                button.classList.add('active');
-            }
-            
-            // If no categories are selected, revert to 'all'
-            if (activeCategories.size === 0) {
-                activeCategories.add('all');
-                document.querySelector('[data-category="all"]').classList.add('active');
-            }
+
+        if (activeCategories.has('all')) {
+            activeCategories.clear();
+            document.querySelector('.show-all-btn').classList.remove('active');
         }
-        
-        console.log('Active categories after toggle:', Array.from(activeCategories));
+
+        if (activeCategories.has(categoryId.toString())) {
+            activeCategories.delete(categoryId.toString());
+            button.classList.remove('active');
+            if (activeCategories.size === 0) {
+                resetCategoryFilters();
+                return;
+            }
+        } else {
+            activeCategories.add(categoryId.toString());
+            button.classList.add('active');
+        }
+
+        // Force refresh of activities
+        fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
+    }
+
+    function resetCategoryFilters() {
+        activeCategories.clear();
+        activeCategories.add('all');
+        document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.show-all-btn').classList.add('active');
         updateCalendar();
     }
 
     function shouldDisplayActivity(activity) {
-        // Always show if "Show All" is active
-        if (activeCategories.has('all')) {
-            return true;
-        }
-        
-        // If activity has no categories, show it when no specific filters are active
-        if (!activity.categories || !Array.isArray(activity.categories) || activity.categories.length === 0) {
-            return activeCategories.size === 0;
-        }
-        
-        // Check if any of the activity's categories match active filters
-        return activity.categories.some(category => {
-            const categoryId = (category.id || category).toString();
-            return activeCategories.has(categoryId);
-        });
+        if (activeCategories.has('all')) return true;
+        if (!activity.categories || activity.categories.length === 0) return false;
+        return activity.categories.some(category => activeCategories.has(category.id.toString()));
     }
 
     function updateCalendarHeader() {
@@ -345,6 +305,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/activities');
             const activities = await response.json();
             
+            // Clear existing activities
+            document.querySelectorAll('.all-day-activities, .timed-activities')
+                .forEach(container => {
+                    container.innerHTML = '';
+                    container.style.height = 'auto';
+                });
+            
             // Sort activities by duration (longest first) and start date
             activities.sort((a, b) => {
                 const aDuration = a.end_date ? 
@@ -377,36 +344,31 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             // Render multi-day events first
-            for (let [id, data] of multiDayActivities) {
-                let currentDate = new Date(data.startDate);
+            for (const [_, eventData] of multiDayActivities) {
+                const { activity, startDate, endDate } = eventData;
+                let current = new Date(startDate);
                 
-                while (currentDate <= data.endDate) {
-                    const dateStr = currentDate.toISOString().split('T')[0];
-                    const container = document.querySelector(
-                        `.all-day-activities[data-date="${dateStr}"]`
-                    );
+                while (current <= endDate) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    const container = activity.is_all_day ? 
+                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                     
                     if (container) {
-                        const element = createActivityElement(
-                            data.activity,
-                            dateStr,
-                            data.startDate,
-                            data.endDate
-                        );
+                        const element = createActivityElement(activity, dateStr, startDate, endDate);
                         container.appendChild(element);
-                        data.elements.push(element);
+                        eventData.elements.push(element);
                     }
-                    
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    current.setDate(current.getDate() + 1);
                 }
             }
             
-            // Then render single-day events
+            // Render single-day events
             singleDayActivities.forEach(activity => {
-                const dateStr = new Date(activity.date).toISOString().split('T')[0];
-                const container = activity.is_all_day
-                    ? document.querySelector(`.all-day-activities[data-date="${dateStr}"]`)
-                    : document.querySelector(`.timed-activities[data-date="${dateStr}"]`);
+                const dateStr = activity.date;
+                const container = activity.is_all_day ? 
+                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (container) {
                     const element = createActivityElement(
@@ -418,12 +380,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     container.appendChild(element);
                 }
             });
+            
+            // Apply consistent heights and transitions to multi-day events
+            requestAnimationFrame(() => {
+                multiDayActivities.forEach(({ elements }) => {
+                    if (elements.length > 0) {
+                        // Find the maximum height among all segments
+                        const maxHeight = Math.max(...elements.map(el => 
+                            parseInt(el.getAttribute('data-content-height')) || 0
+                        ));
+                        
+                        // Apply the maximum height to all segments with transition
+                        elements.forEach(element => {
+                            element.style.height = `${maxHeight}px`;
+                        });
+                    }
+                });
+                
+                // Update container heights with transition
+                document.querySelectorAll('.all-day-activities').forEach(container => {
+                    if (container.children.length > 0) {
+                        const totalHeight = Array.from(container.children)
+                            .reduce((acc, child) => acc + child.offsetHeight + 2, 8);
+                        container.style.height = `${totalHeight}px`;
+                    }
+                });
+            });
+            
         } catch (error) {
-            console.error('Error fetching activities:', error);
+            console.error('Error loading activities:', error);
         }
     }
 
-    function showActivityDetails(activity) {
+    async function showActivityDetails(activity) {
         // Create modal if it doesn't exist
         let modal = document.getElementById('activityDetailsModal');
         if (!modal) {
@@ -436,10 +425,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="activity-details"></div>
+                                <div class="activity-info"></div>
                             </div>
                             <div class="modal-footer border-secondary">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -449,82 +438,88 @@ document.addEventListener('DOMContentLoaded', function() {
             modal = document.getElementById('activityDetailsModal');
         }
 
-        // Update modal content
-        const modalTitle = modal.querySelector('.modal-title');
-        const modalBody = modal.querySelector('.activity-details');
-        
-        modalTitle.textContent = activity.title;
-        
-        // Format date and time
+        // Format dates and times
         const startDate = new Date(activity.date);
         const endDate = activity.end_date ? new Date(activity.end_date) : null;
         
-        let dateStr = startDate.toLocaleDateString('fr-FR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        const formatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        let dateTimeStr = startDate.toLocaleDateString('fr-FR', formatOptions);
         
         if (endDate) {
-            dateStr += ` - ${endDate.toLocaleDateString('fr-FR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            })}`;
+            dateTimeStr += ` - ${endDate.toLocaleDateString('fr-FR', formatOptions)}`;
         }
         
-        let timeStr = '';
-        if (activity.is_all_day) {
-            timeStr = 'Toute la journée';
-        } else if (activity.time) {
-            timeStr = activity.time;
-            if (activity.end_time) {
-                timeStr += ` - ${activity.end_time}`;
+        if (!activity.is_all_day) {
+            dateTimeStr += `<br>`;
+            if (activity.time) {
+                dateTimeStr += activity.time;
+                if (activity.end_time) {
+                    dateTimeStr += ` - ${activity.end_time}`;
+                }
             }
+        } else {
+            dateTimeStr += `<br>Toute la journée`;
         }
 
-        const categoryStr = activity.categories
-            .map(cat => `<span class="badge" style="background-color: ${cat.color}">${cat.name}</span>`)
-            .join(' ');
-
-        modalBody.innerHTML = `
-            <div class="mb-3">
+        // Create content for modal
+        const modalTitle = modal.querySelector('.modal-title');
+        const modalBody = modal.querySelector('.activity-info');
+        
+        modalTitle.textContent = activity.title;
+        
+        let content = `
+            <div class="mb-3 text-white">
                 <strong class="text-white">Date:</strong><br>
-                ${dateStr}
+                ${dateTimeStr}
             </div>
-            ${timeStr ? `
-                <div class="mb-3">
-                    <strong class="text-white">Horaire:</strong><br>
-                    ${timeStr}
-                </div>
-            ` : ''}
-            ${activity.location ? `
-                <div class="mb-3">
+        `;
+
+        if (activity.location) {
+            content += `
+                <div class="mb-3 text-white">
                     <strong class="text-white">Lieu:</strong><br>
                     ${activity.location}
                 </div>
-            ` : ''}
-            ${categoryStr ? `
-                <div class="mb-3">
+            `;
+        }
+
+        if (activity.categories && activity.categories.length > 0) {
+            content += `
+                <div class="mb-3 text-white">
                     <strong class="text-white">Catégories:</strong><br>
-                    ${categoryStr}
+                    <div class="d-flex flex-wrap gap-1">
+                        ${activity.categories.map(category => `
+                            <span class="badge" style="background-color: ${category.color}">${category.name}</span>
+                        `).join('')}
+                    </div>
                 </div>
-            ` : ''}
-            ${activity.notes ? `
-                <div class="mb-3">
+            `;
+        }
+
+        if (activity.notes) {
+            content += `
+                <div class="mb-3 text-white">
                     <strong class="text-white">Notes:</strong><br>
                     ${activity.notes}
                 </div>
-            ` : ''}
-            ${activity.is_recurring ? `
-                <div class="mb-3">
+            `;
+        }
+
+        if (activity.is_recurring) {
+            content += `
+                <div class="mb-3 text-white">
                     <strong class="text-white">Récurrence:</strong><br>
-                    <i class="bi bi-arrow-repeat"></i> ${activity.recurrence_type}
+                    <i class="bi bi-arrow-repeat"></i> 
+                    ${activity.recurrence_type}
+                    ${activity.recurrence_end_date ? 
+                        `jusqu'au ${new Date(activity.recurrence_end_date)
+                            .toLocaleDateString('fr-FR', {year: 'numeric', month: 'long', day: 'numeric'})}`
+                        : ''}
                 </div>
-            ` : ''}
-        `;
+            `;
+        }
+
+        modalBody.innerHTML = content;
 
         // Show modal
         const bsModal = new bootstrap.Modal(modal);
