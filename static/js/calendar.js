@@ -307,22 +307,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
                 </div>
             `;
-        } else if (position === 'middle') {
-            content = '<div class="activity-content"></div>';
-        } else if (position === 'end') {
+        } else if (position === 'middle' || position === 'end') {
             content = '<div class="activity-content"></div>';
         }
         
         activityDiv.innerHTML = content;
         activityDiv.addEventListener('click', () => showActivityDetails(activity));
-        
-        // Calculate and set the width for multi-day events
-        if (position !== 'single') {
-            const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-            const remainingDays = Math.ceil((endDate - new Date(date)) / (1000 * 60 * 60 * 24)) + 1;
-            const width = position === 'start' ? totalDays : remainingDays;
-            activityDiv.style.width = `calc(${width * 100}% + ${width - 1}px)`;
-        }
         
         return activityDiv;
     }
@@ -353,16 +343,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (allDayContainer && timedContainer) {
-                    dateActivities.allDay.forEach(activity => {
+                    // Handle all-day events
+                    dateActivities.allDay.forEach((activity, index) => {
                         if (shouldDisplayActivity(activity)) {
                             const activityElement = createActivityElement(activity, dateStr);
                             allDayContainer.appendChild(activityElement);
                         }
                     });
                     
-                    dateActivities.timed.forEach(activity => {
+                    // Handle timed events with overlap prevention
+                    const timeSlots = new Map(); // Track time slots for overlap detection
+                    
+                    dateActivities.timed.forEach((activity, index) => {
                         if (shouldDisplayActivity(activity)) {
                             const activityElement = createActivityElement(activity, dateStr);
+                            
+                            // Check for overlapping events
+                            const startTime = activity.time || '00:00';
+                            const endTime = activity.end_time || '23:59';
+                            
+                            let overlapCount = 0;
+                            timeSlots.forEach((slot, existingTime) => {
+                                if (isTimeOverlapping(startTime, endTime, existingTime.start, existingTime.end)) {
+                                    overlapCount++;
+                                }
+                            });
+                            
+                            // Add overlap classes if needed
+                            if (overlapCount > 0) {
+                                activityElement.classList.add(`overlapped-${overlapCount}`);
+                            }
+                            
+                            // Store the time slot
+                            timeSlots.set(startTime, { start: startTime, end: endTime });
+                            
                             timedContainer.appendChild(activityElement);
                         }
                     });
@@ -371,6 +385,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error fetching activities:', error);
         }
+    }
+
+    function isTimeOverlapping(start1, end1, start2, end2) {
+        return start1 < end2 && end1 > start2;
     }
 
     function groupActivitiesByDate(activities, startDate, endDate) {

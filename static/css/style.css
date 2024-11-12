@@ -95,8 +95,13 @@
     min-height: 0;
     height: auto;
     z-index: 1;
-    overflow: visible;
-    background-color: #9AB5D9;
+    background-color: #f8f9fa;
+}
+
+.all-day-activities .activity {
+    margin: 1px 0;
+    min-height: 24px;
+    z-index: 2;
 }
 
 .timed-activities {
@@ -130,7 +135,7 @@
 .activity:hover {
     filter: brightness(1.1);
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 2;
+    z-index: 3;
 }
 
 .activity.multi-day {
@@ -163,6 +168,21 @@
     border-bottom-left-radius: 0;
     margin-left: -1px;
     z-index: 1;
+}
+
+.activity.overlapped {
+    margin-left: calc(25% + 2px);
+    width: calc(75% - 4px);
+}
+
+.activity.overlapped-2 {
+    margin-left: calc(50% + 2px);
+    width: calc(50% - 4px);
+}
+
+.activity.overlapped-3 {
+    margin-left: calc(75% + 2px);
+    width: calc(25% - 4px);
 }
 
 .activity-content {
