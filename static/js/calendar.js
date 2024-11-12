@@ -35,16 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const filterContainer = document.getElementById('categoryFilters');
             filterContainer.innerHTML = '';
             
-            // Add "Show All" button first
+            // Add "Show All" button in French
             const showAllBtn = document.createElement('button');
             showAllBtn.className = 'btn show-all-btn active';
-            showAllBtn.textContent = 'Show All';
+            showAllBtn.textContent = 'Tout afficher';
             showAllBtn.addEventListener('click', resetCategoryFilters);
             filterContainer.appendChild(showAllBtn);
             
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = 'btn category-btn';
+                button.className = 'btn category-btn me-2';
                 button.setAttribute('data-category', category.id);
                 button.style.backgroundColor = category.color;
                 button.textContent = category.name;
@@ -412,39 +412,29 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 });
-                
-                // Update container heights with transition
-                document.querySelectorAll('.all-day-activities').forEach(container => {
-                    if (container.children.length > 0) {
-                        const totalHeight = Array.from(container.children)
-                            .reduce((acc, child) => acc + child.offsetHeight + 2, 8);
-                        container.style.height = `${totalHeight}px`;
-                    }
-                });
             });
-            
         } catch (error) {
             console.error('Error loading activities:', error);
         }
     }
 
-    async function showActivityDetails(activity) {
+    function showActivityDetails(activity) {
         // Create modal if it doesn't exist
         let modal = document.getElementById('activityDetailsModal');
         if (!modal) {
             const modalHTML = `
                 <div class="modal fade" id="activityDetailsModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
-                        <div class="modal-content bg-dark text-white">
-                            <div class="modal-header border-secondary">
-                                <h5 class="modal-title text-white"></h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="activity-info"></div>
+                                <div class="activity-details"></div>
                             </div>
-                            <div class="modal-footer border-secondary">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                             </div>
                         </div>
                     </div>
@@ -454,88 +444,82 @@ document.addEventListener('DOMContentLoaded', function() {
             modal = document.getElementById('activityDetailsModal');
         }
 
-        // Format dates and times
-        const startDate = new Date(activity.date);
-        const endDate = activity.end_date ? new Date(activity.end_date) : null;
-        
-        const formatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        let dateTimeStr = startDate.toLocaleDateString('fr-FR', formatOptions);
-        
-        if (endDate) {
-            dateTimeStr += ` - ${endDate.toLocaleDateString('fr-FR', formatOptions)}`;
-        }
-        
-        if (!activity.is_all_day) {
-            dateTimeStr += `<br>`;
-            if (activity.time) {
-                dateTimeStr += activity.time;
-                if (activity.end_time) {
-                    dateTimeStr += ` - ${activity.end_time}`;
-                }
-            }
-        } else {
-            dateTimeStr += `<br>Toute la journée`;
-        }
-
-        // Create content for modal
+        // Update modal content
         const modalTitle = modal.querySelector('.modal-title');
-        const modalBody = modal.querySelector('.activity-info');
+        const modalBody = modal.querySelector('.activity-details');
         
         modalTitle.textContent = activity.title;
         
-        let content = `
-            <div class="mb-3 text-white">
-                <strong class="text-white">Date:</strong><br>
-                ${dateTimeStr}
-            </div>
-        `;
+        // Format date and time
+        const startDate = new Date(activity.date);
+        const endDate = activity.end_date ? new Date(activity.end_date) : null;
+        
+        let dateStr = startDate.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        if (endDate) {
+            dateStr += ` - ${endDate.toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })}`;
+        }
+        
+        let timeStr = '';
+        if (activity.is_all_day) {
+            timeStr = 'Toute la journée';
+        } else if (activity.time) {
+            timeStr = activity.time;
+            if (activity.end_time) {
+                timeStr += ` - ${activity.end_time}`;
+            }
+        }
 
-        if (activity.location) {
-            content += `
-                <div class="mb-3 text-white">
-                    <strong class="text-white">Lieu:</strong><br>
+        const categoryStr = activity.categories
+            .map(cat => `<span class="badge" style="background-color: ${cat.color}">${cat.name}</span>`)
+            .join(' ');
+
+        modalBody.innerHTML = `
+            <div class="mb-3">
+                <strong>Date:</strong><br>
+                ${dateStr}
+            </div>
+            ${timeStr ? `
+                <div class="mb-3">
+                    <strong>Horaire:</strong><br>
+                    ${timeStr}
+                </div>
+            ` : ''}
+            ${activity.location ? `
+                <div class="mb-3">
+                    <strong>Lieu:</strong><br>
                     ${activity.location}
                 </div>
-            `;
-        }
-
-        if (activity.categories && activity.categories.length > 0) {
-            content += `
-                <div class="mb-3 text-white">
-                    <strong class="text-white">Catégories:</strong><br>
-                    <div class="d-flex flex-wrap gap-1">
-                        ${activity.categories.map(category => `
-                            <span class="badge" style="background-color: ${category.color}">${category.name}</span>
-                        `).join('')}
-                    </div>
+            ` : ''}
+            ${categoryStr ? `
+                <div class="mb-3">
+                    <strong>Catégories:</strong><br>
+                    ${categoryStr}
                 </div>
-            `;
-        }
-
-        if (activity.notes) {
-            content += `
-                <div class="mb-3 text-white">
-                    <strong class="text-white">Notes:</strong><br>
+            ` : ''}
+            ${activity.notes ? `
+                <div class="mb-3">
+                    <strong>Notes:</strong><br>
                     ${activity.notes}
                 </div>
-            `;
-        }
-
-        if (activity.is_recurring) {
-            content += `
-                <div class="mb-3 text-white">
-                    <strong class="text-white">Récurrence:</strong><br>
-                    <i class="bi bi-arrow-repeat"></i> 
-                    ${activity.recurrence_type}
-                    ${activity.recurrence_end_date ? 
-                        `jusqu'au ${new Date(activity.recurrence_end_date)
-                            .toLocaleDateString('fr-FR', {year: 'numeric', month: 'long', day: 'numeric'})}`
-                        : ''}
+            ` : ''}
+            ${activity.is_recurring ? `
+                <div class="mb-3">
+                    <strong>Récurrence:</strong><br>
+                    <i class="bi bi-arrow-repeat"></i> ${activity.recurrence_type}
                 </div>
-            `;
-        }
-
-        modalBody.innerHTML = content;
+            ` : ''}
+        `;
 
         // Show modal
         const bsModal = new bootstrap.Modal(modal);

@@ -405,3 +405,46 @@
     height: 32px;
     width: auto;
 }
+
+/* Add modal styles at the end */
+.activity-details .badge {
+    font-size: 0.875rem;
+    padding: 0.35em 0.65em;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#activityDetailsModal .modal-content {
+    border-radius: 0.5rem;
+}
+
+#activityDetailsModal .modal-header {
+    background-color: #f8f9fa;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+#activityDetailsModal .modal-title {
+    color: #212529;
+    font-weight: 600;
+}
+
+#activityDetailsModal .modal-body {
+    padding: 1.5rem;
+}
+
+#activityDetailsModal .activity-details strong {
+    color: #6f42c1;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+#activityDetailsModal .btn-secondary {
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+}
+
+#activityDetailsModal .btn-secondary:hover {
+    background-color: #5a32a3;
+    border-color: #5a32a3;
+}
