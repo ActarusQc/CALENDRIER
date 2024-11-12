@@ -76,94 +76,58 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = document.querySelector(`[data-category="${categoryStr}"]`);
         
         if (!button) return;
-
-        console.log('Before toggle - Active categories:', Array.from(activeCategories));
         
         if (categoryStr === 'all') {
-            // Only handle "Show All" if it's not already active
-            if (!activeCategories.has('all')) {
-                activeCategories.clear();
-                activeCategories.add('all');
-                
-                // Update button states
-                document.querySelectorAll('[data-category]').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.dataset.category === 'all') {
-                        btn.classList.add('active');
-                    }
-                });
-            }
-        } else {
-            // Handle specific category toggle
-            if (activeCategories.has('all')) {
-                // If "Show All" is active, clear it and add the clicked category
-                activeCategories.clear();
-                activeCategories.add(categoryStr);
-                document.querySelector('[data-category="all"]').classList.remove('active');
-                button.classList.add('active');
-            } else {
-                // Toggle the clicked category while keeping others unchanged
-                if (activeCategories.has(categoryStr)) {
-                    activeCategories.delete(categoryStr);
-                    button.classList.remove('active');
-                } else {
-                    activeCategories.add(categoryStr);
-                    button.classList.add('active');
+            // When clicking 'Show All'
+            activeCategories = new Set(['all']);
+            // Update button states
+            document.querySelectorAll('[data-category]').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.category === 'all') {
+                    btn.classList.add('active');
                 }
+            });
+        } else {
+            // Remove 'all' if it exists when selecting a specific category
+            activeCategories.delete('all');
+            document.querySelector('[data-category="all"]').classList.remove('active');
+            
+            // Toggle the specific category
+            if (activeCategories.has(categoryStr)) {
+                activeCategories.delete(categoryStr);
+                button.classList.remove('active');
+            } else {
+                activeCategories.add(categoryStr);
+                button.classList.add('active');
             }
             
-            // If no categories are selected, switch back to "Show All"
+            // If no categories are selected, revert to 'all'
             if (activeCategories.size === 0) {
                 activeCategories.add('all');
                 document.querySelector('[data-category="all"]').classList.add('active');
             }
         }
         
-        console.log('After toggle - Active categories:', Array.from(activeCategories));
-        
-        // Refresh calendar with updated filters
+        console.log('Active categories after toggle:', Array.from(activeCategories));
         updateCalendar();
     }
 
     function shouldDisplayActivity(activity) {
-        console.log('-------- Filtering Activity --------');
-        console.log('Activity:', activity.title);
-        console.log('Active Categories:', Array.from(activeCategories));
-        
         // Always show if "Show All" is active
         if (activeCategories.has('all')) {
-            console.log('Show All is active - displaying activity');
             return true;
         }
         
-        // Handle activities with no categories more leniently
-        if (!activity.categories) {
-            console.log('Activity has no categories array - showing when no specific filters');
+        // If activity has no categories, show it when no specific filters are active
+        if (!activity.categories || !Array.isArray(activity.categories) || activity.categories.length === 0) {
             return activeCategories.size === 0;
         }
-
-        // Ensure categories is an array
-        if (!Array.isArray(activity.categories)) {
-            console.log('Activity categories is not an array - converting to array');
-            activity.categories = [activity.categories];
-        }
-
-        // Empty categories array - show when no specific filters
-        if (activity.categories.length === 0) {
-            console.log('Activity has empty categories array - showing when no specific filters');
-            return activeCategories.size === 0;
-        }
-
-        // Check if any of the activity's categories match the active filters
-        const hasMatchingCategory = activity.categories.some(category => {
+        
+        // Check if any of the activity's categories match active filters
+        return activity.categories.some(category => {
             const categoryId = (category.id || category).toString();
-            const isMatched = activeCategories.has(categoryId);
-            console.log(`Checking category ${categoryId} (${category.name || 'Unknown'}) - Match: ${isMatched}`);
-            return isMatched;
+            return activeCategories.has(categoryId);
         });
-
-        console.log(`Final result for ${activity.title}: ${hasMatchingCategory}`);
-        return hasMatchingCategory;
     }
 
     function updateCalendarHeader() {
@@ -413,38 +377,43 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             // Render multi-day events first
-            for (const [_, eventData] of multiDayActivities) {
-                const { activity, startDate, endDate } = eventData;
-                let current = new Date(startDate);
+            for (let [id, data] of multiDayActivities) {
+                let currentDate = new Date(data.startDate);
                 
-                while (current <= endDate) {
-                    const dateStr = current.toISOString().split('T')[0];
-                    const container = activity.is_all_day ? 
-                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                while (currentDate <= data.endDate) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const container = document.querySelector(
+                        `.all-day-activities[data-date="${dateStr}"]`
+                    );
                     
                     if (container) {
-                        const element = createActivityElement(activity, dateStr, startDate, endDate);
+                        const element = createActivityElement(
+                            data.activity,
+                            dateStr,
+                            data.startDate,
+                            data.endDate
+                        );
                         container.appendChild(element);
-                        eventData.elements.push(element);
+                        data.elements.push(element);
                     }
-                    current.setDate(current.getDate() + 1);
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
             }
             
-            // Render single-day events
+            // Then render single-day events
             singleDayActivities.forEach(activity => {
-                const dateStr = activity.date;
-                const container = activity.is_all_day ? 
-                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                const dateStr = new Date(activity.date).toISOString().split('T')[0];
+                const container = activity.is_all_day
+                    ? document.querySelector(`.all-day-activities[data-date="${dateStr}"]`)
+                    : document.querySelector(`.timed-activities[data-date="${dateStr}"]`);
                 
                 if (container) {
                     const element = createActivityElement(
-                        activity, 
-                        dateStr, 
+                        activity,
+                        dateStr,
                         new Date(activity.date),
-                        activity.end_date ? new Date(activity.end_date) : new Date(activity.date)
+                        new Date(activity.date)
                     );
                     container.appendChild(element);
                 }
