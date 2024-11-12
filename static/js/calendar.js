@@ -91,10 +91,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } else {
             // Remove "Show All" when selecting a specific category
-            if (activeCategories.has('all')) {
-                activeCategories.clear();
-                document.querySelector('[data-category="all"]').classList.remove('active');
-            }
+            activeCategories.delete('all');
+            document.querySelector('[data-category="all"]').classList.remove('active');
             
             // Toggle the selected category
             if (activeCategories.has(categoryStr)) {
@@ -112,8 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Refresh activities with updated filters
-        fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
+        // Refresh calendar with updated filters
+        updateCalendar();
     }
 
     function shouldDisplayActivity(activity) {
@@ -122,16 +120,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         }
         
-        // Ensure activity has categories array
-        if (!activity.categories || !Array.isArray(activity.categories)) {
+        // If activity has no categories and specific categories are selected, don't show it
+        if (!activity.categories || !Array.isArray(activity.categories) || activity.categories.length === 0) {
             return false;
         }
 
         // Check if any of the activity's categories match the active filters
-        return activity.categories.some(category => {
-            const categoryId = category.id.toString();
-            return activeCategories.has(categoryId);
-        });
+        return activity.categories.some(category => 
+            activeCategories.has(category.id.toString())
+        );
     }
 
     function updateCalendarHeader() {
@@ -348,13 +345,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch('/api/activities');
             const activities = await response.json();
-            
-            // Clear existing activities
-            document.querySelectorAll('.all-day-activities, .timed-activities')
-                .forEach(container => {
-                    container.innerHTML = '';
-                    container.style.height = 'auto';
-                });
             
             // Sort activities by duration (longest first) and start date
             activities.sort((a, b) => {
