@@ -349,6 +349,26 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const groupedActivities = groupActivitiesByDate(activities, startDate, endDate);
             
+            // First pass: Calculate heights for all-day sections
+            Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
+                const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
+                if (allDayContainer && dateActivities.allDay.length > 0) {
+                    // Add class to indicate container has events
+                    allDayContainer.classList.add('has-events');
+                    
+                    // Calculate required height based on number of events
+                    const totalEvents = dateActivities.allDay.filter(activity => shouldDisplayActivity(activity)).length;
+                    if (totalEvents > 0) {
+                        const baseHeight = 32; // Base height for container
+                        const eventHeight = 28; // Height of each event including margin
+                        const padding = 8; // Additional padding
+                        const newHeight = baseHeight + (eventHeight * totalEvents) + padding;
+                        allDayContainer.style.minHeight = `${newHeight}px`;
+                    }
+                }
+            });
+            
+            // Second pass: Add events to containers
             Object.entries(groupedActivities).forEach(([dateStr, dateActivities]) => {
                 const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
                 const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
@@ -405,6 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Helper function to check if two time slots overlap
     function isTimeOverlapping(start1, end1, start2, end2) {
         return start1 < end2 && end1 > start2;
     }

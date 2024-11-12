@@ -97,6 +97,12 @@
     z-index: 1;
     background-color: #f8f9fa;
     margin: 0;
+    transition: min-height 0.3s ease;
+}
+
+.all-day-activities.has-events {
+    min-height: fit-content;
+    padding-bottom: 8px;
 }
 
 .all-day-activities .activity {
