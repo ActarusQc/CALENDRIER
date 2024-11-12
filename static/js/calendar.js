@@ -58,9 +58,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activeCategories.has('all')) {
             activeCategories.clear();
             document.querySelector('.show-all-btn').classList.remove('active');
-            activeCategories.add(categoryId.toString());
-            button.classList.add('active');
-        } else if (activeCategories.has(categoryId.toString())) {
+        }
+
+        if (activeCategories.has(categoryId.toString())) {
             activeCategories.delete(categoryId.toString());
             button.classList.remove('active');
             if (activeCategories.size === 0) {
@@ -72,7 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
             button.classList.add('active');
         }
 
-        updateCalendar();
+        // Force refresh of activities
+        fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
     }
 
     function resetCategoryFilters() {
@@ -85,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
-        if (!activity.categories?.length) return false;
+        if (!activity.categories || activity.categories.length === 0) return false;
         return activity.categories.some(category => activeCategories.has(category.id.toString()));
     }
 
@@ -418,15 +419,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const modalHTML = `
                 <div class="modal fade" id="activityDetailsModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title"></h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-content bg-dark text-white">
+                            <div class="modal-header border-secondary">
+                                <h5 class="modal-title text-white"></h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
                                 <div class="activity-info"></div>
                             </div>
-                            <div class="modal-footer">
+                            <div class="modal-footer border-secondary">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
@@ -467,16 +468,16 @@ document.addEventListener('DOMContentLoaded', function() {
         modalTitle.textContent = activity.title;
         
         let content = `
-            <div class="mb-3">
-                <strong>Date:</strong><br>
+            <div class="mb-3 text-white">
+                <strong class="text-white">Date:</strong><br>
                 ${dateTimeStr}
             </div>
         `;
 
         if (activity.location) {
             content += `
-                <div class="mb-3">
-                    <strong>Lieu:</strong><br>
+                <div class="mb-3 text-white">
+                    <strong class="text-white">Lieu:</strong><br>
                     ${activity.location}
                 </div>
             `;
@@ -484,8 +485,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (activity.categories && activity.categories.length > 0) {
             content += `
-                <div class="mb-3">
-                    <strong>Catégories:</strong><br>
+                <div class="mb-3 text-white">
+                    <strong class="text-white">Catégories:</strong><br>
                     <div class="d-flex flex-wrap gap-1">
                         ${activity.categories.map(category => `
                             <span class="badge" style="background-color: ${category.color}">${category.name}</span>
@@ -497,8 +498,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (activity.notes) {
             content += `
-                <div class="mb-3">
-                    <strong>Notes:</strong><br>
+                <div class="mb-3 text-white">
+                    <strong class="text-white">Notes:</strong><br>
                     ${activity.notes}
                 </div>
             `;
@@ -506,8 +507,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (activity.is_recurring) {
             content += `
-                <div class="mb-3">
-                    <strong>Récurrence:</strong><br>
+                <div class="mb-3 text-white">
+                    <strong class="text-white">Récurrence:</strong><br>
                     <i class="bi bi-arrow-repeat"></i> 
                     ${activity.recurrence_type}
                     ${activity.recurrence_end_date ? 
