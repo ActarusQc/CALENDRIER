@@ -264,33 +264,33 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Calculate and set initial height with smooth transition
+        // Initial state with opacity 0
+        element.style.opacity = '0';
+        element.style.height = '0px';
+        
+        // Calculate and set height with smooth transition
         requestAnimationFrame(() => {
             const content = element.querySelector('.activity-content');
             if (content) {
-                // Set initial height to 0 and opacity to 0
-                element.style.height = '0px';
-                element.style.opacity = '0';
-                
                 const contentHeight = content.scrollHeight;
                 const minHeight = parseInt(getComputedStyle(document.documentElement)
                     .getPropertyValue('--min-activity-height'));
                 const padding = parseInt(getComputedStyle(document.documentElement)
                     .getPropertyValue('--activity-padding')) * 2;
-                
+            
                 const finalHeight = Math.max(minHeight, contentHeight + padding);
-                
-                // Force a reflow
-                element.offsetHeight;
-                
-                // Animate to final height and full opacity
-                element.style.height = `${finalHeight}px`;
-                element.style.opacity = '1';
-                
-                // If this is a multi-day event's start, store the height for consistency
-                if (element.classList.contains('multi-day') && element.classList.contains('start')) {
+            
+                // Store the height for consistency across segments
+                if (element.classList.contains('multi-day')) {
                     element.setAttribute('data-content-height', finalHeight);
                 }
+            
+                // Force a reflow before applying transitions
+                element.offsetHeight;
+            
+                // Apply final height and opacity
+                element.style.height = `${finalHeight}px`;
+                element.style.opacity = '1';
             }
         });
         
@@ -388,39 +388,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Final pass: Apply consistent heights for multi-day events with smooth transition
+            // Final pass: Apply consistent heights for multi-day events
             requestAnimationFrame(() => {
                 multiDayActivities.forEach((eventData) => {
                     const { elements } = eventData;
                     if (elements.length > 0) {
-                        // Find the start element and get its height
-                        const startElement = elements.find(el => el.classList.contains('start'));
-                        if (startElement) {
-                            const height = startElement.getAttribute('data-content-height');
-                            if (height) {
-                                // Apply the same height to all segments with transition
-                                elements.forEach(element => {
-                                    requestAnimationFrame(() => {
-                                        element.style.height = `${height}px`;
-                                    });
-                                });
-                            }
-                        }
+                        // Get the maximum height from all segments
+                        const maxHeight = Math.max(...elements
+                            .map(el => parseInt(el.getAttribute('data-content-height')) || 0));
+            
+                        // Apply the maximum height to all segments
+                        elements.forEach(element => {
+                            requestAnimationFrame(() => {
+                                element.style.height = `${maxHeight}px`;
+                            });
+                        });
                     }
                 });
-
-                // Update container heights with smooth transition
+            
+                // Update container heights
                 document.querySelectorAll('.all-day-activities').forEach(container => {
-                    const activities = container.querySelectorAll('.activity');
-                    if (activities.length > 0) {
-                        container.style.height = 'auto';
-                        const containerHeight = container.offsetHeight;
-                        container.style.height = '0px';
-                        
-                        // Force a reflow
-                        container.offsetHeight;
-                        
-                        // Animate to final height
+                    if (container.children.length > 0) {
+                        const containerHeight = Array.from(container.children)
+                            .reduce((total, child) => total + child.offsetHeight + 2, 8);
                         container.style.height = `${containerHeight}px`;
                     }
                 });
