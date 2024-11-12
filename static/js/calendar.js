@@ -33,21 +33,36 @@ document.addEventListener('DOMContentLoaded', function() {
             const categories = await response.json();
             
             const filterContainer = document.getElementById('categoryFilters');
-            filterContainer.innerHTML = '';
+            filterContainer.innerHTML = ''; // Clear existing filters
             
-            // Add "Show All" button in French
+            // Add "Show All" button
             const showAllBtn = document.createElement('button');
-            showAllBtn.className = 'btn show-all-btn active';
-            showAllBtn.textContent = 'Tout afficher';
-            showAllBtn.addEventListener('click', resetCategoryFilters);
+            showAllBtn.className = 'btn btn-outline-secondary btn-sm me-2';
+            showAllBtn.dataset.category = 'all';
+            showAllBtn.textContent = window.translations?.show_all || 'Show All';
+            showAllBtn.addEventListener('click', () => toggleCategoryFilter('all'));
+            
+            // Set initial active state
+            if (activeCategories.has('all')) {
+                showAllBtn.classList.add('active');
+            }
+            
             filterContainer.appendChild(showAllBtn);
             
+            // Add category buttons
             categories.forEach(category => {
                 const button = document.createElement('button');
-                button.className = 'btn category-btn me-2';
-                button.setAttribute('data-category', category.id);
+                button.className = 'btn btn-sm me-2';
+                button.dataset.category = category.id;
                 button.style.backgroundColor = category.color;
+                button.style.color = 'white';
                 button.textContent = category.name;
+                
+                // Set initial active state
+                if (activeCategories.has(category.id.toString())) {
+                    button.classList.add('active');
+                }
+                
                 button.addEventListener('click', () => toggleCategoryFilter(category.id));
                 filterContainer.appendChild(button);
             });
@@ -57,39 +72,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategoryFilter(categoryId) {
+        const categoryStr = categoryId.toString();
         const button = document.querySelector(`[data-category="${categoryId}"]`);
+        
         if (!button) return;
 
-        // If 'Show All' is active, deactivate it first
-        if (activeCategories.has('all')) {
+        if (categoryId === 'all') {
+            // Clicking "Show All"
             activeCategories.clear();
-            document.querySelector('.show-all-btn').classList.remove('active');
-        }
-
-        // Toggle category
-        if (activeCategories.has(categoryId.toString())) {
-            activeCategories.delete(categoryId.toString());
-            button.classList.remove('active');
+            activeCategories.add('all');
             
-            // If no categories are selected, reset to show all
-            if (activeCategories.size === 0) {
-                resetCategoryFilters();
-                return;
-            }
+            // Update all buttons
+            document.querySelectorAll('[data-category]').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.category === 'all') {
+                    btn.classList.add('active');
+                }
+            });
         } else {
-            activeCategories.add(categoryId.toString());
-            button.classList.add('active');
+            // Clicking a category button
+            if (activeCategories.has('all')) {
+                // If "Show All" was active, clear it
+                activeCategories.clear();
+                document.querySelector('[data-category="all"]').classList.remove('active');
+            }
+
+            // Toggle the clicked category
+            if (activeCategories.has(categoryStr)) {
+                activeCategories.delete(categoryStr);
+                button.classList.remove('active');
+                
+                // If no categories are selected, revert to "Show All"
+                if (activeCategories.size === 0) {
+                    activeCategories.add('all');
+                    document.querySelector('[data-category="all"]').classList.add('active');
+                }
+            } else {
+                activeCategories.add(categoryStr);
+                button.classList.add('active');
+            }
         }
 
         // Refresh calendar with updated filters
-        fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
-    }
-
-    function resetCategoryFilters() {
-        activeCategories.clear();
-        activeCategories.add('all');
-        document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector('.show-all-btn').classList.add('active');
         fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
     }
 
@@ -97,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Always show if "Show All" is active
         if (activeCategories.has('all')) return true;
         
-        // Don't show activities without categories when filtering
+        // Don't show activities without categories when specific categories are selected
         if (!activity.categories || activity.categories.length === 0) return false;
         
         // Show if activity has at least one category that matches active filters

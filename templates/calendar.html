@@ -25,9 +25,6 @@
 
 <!-- Category Filters -->
 <div class="category-filters mb-3">
-    <button class="btn btn-outline-secondary btn-sm me-2 show-all-btn active" data-category="all">
-        {{ trans.show_all }}
-    </button>
     <div id="categoryFilters" class="d-inline-block">
         <!-- Category filter buttons will be dynamically added here -->
     </div>
@@ -64,19 +61,16 @@
                         <small class="text-muted d-block mb-2">{{ helpers.title }}</small>
                         <input type="text" class="form-control bg-dark text-white" id="title" required>
                     </div>
-                    <!-- Start date and time section -->
                     <div class="mb-3">
                         <label class="form-label text-white">{{ trans.date }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.date }}</small>
                         <input type="date" class="form-control bg-dark text-white" id="date" required>
                     </div>
-                    <!-- End date section -->
                     <div class="mb-3">
                         <label class="form-label text-white">{{ trans.end_date }}</label>
                         <small class="text-muted d-block mb-2">{{ helpers.end_date }}</small>
                         <input type="date" class="form-control bg-dark text-white" id="end_date">
                     </div>
-                    <!-- Time and all-day section -->
                     <div class="mb-3">
                         <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="is_all_day" name="is_all_day">
@@ -93,7 +87,6 @@
                             <input type="time" class="form-control bg-dark text-white" id="end_time" name="end_time">
                         </div>
                     </div>
-                    <!-- Recurring event section -->
                     <div class="mb-3">
                         <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="is_recurring" name="is_recurring">
