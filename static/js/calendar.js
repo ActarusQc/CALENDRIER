@@ -80,29 +80,36 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Before toggle - Active categories:', Array.from(activeCategories));
         
         if (categoryStr === 'all') {
-            // Clear all other selections when "Show All" is clicked
-            activeCategories.clear();
-            activeCategories.add('all');
-            
-            // Update button states
-            document.querySelectorAll('[data-category]').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.category === 'all') {
-                    btn.classList.add('active');
-                }
-            });
+            // Only handle "Show All" if it's not already active
+            if (!activeCategories.has('all')) {
+                activeCategories.clear();
+                activeCategories.add('all');
+                
+                // Update button states
+                document.querySelectorAll('[data-category]').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.category === 'all') {
+                        btn.classList.add('active');
+                    }
+                });
+            }
         } else {
-            // Remove "Show All" when selecting a specific category
-            activeCategories.delete('all');
-            document.querySelector('[data-category="all"]').classList.remove('active');
-            
-            // Toggle the selected category
-            if (activeCategories.has(categoryStr)) {
-                activeCategories.delete(categoryStr);
-                button.classList.remove('active');
-            } else {
+            // Handle specific category toggle
+            if (activeCategories.has('all')) {
+                // If "Show All" is active, clear it and add the clicked category
+                activeCategories.clear();
                 activeCategories.add(categoryStr);
+                document.querySelector('[data-category="all"]').classList.remove('active');
                 button.classList.add('active');
+            } else {
+                // Toggle the clicked category while keeping others unchanged
+                if (activeCategories.has(categoryStr)) {
+                    activeCategories.delete(categoryStr);
+                    button.classList.remove('active');
+                } else {
+                    activeCategories.add(categoryStr);
+                    button.classList.add('active');
+                }
             }
             
             // If no categories are selected, switch back to "Show All"
@@ -129,28 +136,29 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         }
         
-        // Handle activities with no categories
+        // Handle activities with no categories more leniently
         if (!activity.categories) {
-            console.log('Activity has no categories array - hiding activity');
-            return false;
+            console.log('Activity has no categories array - showing when no specific filters');
+            return activeCategories.size === 0;
         }
 
-        // Ensure categories is an array and not empty
+        // Ensure categories is an array
         if (!Array.isArray(activity.categories)) {
-            console.log('Activity categories is not an array - hiding activity');
-            return false;
+            console.log('Activity categories is not an array - converting to array');
+            activity.categories = [activity.categories];
         }
 
+        // Empty categories array - show when no specific filters
         if (activity.categories.length === 0) {
-            console.log('Activity has empty categories array - hiding activity');
-            return false;
+            console.log('Activity has empty categories array - showing when no specific filters');
+            return activeCategories.size === 0;
         }
 
         // Check if any of the activity's categories match the active filters
         const hasMatchingCategory = activity.categories.some(category => {
-            const categoryId = category.id.toString();
+            const categoryId = (category.id || category).toString();
             const isMatched = activeCategories.has(categoryId);
-            console.log(`Checking category ${categoryId} (${category.name}) - Match: ${isMatched}`);
+            console.log(`Checking category ${categoryId} (${category.name || 'Unknown'}) - Match: ${isMatched}`);
             return isMatched;
         });
 
