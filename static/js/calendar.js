@@ -228,6 +228,66 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarDates.appendChild(createDateCell(currentDate));
     }
 
+    function createActivityElement(activity, dateStr, startDate, endDate) {
+        const element = document.createElement('div');
+        element.className = 'activity';
+        element.setAttribute('data-activity-id', activity.id);
+        
+        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
+        element.style.backgroundColor = categoryColor;
+        
+        if (activity.is_all_day) {
+            element.classList.add('all-day');
+        }
+        
+        if (startDate < endDate) {
+            const currentDate = new Date(dateStr);
+            const isStart = startDate.toDateString() === currentDate.toDateString();
+            const isEnd = endDate.toDateString() === currentDate.toDateString();
+            
+            element.classList.add('multi-day');
+            if (isStart) {
+                element.classList.add('start');
+                element.setAttribute('data-start-date', startDate.toISOString());
+            } else if (isEnd) {
+                element.classList.add('end');
+            } else {
+                element.classList.add('middle');
+            }
+        }
+        
+        element.innerHTML = `
+            <div class="activity-content">
+                <div class="title">${activity.title}</div>
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
+            </div>
+        `;
+        
+        // Calculate and set initial height
+        requestAnimationFrame(() => {
+            const content = element.querySelector('.activity-content');
+            if (content) {
+                const contentHeight = content.scrollHeight;
+                const minHeight = parseInt(getComputedStyle(document.documentElement)
+                    .getPropertyValue('--min-activity-height'));
+                const padding = parseInt(getComputedStyle(document.documentElement)
+                    .getPropertyValue('--activity-padding')) * 2;
+                
+                const finalHeight = Math.max(minHeight, contentHeight + padding);
+                element.style.height = `${finalHeight}px`;
+                
+                // If this is a multi-day event's start, store the height for consistency
+                if (element.classList.contains('multi-day') && element.classList.contains('start')) {
+                    element.setAttribute('data-content-height', finalHeight);
+                }
+            }
+        });
+        
+        element.addEventListener('click', () => showActivityDetails(activity));
+        return element;
+    }
+
     async function fetchActivities(year, month) {
         try {
             const response = await fetch('/api/activities');
@@ -266,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     multiDayActivities.set(activity.id, {
                         activity,
                         elements: [],
-                        firstDayHeight: 0
+                        height: 0
                     });
                 } else {
                     singleDayActivities.push(activity);
@@ -274,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Second pass: Render multi-day events first
-            multiDayActivities.forEach((eventData, activityId) => {
+            for (const [_, eventData] of multiDayActivities) {
                 const { activity } = eventData;
                 const startDate = new Date(activity.date);
                 const endDate = new Date(activity.end_date);
@@ -298,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     current.setDate(current.getDate() + 1);
                 }
-            });
+            }
 
             // Third pass: Render single-day events
             singleDayActivities.forEach(activity => {
@@ -318,30 +378,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Final pass: Normalize heights for multi-day events
+            // Final pass: Apply consistent heights for multi-day events
             requestAnimationFrame(() => {
                 multiDayActivities.forEach((eventData) => {
                     const { elements } = eventData;
                     if (elements.length > 0) {
-                        // Calculate the height needed for the first day (with location)
-                        const firstElement = elements[0];
-                        firstElement.style.height = 'auto';
-                        const firstDayHeight = firstElement.getBoundingClientRect().height;
-
-                        // Apply this height to all segments
-                        elements.forEach(element => {
-                            element.style.height = `${firstDayHeight}px`;
-                        });
-
-                        // Update container heights if needed
-                        elements.forEach(element => {
-                            const container = element.closest('.all-day-activities');
-                            if (container) {
-                                const currentHeight = parseInt(container.style.height) || 0;
-                                const newHeight = element.offsetTop + firstDayHeight + 8; // 8px for padding
-                                container.style.height = `${Math.max(currentHeight, newHeight)}px`;
+                        // Find the start element and get its height
+                        const startElement = elements.find(el => el.classList.contains('start'));
+                        if (startElement) {
+                            const height = startElement.getAttribute('data-content-height');
+                            if (height) {
+                                // Apply the same height to all segments
+                                elements.forEach(element => {
+                                    element.style.height = `${height}px`;
+                                });
                             }
+                        }
+                    }
+                });
+
+                // Update container heights
+                document.querySelectorAll('.all-day-activities').forEach(container => {
+                    const activities = container.querySelectorAll('.activity');
+                    if (activities.length > 0) {
+                        let maxBottom = 0;
+                        activities.forEach(activity => {
+                            const rect = activity.getBoundingClientRect();
+                            maxBottom = Math.max(maxBottom, rect.bottom - container.getBoundingClientRect().top);
                         });
+                        container.style.height = `${maxBottom + 8}px`; // 8px for padding
                     }
                 });
             });
@@ -351,47 +416,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function createActivityElement(activity, dateStr, startDate, endDate) {
-        const element = document.createElement('div');
-        element.className = 'activity';
-        element.setAttribute('data-activity-id', activity.id);
-        
-        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
-        element.style.backgroundColor = categoryColor;
-        
-        if (activity.is_all_day) {
-            element.classList.add('all-day');
-        }
-        
-        if (startDate < endDate) {
-            const currentDate = new Date(dateStr);
-            const isStart = startDate.toDateString() === currentDate.toDateString();
-            const isEnd = endDate.toDateString() === currentDate.toDateString();
-            
-            element.classList.add('multi-day');
-            if (isStart) {
-                element.classList.add('start');
-                element.setAttribute('data-start-date', startDate.toISOString());
-            } else if (isEnd) {
-                element.classList.add('end');
-            } else {
-                element.classList.add('middle');
-            }
-        }
-        
-        element.innerHTML = `
-            <div class="activity-content">
-                <div class="title">${activity.title}</div>
-                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
-            </div>
-        `;
-        
-        element.addEventListener('click', () => showActivityDetails(activity));
-        return element;
-    }
-
     function showActivityDetails(activity) {
-        window.location.href = `/admin?selected_date=${activity.date}`;
+        // Get the modal from calendar.html
+        const modal = document.getElementById('activityModal');
+        if (!modal) {
+            // If modal not found, redirect to admin with activity ID
+            window.location.href = `/admin?activity_id=${activity.id}`;
+            return;
+        }
+
+        // Fetch activity details
+        fetch(`/api/activities/${activity.id}`)
+            .then(response => response.json())
+            .then(activityDetails => {
+                // Fill in the modal with activity details
+                document.getElementById('activityId').value = activityDetails.id;
+                document.getElementById('title').value = activityDetails.title;
+                document.getElementById('date').value = activityDetails.date;
+                document.getElementById('end_date').value = activityDetails.end_date || '';
+                document.getElementById('is_all_day').checked = activityDetails.is_all_day;
+                document.getElementById('time').value = activityDetails.time || '';
+                document.getElementById('end_time').value = activityDetails.end_time || '';
+                document.getElementById('location').value = activityDetails.location_id || '';
+                document.getElementById('notes').value = activityDetails.notes || '';
+                
+                // Set recurring fields
+                document.getElementById('is_recurring').checked = activityDetails.is_recurring;
+                document.getElementById('recurrence_type').value = activityDetails.recurrence_type || '';
+                document.getElementById('recurrence_end_date').value = activityDetails.recurrence_end_date || '';
+                
+                // Show/hide time fields based on all-day status
+                const timeField = document.getElementById('timeField');
+                const endTimeField = document.getElementById('endTimeField');
+                if (timeField && endTimeField) {
+                    timeField.style.display = activityDetails.is_all_day ? 'none' : 'block';
+                    endTimeField.style.display = activityDetails.is_all_day ? 'none' : 'block';
+                }
+
+                // Show/hide recurrence fields
+                const recurrenceFields = document.getElementById('recurrenceFields');
+                if (recurrenceFields) {
+                    recurrenceFields.style.display = activityDetails.is_recurring ? 'block' : 'none';
+                }
+
+                // Set categories
+                const checkboxes = document.querySelectorAll('input[name="categories"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = activityDetails.category_ids.includes(parseInt(checkbox.value));
+                });
+
+                // Show the modal
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching activity details:', error);
+                // Fallback to admin page if modal fails
+                window.location.href = `/admin?activity_id=${activity.id}`;
+            });
     }
 });

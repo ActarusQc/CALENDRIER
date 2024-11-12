@@ -3,10 +3,65 @@ document.addEventListener('DOMContentLoaded', function() {
     loadLocationsAndCategories();
     setupForm();
 
-    // Check for selected date parameter in URL
+    // Check for URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const selectedDate = urlParams.get('selected_date');
-    if (selectedDate) {
+    const activityId = urlParams.get('activity_id');
+
+    if (activityId) {
+        // If activity_id is present, fetch and load that activity's details
+        fetch(`/api/activities/${activityId}`)
+            .then(response => response.json())
+            .then(activity => {
+                document.getElementById('activityId').value = activity.id;
+                document.getElementById('title').value = activity.title;
+                document.getElementById('date').value = activity.date;
+                document.getElementById('end_date').value = activity.end_date || '';
+                document.getElementById('is_all_day').checked = activity.is_all_day;
+                document.getElementById('time').value = activity.time || '';
+                document.getElementById('end_time').value = activity.end_time || '';
+                document.getElementById('location').value = activity.location_id || '';
+                document.getElementById('notes').value = activity.notes || '';
+                
+                // Set recurring fields
+                document.getElementById('is_recurring').checked = activity.is_recurring;
+                document.getElementById('recurrence_type').value = activity.recurrence_type || '';
+                document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
+                
+                // Update form display based on activity type
+                const timeField = document.getElementById('timeField');
+                const endTimeField = document.getElementById('endTimeField');
+                const recurrenceFields = document.getElementById('recurrenceFields');
+                
+                if (timeField && endTimeField) {
+                    timeField.style.display = activity.is_all_day ? 'none' : 'block';
+                    endTimeField.style.display = activity.is_all_day ? 'none' : 'block';
+                }
+                
+                if (recurrenceFields) {
+                    recurrenceFields.style.display = activity.is_recurring ? 'block' : 'none';
+                }
+
+                // Wait for categories to load before setting them
+                const checkInterval = setInterval(() => {
+                    const checkboxes = document.querySelectorAll('input[name="categories"]');
+                    if (checkboxes.length > 0) {
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
+                        });
+                        clearInterval(checkInterval);
+                    }
+                }, 100);
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading activity:', error);
+                alert('Error loading activity: ' + error.message);
+            });
+    } else if (selectedDate) {
         // Pre-fill the date and show the modal
         document.getElementById('date').value = selectedDate;
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));

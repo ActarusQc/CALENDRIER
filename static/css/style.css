@@ -9,6 +9,8 @@
 :root {
     --theme-purple: #6f42c1;
     --theme-light-purple: #e9ecef;
+    --min-activity-height: 28px;
+    --activity-padding: 4px;
 }
 
 /* Calendar Styles */
@@ -51,6 +53,7 @@
     border-bottom: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
+    overflow: visible;
 }
 
 .date-number {
@@ -66,6 +69,12 @@
     z-index: 2;
 }
 
+.date-number:hover {
+    background-color: var(--theme-purple);
+    color: white;
+    cursor: pointer;
+}
+
 .all-day-activities {
     padding: 4px;
     border-bottom: 1px solid #dee2e6;
@@ -75,71 +84,111 @@
     position: relative;
     min-height: 32px;
     height: auto;
+    z-index: 1;
     background-color: #f8f9fa;
-    transition: height 0.3s ease;
+    margin: 0;
+    transition: min-height 0.3s ease;
+}
+
+.all-day-activities.has-events {
+    min-height: fit-content;
+    padding-bottom: 8px;
+}
+
+.all-day-activities .activity {
+    margin: 1px 0;
+    min-height: 24px;
+    padding: 4px 8px;
+    z-index: 2;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.timed-activities {
+    flex: 1;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    height: auto;
+    min-height: 60px;
+    overflow: visible;
+    z-index: 1;
 }
 
 .activity {
     margin: 2px 4px;
-    padding: 4px 8px;
-    min-height: 28px;
+    padding: var(--activity-padding) 8px;
+    min-height: var(--min-activity-height);
     border-radius: 4px;
     color: white;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     position: relative;
     z-index: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    height: auto;
 }
 
 .activity.multi-day {
     position: relative;
     margin: 2px 0;
     height: auto;
-    min-height: 28px;
+    min-height: var(--min-activity-height);
     box-sizing: border-box;
 }
 
 .activity.multi-day.start {
-    margin-right: -1px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+    margin-right: -1px;
+    z-index: 2;
 }
 
 .activity.multi-day.middle {
+    border-radius: 0;
     margin-left: -1px;
     margin-right: -1px;
-    border-radius: 0;
+    z-index: 1;
 }
 
 .activity.multi-day.end {
-    margin-left: -1px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    margin-left: -1px;
+    z-index: 1;
 }
 
 .activity-content {
     width: 100%;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     padding: 2px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .activity-content .title {
     font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 .activity-content .location {
     font-size: 0.7rem;
     opacity: 0.9;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.1;
 }
 
 /* Category Filter Styles */
@@ -298,12 +347,6 @@
     z-index: 2;
 }
 
-.date-number:hover {
-    background-color: var(--theme-purple);
-    color: white;
-    cursor: pointer;
-}
-
 .all-day-activities {
     padding: 4px;
     border-bottom: 1px solid #dee2e6;
@@ -313,47 +356,14 @@
     position: relative;
     min-height: 32px;
     height: auto;
-    z-index: 1;
     background-color: #f8f9fa;
-    margin: 0;
-    transition: min-height 0.3s ease;
-}
-
-.all-day-activities.has-events {
-    min-height: fit-content;
-    padding-bottom: 8px;
-}
-
-.all-day-activities .activity {
-    margin: 1px 0;
-    min-height: 24px;
-    padding: 4px 8px;
-    z-index: 2;
-    border-radius: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.timed-activities {
-    flex: 1;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    position: relative;
-    height: auto;
-    min-height: 60px;
-    overflow: visible;
-    z-index: 1;
+    transition: height 0.3s ease;
 }
 
 .activity {
-    margin: 2px 0;
+    margin: 2px 4px;
     padding: 4px 8px;
     min-height: 28px;
-    display: flex;
-    align-items: center;
     border-radius: 4px;
     color: white;
     font-size: 0.75rem;
@@ -361,66 +371,56 @@
     transition: all 0.2s ease;
     position: relative;
     z-index: 1;
-    box-sizing: border-box;
-}
-
-.activity:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .activity.multi-day {
-    position: absolute;
-    left: 0;
-    right: 0;
-    margin: 2px 4px;
+    position: relative;
+    margin: 2px 0;
     height: auto;
     min-height: 28px;
+    box-sizing: border-box;
 }
 
 .activity.multi-day.start {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
+    margin-right: -1px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-    margin-right: -1px;
-    z-index: 2;
 }
 
 .activity.multi-day.middle {
-    border-radius: 0;
     margin-left: -1px;
     margin-right: -1px;
-    z-index: 1;
+    border-radius: 0;
 }
 
 .activity.multi-day.end {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    margin-left: -1px;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
-    margin-left: -1px;
-    z-index: 1;
 }
 
 .activity-content {
     width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     padding: 2px 0;
 }
 
 .activity-content .title {
     font-weight: 500;
-    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .activity-content .location {
     font-size: 0.7rem;
     opacity: 0.9;
-    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Category Filter Styles */
