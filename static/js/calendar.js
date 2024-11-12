@@ -77,6 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!button) return;
 
+        console.log('Before toggle - Active categories:', Array.from(activeCategories));
+        
         if (categoryStr === 'all') {
             // Clear all other selections when "Show All" is clicked
             activeCategories.clear();
@@ -110,25 +112,50 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        console.log('After toggle - Active categories:', Array.from(activeCategories));
+        
         // Refresh calendar with updated filters
         updateCalendar();
     }
 
     function shouldDisplayActivity(activity) {
+        console.log('-------- Filtering Activity --------');
+        console.log('Activity:', activity.title);
+        console.log('Active Categories:', Array.from(activeCategories));
+        
         // Always show if "Show All" is active
         if (activeCategories.has('all')) {
+            console.log('Show All is active - displaying activity');
             return true;
         }
         
-        // If activity has no categories and specific categories are selected, don't show it
-        if (!activity.categories || !Array.isArray(activity.categories) || activity.categories.length === 0) {
+        // Handle activities with no categories
+        if (!activity.categories) {
+            console.log('Activity has no categories array - hiding activity');
+            return false;
+        }
+
+        // Ensure categories is an array and not empty
+        if (!Array.isArray(activity.categories)) {
+            console.log('Activity categories is not an array - hiding activity');
+            return false;
+        }
+
+        if (activity.categories.length === 0) {
+            console.log('Activity has empty categories array - hiding activity');
             return false;
         }
 
         // Check if any of the activity's categories match the active filters
-        return activity.categories.some(category => 
-            activeCategories.has(category.id.toString())
-        );
+        const hasMatchingCategory = activity.categories.some(category => {
+            const categoryId = category.id.toString();
+            const isMatched = activeCategories.has(categoryId);
+            console.log(`Checking category ${categoryId} (${category.name}) - Match: ${isMatched}`);
+            return isMatched;
+        });
+
+        console.log(`Final result for ${activity.title}: ${hasMatchingCategory}`);
+        return hasMatchingCategory;
     }
 
     function updateCalendarHeader() {
