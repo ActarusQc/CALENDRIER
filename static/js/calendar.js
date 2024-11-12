@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
             categories.forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'btn btn-sm me-2';
-                button.dataset.category = category.id;
+                button.dataset.category = category.id.toString();
                 button.style.backgroundColor = category.color;
                 button.style.color = 'white';
                 button.textContent = category.name;
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     button.classList.add('active');
                 }
                 
-                button.addEventListener('click', () => toggleCategoryFilter(category.id));
+                button.addEventListener('click', () => toggleCategoryFilter(category.id.toString()));
                 filterContainer.appendChild(button);
             });
         } catch (error) {
@@ -72,17 +72,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategoryFilter(categoryId) {
+        // Ensure categoryId is always a string
         const categoryStr = categoryId.toString();
-        const button = document.querySelector(`[data-category="${categoryId}"]`);
+        const button = document.querySelector(`[data-category="${categoryStr}"]`);
         
         if (!button) return;
 
-        if (categoryId === 'all') {
-            // Clicking "Show All"
+        if (categoryStr === 'all') {
+            // Clicking "Show All" button
             activeCategories.clear();
             activeCategories.add('all');
             
-            // Update all buttons
+            // Update button states
             document.querySelectorAll('[data-category]').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.category === 'all') {
@@ -90,9 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            // Clicking a category button
+            // Clicking a specific category button
             if (activeCategories.has('all')) {
-                // If "Show All" was active, clear it
+                // Remove "Show All" when selecting specific category
                 activeCategories.clear();
                 document.querySelector('[data-category="all"]').classList.remove('active');
             }
@@ -101,15 +102,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (activeCategories.has(categoryStr)) {
                 activeCategories.delete(categoryStr);
                 button.classList.remove('active');
-                
-                // If no categories are selected, revert to "Show All"
-                if (activeCategories.size === 0) {
-                    activeCategories.add('all');
-                    document.querySelector('[data-category="all"]').classList.add('active');
-                }
             } else {
                 activeCategories.add(categoryStr);
                 button.classList.add('active');
+            }
+
+            // If no categories are selected, revert to "Show All"
+            if (activeCategories.size === 0) {
+                activeCategories.add('all');
+                document.querySelector('[data-category="all"]').classList.add('active');
             }
         }
 
@@ -121,13 +122,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Always show if "Show All" is active
         if (activeCategories.has('all')) return true;
         
-        // Don't show activities without categories when specific categories are selected
-        if (!activity.categories || activity.categories.length === 0) return false;
+        // Don't show activities without categories when filtering
+        if (!activity.categories || !Array.isArray(activity.categories) || activity.categories.length === 0) {
+            return false;
+        }
         
         // Show if activity has at least one category that matches active filters
-        return activity.categories.some(category => 
-            activeCategories.has(category.id.toString())
-        );
+        return activity.categories.some(category => {
+            // Ensure category.id is converted to string for comparison
+            return category && category.id && activeCategories.has(category.id.toString());
+        });
     }
 
     function updateCalendarHeader() {
