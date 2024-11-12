@@ -379,60 +379,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        const content = document.createElement('div');
-        content.className = 'activity-content';
+        element.innerHTML = `
+            <div class="activity-content">
+                <div class="title">${activity.title}</div>
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
+            </div>
+        `;
         
-        const title = document.createElement('div');
-        title.className = 'title';
-        title.textContent = activity.title;
-        content.appendChild(title);
-        
-        if (activity.location) {
-            const location = document.createElement('div');
-            location.className = 'location';
-            location.textContent = activity.location;
-            content.appendChild(location);
-        }
-
-        if (activity.is_recurring) {
-            const icon = document.createElement('i');
-            icon.className = 'bi bi-arrow-repeat ms-1';
-            content.appendChild(icon);
-        }
-        
-        element.appendChild(content);
-        
-        // Add dynamic height adjustment
-        requestAnimationFrame(() => {
-            const contentHeight = content.scrollHeight;
-            const elementHeight = element.offsetHeight;
-            
-            if (contentHeight > elementHeight) {
-                element.classList.add('has-overflow');
-            }
-            
-            element.addEventListener('click', (e) => {
-                if (e.target === element || e.target.closest('.activity-content')) {
-                    if (!element.classList.contains('expanded')) {
-                        element.classList.add('expanded');
-                        content.classList.add('expanded');
-                        element.style.height = `${contentHeight}px`;
-                    } else {
-                        element.classList.remove('expanded');
-                        content.classList.remove('expanded');
-                        element.style.height = '';
-                    }
-                    e.stopPropagation();
-                }
-            });
-        });
-        
-        // Add double-click handler for activity details
-        element.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            showActivityDetails(activity);
-        });
-        
+        element.addEventListener('click', () => showActivityDetails(activity));
         return element;
     }
 
