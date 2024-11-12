@@ -412,116 +412,103 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function showActivityDetails(activity) {
-        // Create modal if it doesn't exist
-        let modal = document.getElementById('activityDetailsModal');
-        if (!modal) {
-            const modalHTML = `
-                <div class="modal fade" id="activityDetailsModal" tabindex="-1" aria-hidden="true">
+        try {
+            const response = await fetch(`/api/activities/${activity.id}`);
+            if (!response.ok) {
+                throw new Error('Failed to load activity details');
+            }
+            const activityDetails = await response.json();
+            
+            // Format dates and times
+            const startDate = new Date(activityDetails.date).toLocaleDateString('fr-FR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            let timeStr = activityDetails.is_all_day ? 'Toute la journée' : 
+                (activityDetails.time + (activityDetails.end_time ? ` - ${activityDetails.end_time}` : ''));
+                
+            let endDateStr = '';
+            if (activityDetails.end_date) {
+                endDateStr = new Date(activityDetails.end_date).toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+            
+            // Get existing modal or create it if it doesn't exist
+            let modal = document.getElementById('activityDetailsModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'activityDetailsModal';
+                modal.className = 'modal fade';
+                modal.setAttribute('tabindex', '-1');
+                modal.innerHTML = `
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title"></h5>
+                                <h5 class="modal-title">Détails de l'activité</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="activity-info"></div>
+                                <div class="activity-details"></div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            modal = document.getElementById('activityDetailsModal');
-        }
-
-        // Format dates and times
-        const startDate = new Date(activity.date);
-        const endDate = activity.end_date ? new Date(activity.end_date) : null;
-        
-        const formatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        let dateTimeStr = startDate.toLocaleDateString('fr-FR', formatOptions);
-        
-        if (endDate) {
-            dateTimeStr += ` - ${endDate.toLocaleDateString('fr-FR', formatOptions)}`;
-        }
-        
-        if (!activity.is_all_day) {
-            dateTimeStr += `<br>`;
-            if (activity.time) {
-                dateTimeStr += activity.time;
-                if (activity.end_time) {
-                    dateTimeStr += ` - ${activity.end_time}`;
-                }
+                `;
+                document.body.appendChild(modal);
             }
-        } else {
-            dateTimeStr += `<br>Toute la journée`;
-        }
 
-        // Create content for modal
-        const modalTitle = modal.querySelector('.modal-title');
-        const modalBody = modal.querySelector('.activity-info');
-        
-        modalTitle.textContent = activity.title;
-        
-        let content = `
-            <div class="mb-3">
-                <strong>Date:</strong><br>
-                ${dateTimeStr}
-            </div>
-        `;
-
-        if (activity.location) {
-            content += `
+            // Update modal content
+            const detailsContainer = modal.querySelector('.activity-details');
+            detailsContainer.innerHTML = `
+                <h4>${activityDetails.title}</h4>
                 <div class="mb-3">
-                    <strong>Lieu:</strong><br>
-                    ${activity.location}
+                    <strong>Date:</strong> ${startDate}
+                    ${endDateStr ? `<br><strong>Date de fin:</strong> ${endDateStr}` : ''}
+                    <br><strong>Horaire:</strong> ${timeStr}
                 </div>
-            `;
-        }
-
-        if (activity.categories && activity.categories.length > 0) {
-            content += `
-                <div class="mb-3">
-                    <strong>Catégories:</strong><br>
-                    <div class="d-flex flex-wrap gap-1">
-                        ${activity.categories.map(category => `
-                            <span class="badge" style="background-color: ${category.color}">${category.name}</span>
-                        `).join('')}
+                ${activityDetails.location ? `
+                    <div class="mb-3">
+                        <strong>Lieu:</strong> ${activityDetails.location}
                     </div>
-                </div>
+                ` : ''}
+                ${activityDetails.categories?.length ? `
+                    <div class="mb-3">
+                        <strong>Catégories:</strong><br>
+                        <div class="d-flex flex-wrap gap-1">
+                            ${activityDetails.categories.map(category => `
+                                <span class="badge" style="background-color: ${category.color}">${category.name}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                ${activityDetails.notes ? `
+                    <div class="mb-3">
+                        <strong>Notes:</strong><br>
+                        ${activityDetails.notes}
+                    </div>
+                ` : ''}
+                ${activityDetails.is_recurring ? `
+                    <div class="mb-3">
+                        <strong>Récurrence:</strong><br>
+                        ${activityDetails.recurrence_type}
+                        ${activityDetails.recurrence_end_date ? `<br>Jusqu'au ${new Date(activityDetails.recurrence_end_date).toLocaleDateString('fr-FR')}` : ''}
+                    </div>
+                ` : ''}
             `;
+
+            // Show modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        } catch (error) {
+            console.error('Error loading activity details:', error);
+            alert('Error loading activity details: ' + error.message);
         }
-
-        if (activity.notes) {
-            content += `
-                <div class="mb-3">
-                    <strong>Notes:</strong><br>
-                    ${activity.notes}
-                </div>
-            `;
-        }
-
-        if (activity.is_recurring) {
-            content += `
-                <div class="mb-3">
-                    <strong>Récurrence:</strong><br>
-                    <i class="bi bi-arrow-repeat"></i> 
-                    ${activity.recurrence_type}
-                    ${activity.recurrence_end_date ? 
-                        `jusqu'au ${new Date(activity.recurrence_end_date)
-                            .toLocaleDateString('fr-FR', {year: 'numeric', month: 'long', day: 'numeric'})}`
-                        : ''}
-                </div>
-            `;
-        }
-
-        modalBody.innerHTML = content;
-
-        // Show modal
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
     }
 });
