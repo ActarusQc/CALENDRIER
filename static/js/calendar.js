@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const filterContainer = document.getElementById('categoryFilters');
             filterContainer.innerHTML = ''; // Clear existing filters
             
-            // Add "Show All" button
+            // Add single "Show All" button
             const showAllBtn = document.createElement('button');
             showAllBtn.className = 'btn btn-outline-secondary btn-sm me-2';
             showAllBtn.dataset.category = 'all';
@@ -72,20 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategoryFilter(categoryId) {
-        // Ensure categoryId is always a string
         const categoryStr = categoryId.toString();
         const button = document.querySelector(`[data-category="${categoryStr}"]`);
         
         if (!button) return;
 
-        // Remove "Show All" first if clicking a specific category
-        if (categoryStr !== 'all' && activeCategories.has('all')) {
-            activeCategories.clear();
-            document.querySelector('[data-category="all"]').classList.remove('active');
-        }
-
-        // Handle "Show All" click
         if (categoryStr === 'all') {
+            // Clear all other selections when "Show All" is clicked
             activeCategories.clear();
             activeCategories.add('all');
             
@@ -97,7 +90,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            // Toggle the specific category
+            // Remove "Show All" when selecting a specific category
+            if (activeCategories.has('all')) {
+                activeCategories.clear();
+                document.querySelector('[data-category="all"]').classList.remove('active');
+            }
+            
+            // Toggle the selected category
             if (activeCategories.has(categoryStr)) {
                 activeCategories.delete(categoryStr);
                 button.classList.remove('active');
@@ -105,15 +104,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 activeCategories.add(categoryStr);
                 button.classList.add('active');
             }
-
-            // If no categories are selected, revert to "Show All"
+            
+            // If no categories are selected, switch back to "Show All"
             if (activeCategories.size === 0) {
                 activeCategories.add('all');
                 document.querySelector('[data-category="all"]').classList.add('active');
             }
         }
-
-        // Refresh calendar with updated filters
+        
+        // Refresh activities with updated filters
         fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
     }
 
@@ -130,10 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Check if any of the activity's categories match the active filters
         return activity.categories.some(category => {
-            if (!category || typeof category.id === 'undefined') {
-                return false;
-            }
-            // Convert category ID to string for comparison
             const categoryId = category.id.toString();
             return activeCategories.has(categoryId);
         });
@@ -421,33 +416,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (container) {
                     const element = createActivityElement(
-                        activity,
-                        dateStr,
+                        activity, 
+                        dateStr, 
                         new Date(activity.date),
-                        new Date(activity.date)
+                        activity.end_date ? new Date(activity.end_date) : new Date(activity.date)
                     );
                     container.appendChild(element);
                 }
             });
-            
-            // Apply consistent heights and transitions to multi-day events
-            requestAnimationFrame(() => {
-                multiDayActivities.forEach(({ elements }) => {
-                    if (elements.length > 0) {
-                        // Find the maximum height among all segments
-                        const maxHeight = Math.max(...elements.map(el => 
-                            parseInt(el.getAttribute('data-content-height')) || 0
-                        ));
-                        
-                        // Apply the maximum height to all segments with transition
-                        elements.forEach(element => {
-                            element.style.height = `${maxHeight}px`;
-                        });
-                    }
-                });
-            });
         } catch (error) {
-            console.error('Error loading activities:', error);
+            console.error('Error fetching activities:', error);
         }
     }
 
