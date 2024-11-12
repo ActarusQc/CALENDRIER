@@ -277,6 +277,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const startDate = new Date(activity.date);
         const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
         
+        // Add additional class for all-day events
+        if (activity.is_all_day) {
+            activityDiv.classList.add('all-day');
+        }
+        
         // Determine the position of this segment in a multi-day event
         let position = 'single';
         if (endDate > startDate) {
@@ -293,6 +298,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             activityDiv.classList.add('multi-day', position);
+            
+            // Calculate width for multi-day events
+            if (position === 'start') {
+                const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                activityDiv.style.width = `calc(${100 * totalDays}% + ${totalDays - 1}px)`;
+            }
         }
         
         activityDiv.style.backgroundColor = categoryColor;
@@ -307,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1" title="Activité récurrente"></i>' : ''}
                 </div>
             `;
-        } else if (position === 'middle' || position === 'end') {
+        } else {
             content = '<div class="activity-content"></div>';
         }
         
@@ -343,18 +354,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (allDayContainer && timedContainer) {
-                    // Handle all-day events
-                    dateActivities.allDay.forEach((activity, index) => {
+                    // Handle all-day events first
+                    const processedMultiDayEvents = new Set();
+                    
+                    dateActivities.allDay.forEach((activity) => {
                         if (shouldDisplayActivity(activity)) {
-                            const activityElement = createActivityElement(activity, dateStr);
-                            allDayContainer.appendChild(activityElement);
+                            // For multi-day events, only process once
+                            const activityId = activity.id;
+                            if (!processedMultiDayEvents.has(activityId)) {
+                                const activityElement = createActivityElement(activity, dateStr);
+                                allDayContainer.appendChild(activityElement);
+                                processedMultiDayEvents.add(activityId);
+                            }
                         }
                     });
                     
                     // Handle timed events with overlap prevention
-                    const timeSlots = new Map(); // Track time slots for overlap detection
+                    const timeSlots = [];
                     
-                    dateActivities.timed.forEach((activity, index) => {
+                    dateActivities.timed.forEach((activity) => {
                         if (shouldDisplayActivity(activity)) {
                             const activityElement = createActivityElement(activity, dateStr);
                             
@@ -363,19 +381,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             const endTime = activity.end_time || '23:59';
                             
                             let overlapCount = 0;
-                            timeSlots.forEach((slot, existingTime) => {
-                                if (isTimeOverlapping(startTime, endTime, existingTime.start, existingTime.end)) {
+                            for (const slot of timeSlots) {
+                                if (isTimeOverlapping(startTime, endTime, slot.start, slot.end)) {
                                     overlapCount++;
                                 }
-                            });
+                            }
                             
                             // Add overlap classes if needed
                             if (overlapCount > 0) {
-                                activityElement.classList.add(`overlapped-${overlapCount}`);
+                                activityElement.classList.add(`overlapped-${Math.min(overlapCount, 3)}`);
                             }
                             
                             // Store the time slot
-                            timeSlots.set(startTime, { start: startTime, end: endTime });
+                            timeSlots.push({ start: startTime, end: endTime });
                             
                             timedContainer.appendChild(activityElement);
                         }
@@ -411,11 +429,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 }
                 
-                const array = activity.is_all_day ? grouped[dateStr].allDay : grouped[dateStr].timed;
-                array.push({
-                    ...activity,
-                    displayDate: new Date(currentDate)
-                });
+                // Check if this is a multi-day event
+                const isMultiDay = activityEndDate > activityStartDate;
+                
+                // Determine if this should be treated as an all-day event
+                const isAllDay = activity.is_all_day || isMultiDay;
+                
+                // Create a copy of the activity for this date
+                const activityCopy = { ...activity };
+                
+                // Add to appropriate array
+                if (isAllDay) {
+                    // Don't add duplicate all-day events
+                    if (!grouped[dateStr].allDay.some(a => a.id === activity.id)) {
+                        grouped[dateStr].allDay.push(activityCopy);
+                    }
+                } else {
+                    grouped[dateStr].timed.push(activityCopy);
+                }
                 
                 currentDate.setDate(currentDate.getDate() + 1);
             }
