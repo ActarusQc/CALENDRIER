@@ -411,63 +411,117 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function showActivityDetails(activity) {
-        // Get the modal from calendar.html
-        const modal = document.getElementById('activityModal');
+    async function showActivityDetails(activity) {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('activityDetailsModal');
         if (!modal) {
-            // If modal not found, redirect to admin with activity ID
-            window.location.href = `/admin?activity_id=${activity.id}`;
-            return;
+            const modalHTML = `
+                <div class="modal fade" id="activityDetailsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="activity-info"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            modal = document.getElementById('activityDetailsModal');
         }
 
-        // Fetch activity details
-        fetch(`/api/activities/${activity.id}`)
-            .then(response => response.json())
-            .then(activityDetails => {
-                // Fill in the modal with activity details
-                document.getElementById('activityId').value = activityDetails.id;
-                document.getElementById('title').value = activityDetails.title;
-                document.getElementById('date').value = activityDetails.date;
-                document.getElementById('end_date').value = activityDetails.end_date || '';
-                document.getElementById('is_all_day').checked = activityDetails.is_all_day;
-                document.getElementById('time').value = activityDetails.time || '';
-                document.getElementById('end_time').value = activityDetails.end_time || '';
-                document.getElementById('location').value = activityDetails.location_id || '';
-                document.getElementById('notes').value = activityDetails.notes || '';
-                
-                // Set recurring fields
-                document.getElementById('is_recurring').checked = activityDetails.is_recurring;
-                document.getElementById('recurrence_type').value = activityDetails.recurrence_type || '';
-                document.getElementById('recurrence_end_date').value = activityDetails.recurrence_end_date || '';
-                
-                // Show/hide time fields based on all-day status
-                const timeField = document.getElementById('timeField');
-                const endTimeField = document.getElementById('endTimeField');
-                if (timeField && endTimeField) {
-                    timeField.style.display = activityDetails.is_all_day ? 'none' : 'block';
-                    endTimeField.style.display = activityDetails.is_all_day ? 'none' : 'block';
+        // Format dates and times
+        const startDate = new Date(activity.date);
+        const endDate = activity.end_date ? new Date(activity.end_date) : null;
+        
+        const formatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        let dateTimeStr = startDate.toLocaleDateString('fr-FR', formatOptions);
+        
+        if (endDate) {
+            dateTimeStr += ` - ${endDate.toLocaleDateString('fr-FR', formatOptions)}`;
+        }
+        
+        if (!activity.is_all_day) {
+            dateTimeStr += `<br>`;
+            if (activity.time) {
+                dateTimeStr += activity.time;
+                if (activity.end_time) {
+                    dateTimeStr += ` - ${activity.end_time}`;
                 }
+            }
+        } else {
+            dateTimeStr += `<br>Toute la journée`;
+        }
 
-                // Show/hide recurrence fields
-                const recurrenceFields = document.getElementById('recurrenceFields');
-                if (recurrenceFields) {
-                    recurrenceFields.style.display = activityDetails.is_recurring ? 'block' : 'none';
-                }
+        // Create content for modal
+        const modalTitle = modal.querySelector('.modal-title');
+        const modalBody = modal.querySelector('.activity-info');
+        
+        modalTitle.textContent = activity.title;
+        
+        let content = `
+            <div class="mb-3">
+                <strong>Date:</strong><br>
+                ${dateTimeStr}
+            </div>
+        `;
 
-                // Set categories
-                const checkboxes = document.querySelectorAll('input[name="categories"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = activityDetails.category_ids.includes(parseInt(checkbox.value));
-                });
+        if (activity.location) {
+            content += `
+                <div class="mb-3">
+                    <strong>Lieu:</strong><br>
+                    ${activity.location}
+                </div>
+            `;
+        }
 
-                // Show the modal
-                const bsModal = new bootstrap.Modal(modal);
-                bsModal.show();
-            })
-            .catch(error => {
-                console.error('Error fetching activity details:', error);
-                // Fallback to admin page if modal fails
-                window.location.href = `/admin?activity_id=${activity.id}`;
-            });
+        if (activity.categories && activity.categories.length > 0) {
+            content += `
+                <div class="mb-3">
+                    <strong>Catégories:</strong><br>
+                    <div class="d-flex flex-wrap gap-1">
+                        ${activity.categories.map(category => `
+                            <span class="badge" style="background-color: ${category.color}">${category.name}</span>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (activity.notes) {
+            content += `
+                <div class="mb-3">
+                    <strong>Notes:</strong><br>
+                    ${activity.notes}
+                </div>
+            `;
+        }
+
+        if (activity.is_recurring) {
+            content += `
+                <div class="mb-3">
+                    <strong>Récurrence:</strong><br>
+                    <i class="bi bi-arrow-repeat"></i> 
+                    ${activity.recurrence_type}
+                    ${activity.recurrence_end_date ? 
+                        `jusqu'au ${new Date(activity.recurrence_end_date)
+                            .toLocaleDateString('fr-FR', {year: 'numeric', month: 'long', day: 'numeric'})}`
+                        : ''}
+                </div>
+            `;
+        }
+
+        modalBody.innerHTML = content;
+
+        // Show modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
     }
 });
