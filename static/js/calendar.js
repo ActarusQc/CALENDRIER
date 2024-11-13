@@ -414,12 +414,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('activityDetailsModal');
             modal.querySelector('.modal-body').innerHTML = `
                 <div class="activity-details">
-                    <h5>${details.title}</h5>
-                    <p>Date: ${new Date(details.date).toLocaleDateString('fr-FR')}</p>
-                    ${details.time ? `<p>Heure: ${details.time}</p>` : ''}
-                    ${details.location ? `<p>Lieu: ${details.location}</p>` : ''}
-                    ${details.notes ? `<p>Notes: ${details.notes}</p>` : ''}
-                    ${details.is_recurring ? '<p><i class="bi bi-arrow-repeat"></i> Événement récurrent</p>' : ''}
+                    <h5 class="text-white">${details.title}</h5>
+                    <p class="text-white">Date: ${new Date(details.date).toLocaleDateString('fr-FR')}</p>
+                    ${details.time ? `<p class="text-white">Heure: ${details.time}</p>` : ''}
+                    ${details.location ? `<p class="text-white">Lieu: ${details.location}</p>` : ''}
+                    ${details.notes ? `<p class="text-white">Notes: ${details.notes}</p>` : ''}
+                    ${details.is_recurring ? '<p class="text-white"><i class="bi bi-arrow-repeat"></i> Événement récurrent</p>' : ''}
+                    <div class="mt-2">
+                        ${details.categories.map(c => `
+                            <span class="badge" style="background-color: ${c.color}">${c.name}</span>
+                        `).join(' ')}
+                    </div>
                 </div>
             `;
             new bootstrap.Modal(modal).show();
