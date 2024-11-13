@@ -25,6 +25,14 @@
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 
+#activityDetailsModal .activity-details {
+    color: white;
+}
+
+#activityDetailsModal .badge {
+    color: white;
+}
+
 /* Calendar Container */
 .calendar-container {
     margin: 20px 0;
