@@ -263,11 +263,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Set initial state
         element.style.opacity = '0';
         element.style.transform = 'translateY(10px)';
         
-        // Calculate final height including all content
         const calculateHeight = () => {
             const content = element.querySelector('.activity-content');
             if (!content) return 0;
@@ -281,15 +279,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return Math.max(minHeight, contentHeight + padding);
         };
         
-        // Apply transitions after a short delay to ensure content is rendered
         requestAnimationFrame(() => {
             const finalHeight = calculateHeight();
             element.setAttribute('data-content-height', finalHeight);
             
-            // Force reflow
             element.offsetHeight;
             
-            // Apply transitions
             element.style.height = `${finalHeight}px`;
             element.style.opacity = '1';
             element.style.transform = 'translateY(0)';
@@ -302,16 +297,17 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchActivities(year, month) {
         try {
             const response = await fetch('/api/activities');
+            if (!response.ok) {
+                throw new Error('Failed to load activities');
+            }
             const activities = await response.json();
             
-            // Clear existing activities
             document.querySelectorAll('.all-day-activities, .timed-activities')
                 .forEach(container => {
                     container.innerHTML = '';
                     container.style.height = 'auto';
                 });
             
-            // Sort activities by duration (longest first) and start date
             activities.sort((a, b) => {
                 const aDuration = a.end_date ? 
                     (new Date(a.end_date) - new Date(a.date)) : 0;
@@ -320,7 +316,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return bDuration - aDuration || new Date(a.date) - new Date(b.date);
             });
             
-            // Group activities
             const multiDayActivities = new Map();
             const singleDayActivities = [];
             
@@ -342,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Render multi-day events first
             for (const [_, eventData] of multiDayActivities) {
                 const { activity, startDate, endDate } = eventData;
                 let current = new Date(startDate);
@@ -362,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Render single-day events
             singleDayActivities.forEach(activity => {
                 const dateStr = activity.date;
                 const container = activity.is_all_day ? 
@@ -380,23 +373,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // Apply consistent heights and transitions to multi-day events
             requestAnimationFrame(() => {
                 multiDayActivities.forEach(({ elements }) => {
                     if (elements.length > 0) {
-                        // Find the maximum height among all segments
                         const maxHeight = Math.max(...elements.map(el => 
                             parseInt(el.getAttribute('data-content-height')) || 0
                         ));
                         
-                        // Apply the maximum height to all segments with transition
                         elements.forEach(element => {
                             element.style.height = `${maxHeight}px`;
                         });
                     }
                 });
                 
-                // Update container heights with transition
                 document.querySelectorAll('.all-day-activities').forEach(container => {
                     if (container.children.length > 0) {
                         const totalHeight = Array.from(container.children)
@@ -408,107 +397,58 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error loading activities:', error);
+            // Show error message to user
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = 'Failed to load activities. Please try again later.';
+            document.querySelector('.calendar-container').prepend(errorDiv);
         }
     }
 
     async function showActivityDetails(activity) {
         try {
             const response = await fetch(`/api/activities/${activity.id}`);
+            if (response.status === 401 || response.status === 302) {
+                // Handle unauthorized access by showing basic activity details
+                const modal = document.getElementById('activityDetailsModal');
+                modal.querySelector('.modal-body').innerHTML = `
+                    <div class="activity-details">
+                        <h5>${activity.title}</h5>
+                        <p>${activity.date}</p>
+                        ${activity.location ? `<p>Location: ${activity.location}</p>` : ''}
+                        ${activity.notes ? `<p>Notes: ${activity.notes}</p>` : ''}
+                    </div>
+                `;
+                new bootstrap.Modal(modal).show();
+                return;
+            }
+            
             if (!response.ok) {
                 throw new Error('Failed to load activity details');
             }
-            const activityDetails = await response.json();
-            
-            // Format dates and times
-            const startDate = new Date(activityDetails.date).toLocaleDateString('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            let timeStr = activityDetails.is_all_day ? 'Toute la journée' : 
-                (activityDetails.time + (activityDetails.end_time ? ` - ${activityDetails.end_time}` : ''));
-                
-            let endDateStr = '';
-            if (activityDetails.end_date) {
-                endDateStr = new Date(activityDetails.end_date).toLocaleDateString('fr-FR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            }
-            
-            // Get existing modal or create it if it doesn't exist
-            let modal = document.getElementById('activityDetailsModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'activityDetailsModal';
-                modal.className = 'modal fade';
-                modal.setAttribute('tabindex', '-1');
-                modal.innerHTML = `
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Détails de l'activité</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="activity-details"></div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-            }
 
-            // Update modal content
-            const detailsContainer = modal.querySelector('.activity-details');
-            detailsContainer.innerHTML = `
-                <h4>${activityDetails.title}</h4>
-                <div class="mb-3">
-                    <strong>Date:</strong> ${startDate}
-                    ${endDateStr ? `<br><strong>Date de fin:</strong> ${endDateStr}` : ''}
-                    <br><strong>Horaire:</strong> ${timeStr}
+            const details = await response.json();
+            // Display activity details in modal
+            const modal = document.getElementById('activityDetailsModal');
+            modal.querySelector('.modal-body').innerHTML = `
+                <div class="activity-details">
+                    <h5>${details.title}</h5>
+                    <p>${details.date}</p>
+                    ${details.location ? `<p>Location: ${details.location}</p>` : ''}
+                    ${details.notes ? `<p>Notes: ${details.notes}</p>` : ''}
                 </div>
-                ${activityDetails.location ? `
-                    <div class="mb-3">
-                        <strong>Lieu:</strong> ${activityDetails.location}
-                    </div>
-                ` : ''}
-                ${activityDetails.categories?.length ? `
-                    <div class="mb-3">
-                        <strong>Catégories:</strong><br>
-                        <div class="d-flex flex-wrap gap-1">
-                            ${activityDetails.categories.map(category => `
-                                <span class="badge" style="background-color: ${category.color}">${category.name}</span>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                ${activityDetails.notes ? `
-                    <div class="mb-3">
-                        <strong>Notes:</strong><br>
-                        ${activityDetails.notes}
-                    </div>
-                ` : ''}
-                ${activityDetails.is_recurring ? `
-                    <div class="mb-3">
-                        <strong>Récurrence:</strong><br>
-                        ${activityDetails.recurrence_type}
-                        ${activityDetails.recurrence_end_date ? `<br>Jusqu'au ${new Date(activityDetails.recurrence_end_date).toLocaleDateString('fr-FR')}` : ''}
-                    </div>
-                ` : ''}
             `;
-
-            // Show modal
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
+            new bootstrap.Modal(modal).show();
         } catch (error) {
             console.error('Error loading activity details:', error);
-            alert('Error loading activity details: ' + error.message);
+            // Show error message in modal
+            const modal = document.getElementById('activityDetailsModal');
+            modal.querySelector('.modal-body').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load activity details. Please try again later.
+                </div>
+            `;
+            new bootstrap.Modal(modal).show();
         }
     }
 });
