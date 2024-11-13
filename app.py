@@ -449,48 +449,69 @@ def export_activity(activity_id):
     
     # Create calendar event
     cal = Calendar()
-    cal.add('prodid', '-//CFSJ Calendar//EN')
+    cal.add('prodid', '-//CFSJ Calendar//FR')
     cal.add('version', '2.0')
     
     event = Event()
     event.add('summary', activity.title)
     
-    # Set event start
+    # Handle start date/time
     start_date = activity.date
-    if activity.time and not activity.is_all_day:
-        hours, minutes = map(int, activity.time.split(':'))
-        start_date = datetime.combine(activity.date, datetime.min.time().replace(hour=hours, minute=minutes))
-    event.add('dtstart', start_date)
+    if activity.is_all_day:
+        event.add('dtstart', start_date.date())
+    else:
+        if activity.time:
+            hours, minutes = map(int, activity.time.split(':'))
+            start_datetime = datetime.combine(start_date.date(), datetime.min.time().replace(hour=hours, minute=minutes))
+            event.add('dtstart', start_datetime)
+        else:
+            event.add('dtstart', start_date)
     
-    # Set event end
+    # Handle end date/time
     if activity.end_date:
         end_date = activity.end_date
-        if activity.end_time and not activity.is_all_day:
-            hours, minutes = map(int, activity.end_time.split(':'))
-            end_date = datetime.combine(activity.end_date, datetime.min.time().replace(hour=hours, minute=minutes))
+        if activity.is_all_day:
+            # For all-day events, add 1 day to end date as per iCal spec
+            end_date = end_date + timedelta(days=1)
+            event.add('dtend', end_date.date())
+        else:
+            if activity.end_time:
+                hours, minutes = map(int, activity.end_time.split(':'))
+                end_datetime = datetime.combine(end_date.date(), datetime.min.time().replace(hour=hours, minute=minutes))
+                event.add('dtend', end_datetime)
+            else:
+                event.add('dtend', end_date)
     else:
-        end_date = start_date
-    event.add('dtend', end_date)
+        # If no end date, use start date + 1 hour for timed events or next day for all-day events
+        if activity.is_all_day:
+            event.add('dtend', (start_date + timedelta(days=1)).date())
+        else:
+            if activity.time:
+                hours, minutes = map(int, activity.time.split(':'))
+                start_datetime = datetime.combine(start_date.date(), datetime.min.time().replace(hour=hours, minute=minutes))
+                event.add('dtend', start_datetime + timedelta(hours=1))
+            else:
+                event.add('dtend', start_date + timedelta(hours=1))
     
-    # Add location if exists
+    # Add location if available
     if activity.location_obj:
         event.add('location', activity.location_obj.name)
     
-    # Add description with notes and categories
-    description = ''
+    # Add description with notes if available
     if activity.notes:
-        description += activity.notes + '\n\n'
+        event.add('description', activity.notes)
+    
+    # Add categories
     if activity.categories:
-        description += 'Categories: ' + ', '.join(c.name for c in activity.categories)
-    if description:
-        event.add('description', description)
+        event.add('categories', [category.name for category in activity.categories])
     
     cal.add_component(event)
     
-    # Generate response
+    # Create the response
     response = Response(cal.to_ical())
     response.headers['Content-Type'] = 'text/calendar'
-    response.headers['Content-Disposition'] = f'attachment; filename=event_{activity.id}.ics'
+    response.headers['Content-Disposition'] = f'attachment; filename=event_{activity_id}.ics'
+    
     return response
 
 @app.route('/api/users')

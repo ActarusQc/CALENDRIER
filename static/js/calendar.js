@@ -56,27 +56,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategoryFilter(categoryId) {
+        const categoryIdStr = categoryId.toString();
         const button = document.querySelector(`[data-category="${categoryId}"]`);
         const showAllBtn = document.querySelector('.show-all-btn');
+        
         if (!button) return;
-
+        
         if (activeCategories.has('all')) {
             activeCategories.clear();
             showAllBtn.classList.remove('active');
-            activeCategories.add(categoryId.toString());
-            button.classList.add('active');
-        } else if (activeCategories.has(categoryId.toString())) {
-            activeCategories.delete(categoryId.toString());
+        }
+        
+        if (activeCategories.has(categoryIdStr)) {
+            activeCategories.delete(categoryIdStr);
             button.classList.remove('active');
             if (activeCategories.size === 0) {
                 resetCategoryFilters();
                 return;
             }
         } else {
-            activeCategories.add(categoryId.toString());
+            activeCategories.add(categoryIdStr);
             button.classList.add('active');
         }
-
+        
         updateCalendar();
     }
 
@@ -91,10 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
         if (!activity.categories || activity.categories.length === 0) return false;
-        return activity.categories.some(category => 
-            activeCategories.has(category.id.toString()) || 
-            activeCategories.has(category.id)
-        );
+        
+        return activity.categories.some(category => {
+            const categoryId = category.id.toString();
+            return activeCategories.has(categoryId);
+        });
     }
 
     function showError(message) {
@@ -322,18 +325,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchActivities(year, month) {
         try {
+            // Remove any existing error messages first
+            const existingError = document.querySelector('.calendar-container .alert');
+            if (existingError) {
+                existingError.remove();
+            }
+
             const response = await fetch('/api/activities');
             if (!response.ok) {
                 throw new Error('Failed to load activities');
             }
             const activities = await response.json();
             
+            // Clear existing activities
             document.querySelectorAll('.all-day-activities, .timed-activities')
                 .forEach(container => {
                     container.innerHTML = '';
                     container.style.height = 'auto';
                 });
-            
+
+            if (!activities || !Array.isArray(activities)) {
+                throw new Error('Invalid activities data');
+            }
+
             activities.sort((a, b) => {
                 const aDuration = a.end_date ? 
                     (new Date(a.end_date) - new Date(a.date)) : 0;
@@ -423,81 +437,45 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error loading activities:', error);
-            // Show error message to user
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger';
-            errorDiv.textContent = 'Failed to load activities. Please try again later.';
-            document.querySelector('.calendar-container').prepend(errorDiv);
+            showError('Failed to load activities. Please try again later.');
         }
     }
 
     async function showActivityDetails(activity) {
-        try {
-            const response = await fetch(`/api/activities/${activity.id}`);
-            const details = await response.json();
-            
-            // Display activity details in modal
-            const modal = document.getElementById('activityDetailsModal');
-            const modalBody = modal.querySelector('.modal-body');
-            
-            const startDate = new Date(details.date);
-            const endDate = details.end_date ? new Date(details.end_date) : null;
-            
-            const formatDate = (date) => {
-                return date.toLocaleDateString('fr-FR', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-            };
-            
-            const categoryBadges = details.categories.map(category => 
-                `<span class="badge me-1" style="background-color: ${category.color}">${category.name}</span>`
-            ).join('');
-            
-            modalBody.innerHTML = `
-                <div class="activity-details">
-                    <h4>${details.title}</h4>
-                    <div class="mb-3">
-                        ${categoryBadges}
-                    </div>
-                    <p>
-                        <i class="bi bi-calendar-event"></i>
-                        ${formatDate(startDate)}
-                        ${endDate ? ` - ${formatDate(endDate)}` : ''}
-                    </p>
-                    ${!details.is_all_day ? `
-                        <p>
-                            <i class="bi bi-clock"></i>
-                            ${details.time || ''}
-                            ${details.end_time ? ` - ${details.end_time}` : ''}
-                        </p>
-                    ` : '<p><i class="bi bi-sun"></i> Toute la journée</p>'}
-                    ${details.location ? `
-                        <p>
-                            <i class="bi bi-geo-alt"></i>
-                            ${details.location}
-                        </p>
-                    ` : ''}
-                    ${details.notes ? `
-                        <div class="mt-3">
-                            <h6>Notes:</h6>
-                            <p>${details.notes}</p>
-                        </div>
-                    ` : ''}
-                    <div class="mt-4">
-                        <a href="/api/activities/${activity.id}/export" class="btn btn-outline-light">
-                            <i class="bi bi-calendar-plus"></i> Exporter vers le calendrier
-                        </a>
-                    </div>
-                </div>
-            `;
-            
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
-        } catch (error) {
-            console.error('Error showing activity details:', error);
+        const modal = document.getElementById('activityDetailsModal');
+        const modalBody = modal.querySelector('.modal-body');
+        
+        let dateDisplay = activity.date;
+        if (activity.end_date) {
+            dateDisplay += ` - ${activity.end_date}`;
         }
+        
+        let timeDisplay = activity.is_all_day ? 'Toute la journée' : 
+            (activity.time ? `${activity.time}${activity.end_time ? ` - ${activity.end_time}` : ''}` : '');
+        
+        modalBody.innerHTML = `
+            <div class="activity-details">
+                <h4>${activity.title}</h4>
+                <p><i class="bi bi-calendar"></i> ${dateDisplay}</p>
+                <p><i class="bi bi-clock"></i> ${timeDisplay}</p>
+                ${activity.location ? `<p><i class="bi bi-geo-alt"></i> ${activity.location}</p>` : ''}
+                ${activity.notes ? `<p><i class="bi bi-sticky"></i> ${activity.notes}</p>` : ''}
+                ${activity.categories.length > 0 ? `
+                    <div class="categories mt-2">
+                        ${activity.categories.map(cat => `
+                            <span class="badge" style="background-color: ${cat.color}">${cat.name}</span>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="mt-3">
+                    <a href="/api/activities/${activity.id}/export" class="btn btn-primary">
+                        <i class="bi bi-calendar-plus"></i> Exporter vers le calendrier
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
     }
 });
