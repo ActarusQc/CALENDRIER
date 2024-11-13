@@ -30,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadCategoryFilters() {
         try {
             const response = await fetch('/api/categories');
+            if (!response.ok) {
+                throw new Error('Failed to load categories');
+            }
             const categories = await response.json();
             
             const filterContainer = document.getElementById('categoryFilters');
@@ -48,16 +51,18 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('.show-all-btn').addEventListener('click', resetCategoryFilters);
         } catch (error) {
             console.error('Error loading category filters:', error);
+            showError('Failed to load categories. Please try again later.');
         }
     }
 
     function toggleCategoryFilter(categoryId) {
         const button = document.querySelector(`[data-category="${categoryId}"]`);
+        const showAllBtn = document.querySelector('.show-all-btn');
         if (!button) return;
 
         if (activeCategories.has('all')) {
             activeCategories.clear();
-            document.querySelector('.show-all-btn').classList.remove('active');
+            showAllBtn.classList.remove('active');
             activeCategories.add(categoryId.toString());
             button.classList.add('active');
         } else if (activeCategories.has(categoryId.toString())) {
@@ -85,8 +90,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
-        if (!activity.categories?.length) return false;
-        return activity.categories.some(category => activeCategories.has(category.id.toString()));
+        if (!activity.categories || activity.categories.length === 0) return false;
+        return activity.categories.some(category => 
+            activeCategories.has(category.id.toString()) || 
+            activeCategories.has(category.id)
+        );
+    }
+
+    function showError(message) {
+        // Remove any existing error messages
+        const existingError = document.querySelector('.calendar-container .alert');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = message;
+        document.querySelector('.calendar-container').prepend(errorDiv);
+
+        // Auto-remove error after 5 seconds
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
     }
 
     function updateCalendarHeader() {
