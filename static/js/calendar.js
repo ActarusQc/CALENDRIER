@@ -430,6 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
             new bootstrap.Modal(modal).show();
         } catch (error) {
             console.error('Error loading activity details:', error);
+            alert('Error loading activity details');
         }
     }
 });
