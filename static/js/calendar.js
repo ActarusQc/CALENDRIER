@@ -416,16 +416,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="activity-details">
                     <h5>${details.title}</h5>
                     <p>Date: ${new Date(details.date).toLocaleDateString('fr-FR')}</p>
-                    ${details.location ? `<p>Location: ${details.location}</p>` : ''}
+                    ${details.time ? `<p>Heure: ${details.time}</p>` : ''}
+                    ${details.location ? `<p>Lieu: ${details.location}</p>` : ''}
                     ${details.notes ? `<p>Notes: ${details.notes}</p>` : ''}
-                    ${details.is_recurring ? '<p><i class="bi bi-arrow-repeat"></i> Recurring event</p>' : ''}
-                    ${details.categories ? `
-                        <div class="d-flex flex-wrap gap-1 mt-2">
-                            ${details.categories.map(c => `
-                                <span class="badge" style="background-color: ${c.color}">${c.name}</span>
-                            `).join('')}
-                        </div>
-                    ` : ''}
+                    ${details.is_recurring ? '<p><i class="bi bi-arrow-repeat"></i> Événement récurrent</p>' : ''}
                 </div>
             `;
             new bootstrap.Modal(modal).show();
