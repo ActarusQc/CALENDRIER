@@ -412,25 +412,66 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Display activity details in modal
             const modal = document.getElementById('activityDetailsModal');
-            modal.querySelector('.modal-body').innerHTML = `
+            const modalBody = modal.querySelector('.modal-body');
+            
+            const startDate = new Date(details.date);
+            const endDate = details.end_date ? new Date(details.end_date) : null;
+            
+            const formatDate = (date) => {
+                return date.toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            };
+            
+            const categoryBadges = details.categories.map(category => 
+                `<span class="badge me-1" style="background-color: ${category.color}">${category.name}</span>`
+            ).join('');
+            
+            modalBody.innerHTML = `
                 <div class="activity-details">
-                    <h5 class="text-white">${details.title}</h5>
-                    <p class="text-white">Date: ${new Date(details.date).toLocaleDateString('fr-FR')}</p>
-                    ${details.time ? `<p class="text-white">Heure: ${details.time}</p>` : ''}
-                    ${details.location ? `<p class="text-white">Lieu: ${details.location}</p>` : ''}
-                    ${details.notes ? `<p class="text-white">Notes: ${details.notes}</p>` : ''}
-                    ${details.is_recurring ? '<p class="text-white"><i class="bi bi-arrow-repeat"></i> Événement récurrent</p>' : ''}
-                    <div class="mt-2">
-                        ${details.categories.map(c => `
-                            <span class="badge" style="background-color: ${c.color}">${c.name}</span>
-                        `).join(' ')}
+                    <h4>${details.title}</h4>
+                    <div class="mb-3">
+                        ${categoryBadges}
+                    </div>
+                    <p>
+                        <i class="bi bi-calendar-event"></i>
+                        ${formatDate(startDate)}
+                        ${endDate ? ` - ${formatDate(endDate)}` : ''}
+                    </p>
+                    ${!details.is_all_day ? `
+                        <p>
+                            <i class="bi bi-clock"></i>
+                            ${details.time || ''}
+                            ${details.end_time ? ` - ${details.end_time}` : ''}
+                        </p>
+                    ` : '<p><i class="bi bi-sun"></i> Toute la journée</p>'}
+                    ${details.location ? `
+                        <p>
+                            <i class="bi bi-geo-alt"></i>
+                            ${details.location}
+                        </p>
+                    ` : ''}
+                    ${details.notes ? `
+                        <div class="mt-3">
+                            <h6>Notes:</h6>
+                            <p>${details.notes}</p>
+                        </div>
+                    ` : ''}
+                    <div class="mt-4">
+                        <a href="/api/activities/${activity.id}/export" class="btn btn-outline-light">
+                            <i class="bi bi-calendar-plus"></i> Exporter vers le calendrier
+                        </a>
                     </div>
                 </div>
             `;
-            new bootstrap.Modal(modal).show();
+            
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
         } catch (error) {
-            console.error('Error loading activity details:', error);
-            alert('Error loading activity details');
+            console.error('Error showing activity details:', error);
         }
     }
 });

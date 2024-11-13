@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
@@ -8,6 +8,8 @@ from translations import translations, form_helpers
 from functools import wraps
 from database import db
 from sqlalchemy import text
+from icalendar import Calendar, Event
+import pytz
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "a secret key"
@@ -431,7 +433,7 @@ def delete_location(location_id):
     location = Location.query.get_or_404(location_id)
     
     if location.activities:
-        return jsonify({'error': 'Cannot delete a location that has associated activities'}), 400
+        return jsonify({'error': 'Cannot delete location that has associated activities'}), 400
     
     try:
         db.session.delete(location)
@@ -440,6 +442,56 @@ def delete_location(location_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activities/<int:activity_id>/export', methods=['GET'])
+def export_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    
+    # Create calendar event
+    cal = Calendar()
+    cal.add('prodid', '-//CFSJ Calendar//EN')
+    cal.add('version', '2.0')
+    
+    event = Event()
+    event.add('summary', activity.title)
+    
+    # Set event start
+    start_date = activity.date
+    if activity.time and not activity.is_all_day:
+        hours, minutes = map(int, activity.time.split(':'))
+        start_date = datetime.combine(activity.date, datetime.min.time().replace(hour=hours, minute=minutes))
+    event.add('dtstart', start_date)
+    
+    # Set event end
+    if activity.end_date:
+        end_date = activity.end_date
+        if activity.end_time and not activity.is_all_day:
+            hours, minutes = map(int, activity.end_time.split(':'))
+            end_date = datetime.combine(activity.end_date, datetime.min.time().replace(hour=hours, minute=minutes))
+    else:
+        end_date = start_date
+    event.add('dtend', end_date)
+    
+    # Add location if exists
+    if activity.location_obj:
+        event.add('location', activity.location_obj.name)
+    
+    # Add description with notes and categories
+    description = ''
+    if activity.notes:
+        description += activity.notes + '\n\n'
+    if activity.categories:
+        description += 'Categories: ' + ', '.join(c.name for c in activity.categories)
+    if description:
+        event.add('description', description)
+    
+    cal.add_component(event)
+    
+    # Generate response
+    response = Response(cal.to_ical())
+    response.headers['Content-Type'] = 'text/calendar'
+    response.headers['Content-Disposition'] = f'attachment; filename=event_{activity.id}.ics'
+    return response
 
 @app.route('/api/users')
 @login_required
