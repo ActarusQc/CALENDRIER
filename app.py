@@ -147,6 +147,7 @@ def get_activity(activity_id):
         'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
         'end_time': activity.end_time,
         'location': activity.location_obj.name if activity.location_obj else None,
+        'location_id': activity.location_id,
         'notes': activity.notes,
         'is_all_day': activity.is_all_day,
         'is_recurring': activity.is_recurring,
@@ -154,7 +155,9 @@ def get_activity(activity_id):
             'name': category.name,
             'color': category.color
         } for category in activity.categories],
-        'recurrence_type': activity.recurrence_type
+        'category_ids': [category.id for category in activity.categories],
+        'recurrence_type': activity.recurrence_type,
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
     })
 
 @app.route('/api/activities', methods=['POST'])

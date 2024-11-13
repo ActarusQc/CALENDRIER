@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const checkboxes = document.querySelectorAll('input[name="categories"]');
                     if (checkboxes.length > 0) {
                         checkboxes.forEach(checkbox => {
-                            checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
+                            checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
                         });
                         clearInterval(checkInterval);
                     }
@@ -322,10 +322,10 @@ async function editActivity(id) {
         document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
         document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
         
-        // Set categories
+        // Set categories with null check
         const checkboxes = document.querySelectorAll('input[name="categories"]');
         checkboxes.forEach(checkbox => {
-            checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
+            checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
         });
         
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
