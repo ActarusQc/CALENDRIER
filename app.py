@@ -137,7 +137,6 @@ def get_activities():
     } for activity in activities])
 
 @app.route('/api/activities/<int:activity_id>', methods=['GET'])
-@login_required
 def get_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     return jsonify({
@@ -147,13 +146,15 @@ def get_activity(activity_id):
         'time': activity.time,
         'end_date': activity.end_date.strftime('%Y-%m-%d') if activity.end_date else None,
         'end_time': activity.end_time,
-        'location_id': activity.location_id,
-        'category_ids': [c.id for c in activity.categories],
+        'location': activity.location_obj.name if activity.location_obj else None,
         'notes': activity.notes,
         'is_all_day': activity.is_all_day,
         'is_recurring': activity.is_recurring,
-        'recurrence_type': activity.recurrence_type,
-        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
+        'categories': [{
+            'name': category.name,
+            'color': category.color
+        } for category in activity.categories],
+        'recurrence_type': activity.recurrence_type
     })
 
 @app.route('/api/activities', methods=['POST'])

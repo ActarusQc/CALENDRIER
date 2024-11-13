@@ -408,47 +408,29 @@ document.addEventListener('DOMContentLoaded', function() {
     async function showActivityDetails(activity) {
         try {
             const response = await fetch(`/api/activities/${activity.id}`);
-            if (response.status === 401 || response.status === 302) {
-                // Handle unauthorized access by showing basic activity details
-                const modal = document.getElementById('activityDetailsModal');
-                modal.querySelector('.modal-body').innerHTML = `
-                    <div class="activity-details">
-                        <h5>${activity.title}</h5>
-                        <p>${activity.date}</p>
-                        ${activity.location ? `<p>Location: ${activity.location}</p>` : ''}
-                        ${activity.notes ? `<p>Notes: ${activity.notes}</p>` : ''}
-                    </div>
-                `;
-                new bootstrap.Modal(modal).show();
-                return;
-            }
-            
-            if (!response.ok) {
-                throw new Error('Failed to load activity details');
-            }
-
             const details = await response.json();
+            
             // Display activity details in modal
             const modal = document.getElementById('activityDetailsModal');
             modal.querySelector('.modal-body').innerHTML = `
                 <div class="activity-details">
                     <h5>${details.title}</h5>
-                    <p>${details.date}</p>
+                    <p>Date: ${new Date(details.date).toLocaleDateString('fr-FR')}</p>
                     ${details.location ? `<p>Location: ${details.location}</p>` : ''}
                     ${details.notes ? `<p>Notes: ${details.notes}</p>` : ''}
+                    ${details.is_recurring ? '<p><i class="bi bi-arrow-repeat"></i> Recurring event</p>' : ''}
+                    ${details.categories ? `
+                        <div class="d-flex flex-wrap gap-1 mt-2">
+                            ${details.categories.map(c => `
+                                <span class="badge" style="background-color: ${c.color}">${c.name}</span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
                 </div>
             `;
             new bootstrap.Modal(modal).show();
         } catch (error) {
             console.error('Error loading activity details:', error);
-            // Show error message in modal
-            const modal = document.getElementById('activityDetailsModal');
-            modal.querySelector('.modal-body').innerHTML = `
-                <div class="alert alert-danger">
-                    Failed to load activity details. Please try again later.
-                </div>
-            `;
-            new bootstrap.Modal(modal).show();
         }
     }
 });
