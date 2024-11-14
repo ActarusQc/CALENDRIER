@@ -51,37 +51,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategory(categoryId) {
+        const categoryIdStr = categoryId.toString();
         const button = document.querySelector(`[data-category="${categoryId}"]`);
-        if (categoryId === 'all') {
-            // If "Show All" is clicked
+        const showAllBtn = document.querySelector('[data-category="all"]');
+        
+        if (!button) return;
+        
+        if (categoryIdStr === 'all') {
             selectedCategories.clear();
             selectedCategories.add('all');
             document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            button.classList.add('active');
+            showAllBtn.classList.add('active');
         } else {
-            // If a specific category is clicked
-            const showAllButton = document.querySelector('[data-category="all"]');
-            showAllButton.classList.remove('active');
-            selectedCategories.delete('all');
+            if (selectedCategories.has('all')) {
+                selectedCategories.clear();
+                showAllBtn.classList.remove('active');
+            }
             
-            if (button.classList.contains('active')) {
+            if (selectedCategories.has(categoryIdStr)) {
+                selectedCategories.delete(categoryIdStr);
                 button.classList.remove('active');
-                selectedCategories.delete(categoryId);
-                
-                // If no categories are selected, activate "Show All"
-                if (selectedCategories.size === 0) {
-                    selectedCategories.add('all');
-                    showAllButton.classList.add('active');
-                }
             } else {
+                selectedCategories.add(categoryIdStr);
                 button.classList.add('active');
-                selectedCategories.add(categoryId);
+            }
+            
+            if (selectedCategories.size === 0) {
+                selectedCategories.add('all');
+                showAllBtn.classList.add('active');
             }
         }
         
-        filterActivities();
+        updateCalendar();
     }
 
     function filterActivities() {
@@ -99,9 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function shouldDisplayActivity(activity) {
         if (selectedCategories.has('all')) return true;
-        return activity.categories.some(category => 
-            selectedCategories.has(category.id.toString())
-        );
+        if (!activity.categories || !Array.isArray(activity.categories)) return false;
+        return activity.categories.some(category => selectedCategories.has(category.id.toString()));
     }
 
     function showError(message) {
