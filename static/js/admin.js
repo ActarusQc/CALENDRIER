@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('location').value = activity.location_id || '';
                 document.getElementById('notes').value = activity.notes || '';
                 
+                // Set reminder fields
+                document.getElementById('enable_reminder').checked = activity.enable_reminder;
+                document.getElementById('reminder_minutes').value = activity.reminder_minutes || '30';
+                document.getElementById('reminderField').style.display = activity.enable_reminder ? 'block' : 'none';
+                
                 // Set recurring fields
                 document.getElementById('is_recurring').checked = activity.is_recurring;
                 document.getElementById('recurrence_type').value = activity.recurrence_type || '';
@@ -81,6 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('end_time').value = '';
             document.getElementById('is_all_day').checked = false;
             document.getElementById('is_recurring').checked = false;
+            document.getElementById('enable_reminder').checked = false;
+            document.getElementById('reminder_minutes').value = '30';
+            document.getElementById('reminderField').style.display = 'none';
             document.getElementById('notes').value = '';
             document.getElementById('location').value = '';
             
@@ -134,6 +142,8 @@ function setupForm() {
     const endTimeField = document.getElementById('endTimeField');
     const recurringCheckbox = document.getElementById('is_recurring');
     const recurrenceFields = document.getElementById('recurrenceFields');
+    const enableReminderCheckbox = document.getElementById('enable_reminder');
+    const reminderField = document.getElementById('reminderField');
     
     if (allDayCheckbox && timeField && endTimeField) {
         // Set initial state
@@ -156,6 +166,15 @@ function setupForm() {
             if (!this.checked) {
                 document.getElementById('recurrence_type').value = '';
                 document.getElementById('recurrence_end_date').value = '';
+            }
+        });
+    }
+
+    if (enableReminderCheckbox && reminderField) {
+        enableReminderCheckbox.addEventListener('change', function() {
+            reminderField.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                document.getElementById('reminder_minutes').value = '30';
             }
         });
     }
@@ -190,6 +209,7 @@ async function loadActivities() {
                             <div>
                                 <div class="fw-bold">${activity.title}</div>
                                 ${activity.is_recurring ? '<small class="text-muted"><i class="bi bi-arrow-repeat"></i> Recurring</small>' : ''}
+                                ${activity.enable_reminder ? '<small class="text-muted"><i class="bi bi-bell"></i> Reminder</small>' : ''}
                             </div>
                         </div>
                     </td>
@@ -252,7 +272,9 @@ async function saveActivity() {
             notes: document.getElementById('notes').value.trim(),
             is_recurring: document.getElementById('is_recurring').checked,
             recurrence_type: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_type').value : null,
-            recurrence_end_date: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_end_date').value : null
+            recurrence_end_date: document.getElementById('is_recurring').checked ? document.getElementById('recurrence_end_date').value : null,
+            enable_reminder: document.getElementById('enable_reminder').checked,
+            reminder_minutes: document.getElementById('enable_reminder').checked ? parseInt(document.getElementById('reminder_minutes').value) : null
         };
 
         if (!activity.title || !activity.date) {
@@ -315,6 +337,11 @@ async function editActivity(id) {
         document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
         document.getElementById('location').value = activity.location_id || '';
         document.getElementById('notes').value = activity.notes || '';
+        
+        // Set reminder fields
+        document.getElementById('enable_reminder').checked = activity.enable_reminder;
+        document.getElementById('reminder_minutes').value = activity.reminder_minutes || '30';
+        document.getElementById('reminderField').style.display = activity.enable_reminder ? 'block' : 'none';
         
         // Set recurring fields
         document.getElementById('is_recurring').checked = activity.is_recurring;

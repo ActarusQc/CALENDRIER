@@ -99,6 +99,27 @@
                         <input type="time" class="form-control" id="end_time" name="end_time">
                     </div>
 
+                    <!-- Reminder Settings -->
+                    <div class="col-12">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="enable_reminder" name="enable_reminder">
+                            <label class="form-check-label" for="enable_reminder">Enable Reminder</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6" id="reminderField" style="display: none;">
+                        <label class="form-label">Reminder Time</label>
+                        <small class="form-text d-block mb-2">Set how many minutes before the event to send a reminder</small>
+                        <select class="form-control" id="reminder_minutes" name="reminder_minutes">
+                            <option value="5">5 minutes before</option>
+                            <option value="15">15 minutes before</option>
+                            <option value="30">30 minutes before</option>
+                            <option value="60">1 hour before</option>
+                            <option value="120">2 hours before</option>
+                            <option value="1440">1 day before</option>
+                        </select>
+                    </div>
+
                     <!-- Recurring Section -->
                     <div class="col-12">
                         <div class="form-check mb-2">

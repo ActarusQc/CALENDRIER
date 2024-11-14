@@ -51,6 +51,11 @@ class Activity(db.Model):
     end_time = db.Column(db.String(64))
     color = db.Column(db.String(7))  # Optional custom color override
     
+    # Reminder settings
+    reminder_minutes = db.Column(db.Integer)  # Minutes before event to send reminder
+    enable_reminder = db.Column(db.Boolean, default=False)
+    reminder_sent = db.Column(db.Boolean, default=False)
+    
     # Many-to-many relationship with categories
     categories = db.relationship('Category',
                                secondary=activity_categories,

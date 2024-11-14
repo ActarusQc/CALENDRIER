@@ -134,7 +134,10 @@ def get_activities():
         'is_recurring': activity.is_recurring,
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
-        'is_all_day': activity.is_all_day
+        'is_all_day': activity.is_all_day,
+        'enable_reminder': activity.enable_reminder,
+        'reminder_minutes': activity.reminder_minutes,
+        'reminder_sent': activity.reminder_sent
     } for activity in activities])
 
 @app.route('/api/activities/<int:activity_id>', methods=['GET'])
@@ -158,7 +161,10 @@ def get_activity(activity_id):
         } for category in activity.categories],
         'category_ids': [category.id for category in activity.categories],
         'recurrence_type': activity.recurrence_type,
-        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
+        'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None,
+        'enable_reminder': activity.enable_reminder,
+        'reminder_minutes': activity.reminder_minutes,
+        'reminder_sent': activity.reminder_sent
     })
 
 @app.route('/api/activities', methods=['POST'])
@@ -180,7 +186,11 @@ def create_activity():
             notes=data.get('notes', ''),
             is_recurring=data.get('is_recurring', False),
             recurrence_type=data.get('recurrence_type'),
-            recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
+            recurrence_end_date=datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None,
+            # Add reminder settings
+            enable_reminder=data.get('enable_reminder', False),
+            reminder_minutes=data.get('reminder_minutes'),
+            reminder_sent=False
         )
         
         if data.get('category_ids'):
@@ -207,7 +217,11 @@ def create_activity():
                     notes=data.get('notes', ''),
                     is_recurring=True,
                     recurrence_type=data.get('recurrence_type'),
-                    recurrence_end_date=end_date
+                    recurrence_end_date=end_date,
+                    # Add reminder settings for recurring activities
+                    enable_reminder=data.get('enable_reminder', False),
+                    reminder_minutes=data.get('reminder_minutes'),
+                    reminder_sent=False
                 )
                 recurring_activity.categories = categories if data.get('category_ids') else []
                 activities_to_create.append(recurring_activity)
@@ -216,6 +230,11 @@ def create_activity():
             db.session.add(activity)
         
         db.session.commit()
+        
+        # Send email notification if enabled
+        if base_activity.enable_reminder:
+            EmailNotifier.notify_activity_created(base_activity, [current_user.email])
+            
         return jsonify({'success': True, 'id': base_activity.id})
     except Exception as e:
         db.session.rollback()
@@ -243,10 +262,35 @@ def update_activity(activity_id):
         activity.recurrence_type = data.get('recurrence_type')
         activity.recurrence_end_date = datetime.strptime(data['recurrence_end_date'], '%Y-%m-%d') if data.get('recurrence_end_date') else None
         
+        # Update reminder settings
+        activity.enable_reminder = data.get('enable_reminder', False)
+        activity.reminder_minutes = data.get('reminder_minutes')
+        # Reset reminder sent status if reminder time is changed
+        if activity.reminder_minutes != data.get('reminder_minutes'):
+            activity.reminder_sent = False
+        
         if data.get('category_ids'):
             categories = Category.query.filter(Category.id.in_(data['category_ids'])).all()
             activity.categories = categories
         
+        db.session.commit()
+        
+        # Send email notification if enabled
+        if activity.enable_reminder:
+            EmailNotifier.notify_activity_updated(activity, [current_user.email])
+            
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Add a new endpoint to check and send reminders
+@app.route('/api/check-reminders', methods=['POST'])
+@login_required
+def check_reminders():
+    try:
+        activities = Activity.query.filter_by(enable_reminder=True, reminder_sent=False).all()
+        EmailNotifier.check_and_send_reminders(activities, current_user.email)
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
