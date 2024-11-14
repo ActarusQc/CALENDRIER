@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategoryFilter(categoryId) {
-        const categoryIdStr = categoryId.toString();
         const button = document.querySelector(`[data-category="${categoryId}"]`);
         const showAllBtn = document.querySelector('.show-all-btn');
         
@@ -67,16 +66,18 @@ document.addEventListener('DOMContentLoaded', function() {
             showAllBtn.classList.remove('active');
         }
         
+        const categoryIdStr = categoryId.toString();
         if (activeCategories.has(categoryIdStr)) {
             activeCategories.delete(categoryIdStr);
             button.classList.remove('active');
-            if (activeCategories.size === 0) {
-                resetCategoryFilters();
-                return;
-            }
         } else {
             activeCategories.add(categoryIdStr);
             button.classList.add('active');
+        }
+        
+        if (activeCategories.size === 0) {
+            resetCategoryFilters();
+            return;
         }
         
         updateCalendar();
@@ -92,16 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
-        if (!activity.categories || activity.categories.length === 0) return false;
-        
-        return activity.categories.some(category => {
-            const categoryId = category.id.toString();
-            return activeCategories.has(categoryId);
-        });
+        if (!activity.categories || !Array.isArray(activity.categories)) return false;
+        return activity.categories.some(category => activeCategories.has(category.id.toString()));
     }
 
     function showError(message) {
-        // Remove any existing error messages
         const existingError = document.querySelector('.calendar-container .alert');
         if (existingError) {
             existingError.remove();
@@ -112,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDiv.textContent = message;
         document.querySelector('.calendar-container').prepend(errorDiv);
 
-        // Auto-remove error after 5 seconds
         setTimeout(() => {
             errorDiv.remove();
         }, 5000);
@@ -344,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     container.style.height = 'auto';
                 });
 
-            if (!activities || !Array.isArray(activities)) {
+            if (!Array.isArray(activities)) {
                 throw new Error('Invalid activities data');
             }
 
@@ -437,7 +432,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error loading activities:', error);
-            showError('Failed to load activities. Please try again later.');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = 'Failed to load activities. Please try again later.';
+            document.querySelector('.calendar-container').prepend(errorDiv);
         }
     }
 
@@ -478,4 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
     }
+
+    // Initialize the calendar
+    updateCalendar();
 });
