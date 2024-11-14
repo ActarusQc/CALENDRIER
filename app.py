@@ -32,12 +32,26 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
-# Add template filter for date formatting
-@app.template_filter('format_date')
-def format_date(date):
-    if isinstance(date, str):
-        date = datetime.strptime(date, '%Y-%m-%d')
-    return date.strftime('%d %B %Y')
+def generate_recurring_dates(start_date, recurrence_type, end_date):
+    dates = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        dates.append(current_date)
+        
+        if recurrence_type == 'daily':
+            current_date = current_date + timedelta(days=1)
+        elif recurrence_type == 'weekly':
+            current_date = current_date + timedelta(weeks=1)
+        elif recurrence_type == 'monthly':
+            year = current_date.year + ((current_date.month + 1) // 12)
+            month = ((current_date.month + 1) % 12) or 12
+            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+            current_date = current_date.replace(year=year, month=month, day=day)
+        elif recurrence_type == 'annually':
+            current_date = current_date.replace(year=current_date.year + 1)
+    
+    return dates
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -548,128 +562,103 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-def generate_recurring_dates(start_date, recurrence_type, end_date):
-    dates = []
-    current_date = start_date
-    
-    while current_date <= end_date:
-        dates.append(current_date)
-        
-        if recurrence_type == 'daily':
-            current_date = current_date + timedelta(days=1)
-        elif recurrence_type == 'weekly':
-            current_date = current_date + timedelta(weeks=1)
-        elif recurrence_type == 'monthly':
-            year = current_date.year + ((current_date.month + 1) // 12)
-            month = ((current_date.month + 1) % 12) or 12
-            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
-            current_date = current_date.replace(year=year, month=month, day=day)
-        elif recurrence_type == 'annually':
-            current_date = current_date.replace(year=current_date.year + 1)
-    
-    return dates
-
 def init_db():
     with app.app_context():
         db.drop_all()
         db.create_all()
         
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password_hash=generate_password_hash('admin'),
-                role='admin'
-            )
-            db.session.add(admin)
-            
-            categories = {
-                'Cours de langue': '#FF6B6B',
-                'Activités sociales': '#4ECDC4',
-                'Activités physiques': '#45B7D1',
-                'Ateliers': '#96CEB4'
-            }
-            
-            for name, color in categories.items():
-                if not Category.query.filter_by(name=name).first():
-                    category = Category(name=name, color=color)
-                    db.session.add(category)
-            
-            locations = ['Salle principale', 'Salle de réunion', 'Extérieur', 'Cuisine']
-            for location_name in locations:
-                if not Location.query.filter_by(name=location_name).first():
-                    location = Location(name=location_name)
-                    db.session.add(location)
-            
-            db.session.commit()
-            
-            categories = Category.query.all()
-            locations = Location.query.all()
-            
+        # Create admin user
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+        admin = User(
+            username='admin',
+            email='admin@example.com',
+            password_hash=generate_password_hash(admin_password),
+            role='admin'
+        )
+        db.session.add(admin)
+        
+        # Create some sample categories with different colors
+        categories_data = [
+            ('Cours de langues', '#FF5733'),
+            ('Activités sociales', '#33FF57'),
+            ('Activités physiques', '#3357FF'),
+            ('Ateliers', '#FF33F6')
+        ]
+        categories = []
+        for name, color in categories_data:
+            category = Category(name=name, color=color)
+            categories.append(category)
+            db.session.add(category)
+        
+        # Create some sample locations
+        locations_data = ['Salle 101', 'Gymnase', 'Bibliothèque', 'Cafétéria']
+        locations = []
+        for location_name in locations_data:
+            location = Location(name=location_name)
+            locations.append(location)
+            db.session.add(location)
+        
+        # Create some sample activities
+        if categories and locations:
             activity1 = Activity(
-                title="French Language Class",
-                date=datetime(2024, 11, 4, 9, 0),
-                time="09:00",
-                end_time="10:30",
-                location_id=1,
-                is_all_day=False,
-                notes="Beginner level French class"
+                title='Cours de français',
+                date=datetime.now(),
+                time='09:00',
+                end_time='10:30',
+                location_id=locations[0].id,
+                notes='Niveau débutant',
+                is_all_day=False
             )
             activity1.categories = [categories[0]]
+            db.session.add(activity1)
             
             activity2 = Activity(
-                title="Cultural Festival",
-                date=datetime(2024, 11, 5),
-                is_all_day=True,
-                location_id=1,
-                notes="Annual cultural celebration"
+                title='Café social',
+                date=datetime.now(),
+                time='14:00',
+                end_time='16:00',
+                location_id=locations[3].id,
+                notes='Rencontre hebdomadaire',
+                is_all_day=False
             )
             activity2.categories = [categories[1]]
+            db.session.add(activity2)
             
             activity3 = Activity(
-                title="Sports Week",
-                date=datetime(2024, 11, 6),
-                end_date=datetime(2024, 11, 8),
-                is_all_day=True,
-                location_id=3,
-                notes="Three days of sports activities"
+                title='Yoga',
+                date=datetime.now(),
+                time='17:00',
+                end_time='18:00',
+                location_id=locations[1].id,
+                notes='Apportez votre tapis',
+                is_all_day=False
             )
             activity3.categories = [categories[2]]
+            db.session.add(activity3)
             
             activity4 = Activity(
-                title="Cooking Workshop",
-                date=datetime(2024, 11, 7, 14, 0),
-                time="14:00",
-                end_time="16:00",
-                location_id=4,
-                is_all_day=False,
-                notes="Learn to cook traditional dishes"
+                title='Atelier cuisine',
+                date=datetime.now(),
+                time='10:00',
+                end_time='12:00',
+                location_id=locations[3].id,
+                notes='Cuisine du monde',
+                is_all_day=False
             )
             activity4.categories = [categories[3]]
+            db.session.add(activity4)
             
-            db.session.add_all([activity1, activity2, activity3, activity4])
             db.session.commit()
-
-@app.route('/print/event/<int:activity_id>')
-def print_event(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
-    trans, helpers = get_translations()
-    print_date = datetime.now().strftime('%d %B %Y')
-    return render_template('print_event.html', 
-                         activity=activity,
-                         trans=trans,
-                         helpers=helpers,
-                         print_date=print_date)
 
 if __name__ == '__main__':
     with app.app_context():
         # Verify database connection using SQLAlchemy text()
         try:
             db.session.execute(text('SELECT 1'))
-            print("Database connection successful!")
+            print('Successfully connected to the database!')
         except Exception as e:
-            print(f"Database connection failed: {e}")
+            print('Failed to connect to the database!')
+            print(e)
             exit(1)
-    
-    # Run the Flask application
+        
     app.run(host='0.0.0.0', port=5000, debug=True)

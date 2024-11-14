@@ -175,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="title">${activity.title}</div>
                 ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
                 ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
-                ${activity.enable_reminder ? '<i class="bi bi-bell ms-1"></i>' : ''}
             </div>
         `;
         
@@ -294,11 +293,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         `).join('')}
                     </div>
                 ` : ''}
-                <div class="mt-3">
-                    <a href="/print/event/${activity.id}" target="_blank" class="btn btn-outline-light">
-                        <i class="bi bi-printer"></i> Print
-                    </a>
-                </div>
             </div>
         `;
         
