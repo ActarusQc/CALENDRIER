@@ -217,8 +217,8 @@ def create_activity():
         
         db.session.commit()
         
-        # Send email notification for activity creation
-        EmailNotifier.notify_activity_created(base_activity, [current_user.email])
+        # Comment out email notification as requested by manager
+        # EmailNotifier.notify_activity_created(base_activity, [current_user.email])
             
         return jsonify({'success': True, 'id': base_activity.id})
     except Exception as e:
@@ -253,8 +253,8 @@ def update_activity(activity_id):
         
         db.session.commit()
         
-        # Send email notification for activity update
-        EmailNotifier.notify_activity_updated(activity, [current_user.email])
+        # Comment out email notification as requested by manager
+        # EmailNotifier.notify_activity_updated(activity, [current_user.email])
             
         return jsonify({'success': True})
     except Exception as e:
