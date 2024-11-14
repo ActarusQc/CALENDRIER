@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="print-event">
+    <div class="print-header">
+        <img src="{{ url_for('static', filename='icons/LOGO-CFSJ-ROND.png') }}" alt="Logo">
+        <h2>CALENDRIER ACTIVITÉS CFSJ</h2>
+        <div class="print-date">Imprimé le {{ print_date }}</div>
+    </div>
+
+    <div class="print-event-details">
+        <div class="print-event-label">{{ trans.title }}:</div>
+        <div class="print-event-value">{{ activity.title }}</div>
+
+        <div class="print-event-label">{{ trans.date }}:</div>
+        <div class="print-event-value">
+            {{ activity.date|format_date }}
+            {% if activity.end_date %}
+            - {{ activity.end_date|format_date }}
+            {% endif %}
+        </div>
+
+        {% if not activity.is_all_day %}
+        <div class="print-event-label">{{ trans.time }}:</div>
+        <div class="print-event-value">
+            {{ activity.time }}
+            {% if activity.end_time %}
+            - {{ activity.end_time }}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if activity.location_obj %}
+        <div class="print-event-label">{{ trans.location }}:</div>
+        <div class="print-event-value">{{ activity.location_obj.name }}</div>
+        {% endif %}
+
+        {% if activity.categories %}
+        <div class="print-event-label">{{ trans.categories }}:</div>
+        <div class="print-event-value">
+            <div class="print-event-categories">
+                {% for category in activity.categories %}
+                <span class="print-category" style="background-color: {{ category.color }}">
+                    {{ category.name }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if activity.notes %}
+    <div class="print-event-notes">
+        <div class="print-event-label">{{ trans.notes }}:</div>
+        <div class="print-event-value">{{ activity.notes }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+{% endblock %}

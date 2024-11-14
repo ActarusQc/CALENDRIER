@@ -286,11 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 ` : '<p><strong>Time:</strong> All day</p>'}
                 ${activity.location ? `<p><strong>Location:</strong> ${activity.location}</p>` : ''}
                 ${activity.notes ? `<p><strong>Notes:</strong> ${activity.notes}</p>` : ''}
-                ${activity.enable_reminder ? `
-                    <p>
-                        <strong>Reminder:</strong> ${activity.reminder_minutes} minutes before the event
-                    </p>
-                ` : ''}
                 ${activity.categories && activity.categories.length > 0 ? `
                     <p><strong>Categories:</strong></p>
                     <div class="d-flex flex-wrap gap-1 mb-3">
@@ -299,6 +294,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         `).join('')}
                     </div>
                 ` : ''}
+                <div class="mt-3">
+                    <a href="/print/event/${activity.id}" target="_blank" class="btn btn-outline-light">
+                        <i class="bi bi-printer"></i> Print
+                    </a>
+                </div>
             </div>
         `;
         

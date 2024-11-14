@@ -32,26 +32,12 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
-def generate_recurring_dates(start_date, recurrence_type, end_date):
-    dates = []
-    current_date = start_date
-    
-    while current_date <= end_date:
-        dates.append(current_date)
-        
-        if recurrence_type == 'daily':
-            current_date = current_date + timedelta(days=1)
-        elif recurrence_type == 'weekly':
-            current_date = current_date + timedelta(weeks=1)
-        elif recurrence_type == 'monthly':
-            year = current_date.year + ((current_date.month + 1) // 12)
-            month = ((current_date.month + 1) % 12) or 12
-            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
-            current_date = current_date.replace(year=year, month=month, day=day)
-        elif recurrence_type == 'annually':
-            current_date = current_date.replace(year=current_date.year + 1)
-    
-    return dates
+# Add template filter for date formatting
+@app.template_filter('format_date')
+def format_date(date):
+    if isinstance(date, str):
+        date = datetime.strptime(date, '%Y-%m-%d')
+    return date.strftime('%d %B %Y')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -562,6 +548,27 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+def generate_recurring_dates(start_date, recurrence_type, end_date):
+    dates = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        dates.append(current_date)
+        
+        if recurrence_type == 'daily':
+            current_date = current_date + timedelta(days=1)
+        elif recurrence_type == 'weekly':
+            current_date = current_date + timedelta(weeks=1)
+        elif recurrence_type == 'monthly':
+            year = current_date.year + ((current_date.month + 1) // 12)
+            month = ((current_date.month + 1) % 12) or 12
+            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+            current_date = current_date.replace(year=year, month=month, day=day)
+        elif recurrence_type == 'annually':
+            current_date = current_date.replace(year=current_date.year + 1)
+    
+    return dates
+
 def init_db():
     with app.app_context():
         db.drop_all()
@@ -642,6 +649,17 @@ def init_db():
             
             db.session.add_all([activity1, activity2, activity3, activity4])
             db.session.commit()
+
+@app.route('/print/event/<int:activity_id>')
+def print_event(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    trans, helpers = get_translations()
+    print_date = datetime.now().strftime('%d %B %Y')
+    return render_template('print_event.html', 
+                         activity=activity,
+                         trans=trans,
+                         helpers=helpers,
+                         print_date=print_date)
 
 if __name__ == '__main__':
     with app.app_context():
