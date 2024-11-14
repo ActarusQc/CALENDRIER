@@ -51,25 +51,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategory(categoryId) {
-        const categoryIdStr = categoryId.toString();
         const button = document.querySelector(`[data-category="${categoryId}"]`);
-        const showAllBtn = document.querySelector('[data-category="all"]');
-        
         if (!button) return;
-        
-        if (categoryIdStr === 'all') {
+
+        // Remove existing error message if any
+        const existingError = document.querySelector('.calendar-container .alert');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        if (categoryId === 'all') {
             selectedCategories.clear();
             selectedCategories.add('all');
             document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            showAllBtn.classList.add('active');
+            button.classList.add('active');
         } else {
             if (selectedCategories.has('all')) {
                 selectedCategories.clear();
-                showAllBtn.classList.remove('active');
+                document.querySelector('[data-category="all"]').classList.remove('active');
             }
             
+            const categoryIdStr = categoryId.toString();
             if (selectedCategories.has(categoryIdStr)) {
                 selectedCategories.delete(categoryIdStr);
                 button.classList.remove('active');
@@ -77,44 +81,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedCategories.add(categoryIdStr);
                 button.classList.add('active');
             }
-            
-            if (selectedCategories.size === 0) {
-                selectedCategories.add('all');
-                showAllBtn.classList.add('active');
-            }
         }
-        
-        updateCalendar();
+
+        fetchActivities();
     }
 
     function shouldDisplayActivity(activity) {
         if (selectedCategories.has('all')) return true;
-        return activity.categories && 
-               activity.categories.some(category => selectedCategories.has(category.id.toString()));
+        if (!activity.category_ids || activity.category_ids.length === 0) return false;
+        return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
     }
 
-    function showError(message) {
-        const existingError = document.querySelector('.calendar-container .alert');
-        if (existingError) {
-            existingError.remove();
-        }
-
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger';
-        errorDiv.textContent = message;
-        document.querySelector('.calendar-container').prepend(errorDiv);
-    }
-
-    async function fetchActivities(year, month) {
+    async function fetchActivities() {
         try {
-            const existingError = document.querySelector('.calendar-container .alert');
-            if (existingError) {
-                existingError.remove();
-            }
-
             const response = await fetch('/api/activities');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             const activities = await response.json();
-
+            
             // Clear existing activities
             document.querySelectorAll('.all-day-activities, .timed-activities')
                 .forEach(container => {
@@ -122,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     container.style.height = 'auto';
                 });
 
+            // Filter and display activities
             activities.forEach(activity => {
                 if (!shouldDisplayActivity(activity)) return;
                 
@@ -140,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
         } catch (error) {
-            console.error('Error loading activities:', error);
+            console.error('Error:', error);
             const errorDiv = document.createElement('div');
             errorDiv.className = 'alert alert-danger';
             errorDiv.textContent = 'Failed to load activities. Please try again later.';
@@ -241,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
 
-        fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
+        fetchActivities();
     }
 
     function renderMonthView() {

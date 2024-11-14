@@ -12,17 +12,33 @@
     background-color: var(--theme-light-purple);
     padding: 1rem;
     border-radius: 0.5rem;
-    margin-top: 1rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .category-filters .btn {
     font-size: 0.875rem;
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.category-filters .btn:hover {
+    transform: translateY(-1px);
 }
 
 .category-filters .btn.active {
     font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.category-filters .color-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
 }
 
 /* Error Message Styles */
