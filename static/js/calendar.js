@@ -87,23 +87,10 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCalendar();
     }
 
-    function filterActivities() {
-        document.querySelectorAll('.activity').forEach(activity => {
-            const categoryIds = JSON.parse(activity.getAttribute('data-category-ids') || '[]');
-            
-            if (selectedCategories.has('all') || 
-                categoryIds.some(id => selectedCategories.has(id.toString()))) {
-                activity.classList.remove('filtered');
-            } else {
-                activity.classList.add('filtered');
-            }
-        });
-    }
-
     function shouldDisplayActivity(activity) {
         if (selectedCategories.has('all')) return true;
-        if (!activity.categories || !Array.isArray(activity.categories)) return false;
-        return activity.categories.some(category => selectedCategories.has(category.id.toString()));
+        return activity.categories && 
+               activity.categories.some(category => selectedCategories.has(category.id.toString()));
     }
 
     function showError(message) {
@@ -116,6 +103,89 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDiv.className = 'alert alert-danger';
         errorDiv.textContent = message;
         document.querySelector('.calendar-container').prepend(errorDiv);
+    }
+
+    async function fetchActivities(year, month) {
+        try {
+            const existingError = document.querySelector('.calendar-container .alert');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            const response = await fetch('/api/activities');
+            const activities = await response.json();
+
+            // Clear existing activities
+            document.querySelectorAll('.all-day-activities, .timed-activities')
+                .forEach(container => {
+                    container.innerHTML = '';
+                    container.style.height = 'auto';
+                });
+
+            activities.forEach(activity => {
+                if (!shouldDisplayActivity(activity)) return;
+                
+                const startDate = new Date(activity.date);
+                const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
+                const dateStr = activity.date;
+                
+                const container = activity.is_all_day ? 
+                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                
+                if (container) {
+                    const element = createActivityElement(activity, dateStr, startDate, endDate);
+                    container.appendChild(element);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading activities:', error);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = 'Failed to load activities. Please try again later.';
+            document.querySelector('.calendar-container').prepend(errorDiv);
+        }
+    }
+
+    function createActivityElement(activity, dateStr, startDate, endDate) {
+        const element = document.createElement('div');
+        element.className = 'activity';
+        element.setAttribute('data-activity-id', activity.id);
+        element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
+        
+        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
+        element.style.backgroundColor = categoryColor;
+        
+        if (activity.is_all_day) {
+            element.classList.add('all-day');
+        }
+        
+        const currentDate = new Date(dateStr);
+        const isStart = startDate.toDateString() === currentDate.toDateString();
+        const isEnd = endDate.toDateString() === currentDate.toDateString();
+        
+        if (startDate < endDate) {
+            element.classList.add('multi-day');
+            if (isStart) {
+                element.classList.add('start');
+            } else if (isEnd) {
+                element.classList.add('end');
+            } else {
+                element.classList.add('middle');
+            }
+        }
+        
+        element.innerHTML = `
+            <div class="activity-content">
+                <div class="title">${activity.title}</div>
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
+            </div>
+        `;
+        
+        element.addEventListener('click', () => showActivityDetails(activity));
+        return element;
     }
 
     function updateCalendarHeader() {
@@ -172,96 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
-    }
-
-    async function fetchActivities(year, month) {
-        try {
-            const existingError = document.querySelector('.calendar-container .alert');
-            if (existingError) {
-                existingError.remove();
-            }
-
-            const response = await fetch('/api/activities');
-            if (!response.ok) {
-                throw new Error('Failed to load activities');
-            }
-
-            const activities = await response.json();
-            if (!Array.isArray(activities)) {
-                throw new Error('Invalid activities data');
-            }
-
-            document.querySelectorAll('.all-day-activities, .timed-activities')
-                .forEach(container => {
-                    container.innerHTML = '';
-                    container.style.height = 'auto';
-                });
-
-            activities.forEach(activity => {
-                if (!shouldDisplayActivity(activity)) return;
-                
-                const startDate = new Date(activity.date);
-                const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-                const dateStr = activity.date;
-                
-                const container = activity.is_all_day ? 
-                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                
-                if (container) {
-                    const element = createActivityElement(activity, dateStr, startDate, endDate);
-                    container.appendChild(element);
-                }
-            });
-
-        } catch (error) {
-            console.error('Error loading activities:', error);
-            showError('Failed to load activities. Please try again later.');
-        }
-    }
-
-    function createActivityElement(activity, dateStr, startDate, endDate) {
-        const element = document.createElement('div');
-        element.className = 'activity';
-        element.setAttribute('data-activity-id', activity.id);
-        element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
-        
-        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
-        element.style.backgroundColor = categoryColor;
-        
-        if (activity.is_all_day) {
-            element.classList.add('all-day');
-        }
-        
-        const currentDate = new Date(dateStr);
-        const isStart = startDate.toDateString() === currentDate.toDateString();
-        const isEnd = endDate.toDateString() === currentDate.toDateString();
-        
-        if (startDate < endDate) {
-            element.classList.add('multi-day');
-            if (isStart) {
-                element.classList.add('start');
-            } else if (isEnd) {
-                element.classList.add('end');
-            } else {
-                element.classList.add('middle');
-            }
-        }
-        
-        if (!shouldDisplayActivity(activity)) {
-            element.classList.add('filtered');
-        }
-        
-        element.innerHTML = `
-            <div class="activity-content">
-                <div class="title">${activity.title}</div>
-                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
-            </div>
-        `;
-        
-        element.addEventListener('click', () => showActivityDetails(activity));
-        return element;
     }
 
     function renderMonthView() {
