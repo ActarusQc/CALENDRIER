@@ -7,6 +7,24 @@
     --transition-duration: 0.3s;
 }
 
+/* Category Filters */
+.category-filters {
+    background-color: var(--theme-light-purple);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.category-filters .btn {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+}
+
+.category-filters .btn.active {
+    font-weight: 500;
+}
+
 /* Error Message Styles */
 .calendar-container .alert {
     margin: 1rem;
@@ -73,6 +91,10 @@
                 opacity var(--transition-duration) ease,
                 transform var(--transition-duration) ease;
     box-sizing: border-box;
+}
+
+.activity.filtered {
+    display: none;
 }
 
 /* Multi-day Activity Styles */

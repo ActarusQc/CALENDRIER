@@ -23,6 +23,16 @@
     </h1>
 </div>
 
+<!-- Category Filters -->
+<div class="category-filters mb-3">
+    <div class="d-flex align-items-center">
+        <span class="me-2">{{ trans.categories }}:</span>
+        <div id="categoryFilters" class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-primary active" data-category="all">{{ trans.show_all }}</button>
+        </div>
+    </div>
+</div>
+
 <div class="calendar-container">
     <div class="calendar-grid">
         <div class="calendar-days">
@@ -50,7 +60,6 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}

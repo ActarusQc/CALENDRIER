@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
     let currentView = 'month';
+    let selectedCategories = new Set(['all']);
 
     updateCalendar();
+    loadCategories();
 
     // Navigation button event listeners
     document.getElementById('prevMonth').addEventListener('click', () => {
@@ -25,8 +27,81 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/categories');
+            const categories = await response.json();
+            const categoryFilters = document.getElementById('categoryFilters');
+            
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-sm btn-outline-secondary';
+                button.setAttribute('data-category', category.id);
+                button.innerHTML = `
+                    <span class="color-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${category.color}; margin-right: 4px;"></span>
+                    ${category.name}
+                `;
+                button.addEventListener('click', () => toggleCategory(category.id));
+                categoryFilters.appendChild(button);
+            });
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            showError('Failed to load categories');
+        }
+    }
+
+    function toggleCategory(categoryId) {
+        const button = document.querySelector(`[data-category="${categoryId}"]`);
+        if (categoryId === 'all') {
+            // If "Show All" is clicked
+            selectedCategories.clear();
+            selectedCategories.add('all');
+            document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+        } else {
+            // If a specific category is clicked
+            const showAllButton = document.querySelector('[data-category="all"]');
+            showAllButton.classList.remove('active');
+            selectedCategories.delete('all');
+            
+            if (button.classList.contains('active')) {
+                button.classList.remove('active');
+                selectedCategories.delete(categoryId);
+                
+                // If no categories are selected, activate "Show All"
+                if (selectedCategories.size === 0) {
+                    selectedCategories.add('all');
+                    showAllButton.classList.add('active');
+                }
+            } else {
+                button.classList.add('active');
+                selectedCategories.add(categoryId);
+            }
+        }
+        
+        filterActivities();
+    }
+
+    function filterActivities() {
+        document.querySelectorAll('.activity').forEach(activity => {
+            const categoryIds = JSON.parse(activity.getAttribute('data-category-ids') || '[]');
+            
+            if (selectedCategories.has('all') || 
+                categoryIds.some(id => selectedCategories.has(id.toString()))) {
+                activity.classList.remove('filtered');
+            } else {
+                activity.classList.add('filtered');
+            }
+        });
+    }
+
     function shouldDisplayActivity(activity) {
-        return true; // Always display all activities
+        if (selectedCategories.has('all')) return true;
+        return activity.categories.some(category => 
+            selectedCategories.has(category.id.toString())
+        );
     }
 
     function showError(message) {
@@ -147,6 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const element = document.createElement('div');
         element.className = 'activity';
         element.setAttribute('data-activity-id', activity.id);
+        element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
         
         const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
         element.style.backgroundColor = categoryColor;
@@ -168,6 +244,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 element.classList.add('middle');
             }
+        }
+        
+        if (!shouldDisplayActivity(activity)) {
+            element.classList.add('filtered');
         }
         
         element.innerHTML = `
