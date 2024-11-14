@@ -8,7 +8,6 @@ from translations import translations, form_helpers
 from functools import wraps
 from database import db
 from sqlalchemy import text
-from icalendar import Calendar, Event
 import pytz
 
 app = Flask(__name__)
@@ -442,66 +441,6 @@ def delete_location(location_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/activities/<int:activity_id>/export', methods=['GET'])
-def export_activity(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
-    
-    # Create calendar
-    cal = Calendar()
-    cal.add('prodid', '-//Calendar App//EN')
-    cal.add('version', '2.0')
-    
-    # Create event
-    event = Event()
-    event.add('summary', activity.title)
-    event.add('description', activity.notes or '')
-    
-    # Add categories if any
-    if activity.categories:
-        event.add('categories', [category.name for category in activity.categories])
-    
-    # Handle start date and time
-    if activity.is_all_day:
-        event.add('dtstart', activity.date.date())
-        if activity.end_date:
-            # For all-day events, add 1 day to end date as per iCal spec
-            event.add('dtend', (activity.end_date + timedelta(days=1)).date())
-        else:
-            event.add('dtend', (activity.date + timedelta(days=1)).date())
-    else:
-        if activity.time:
-            hours, minutes = map(int, activity.time.split(':'))
-            start_datetime = datetime.combine(activity.date.date(), 
-                                           datetime.min.time().replace(hour=hours, minute=minutes))
-            event.add('dtstart', start_datetime)
-            
-            if activity.end_date and activity.end_time:
-                end_hours, end_minutes = map(int, activity.end_time.split(':'))
-                end_datetime = datetime.combine(activity.end_date.date(),
-                                             datetime.min.time().replace(hour=end_hours, minute=end_minutes))
-                event.add('dtend', end_datetime)
-            else:
-                # If no end time specified, set duration to 1 hour
-                event.add('dtend', start_datetime + timedelta(hours=1))
-        else:
-            # Fallback to all-day event if no time specified
-            event.add('dtstart', activity.date.date())
-            if activity.end_date:
-                event.add('dtend', (activity.end_date + timedelta(days=1)).date())
-            else:
-                event.add('dtend', (activity.date + timedelta(days=1)).date())
-    
-    # Add location if available
-    if activity.location_obj:
-        event.add('location', activity.location_obj.name)
-    
-    cal.add_component(event)
-    
-    # Generate .ics file
-    response = Response(cal.to_ical(), mimetype='text/calendar')
-    response.headers['Content-Disposition'] = f'attachment; filename={activity.title.replace(" ", "_")}.ics'
-    return response
 
 @app.route('/api/users')
 @login_required

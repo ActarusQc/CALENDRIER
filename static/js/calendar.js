@@ -467,16 +467,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         `).join('')}
                     </div>
                 ` : ''}
-                <div class="mt-3">
-                    <a href="/api/activities/${activity.id}/export" class="btn btn-outline-light">
-                        <i class="bi bi-calendar-plus"></i> Export to Calendar
-                    </a>
-                </div>
             </div>
         `;
         
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
     }
 
     // Initialize the calendar
