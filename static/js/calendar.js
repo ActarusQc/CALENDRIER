@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
         if (!activity.categories || activity.categories.length === 0) return false;
+        
         return activity.categories.some(category => 
             activeCategories.has(category.id.toString())
         );
@@ -109,10 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDiv.className = 'alert alert-danger';
         errorDiv.textContent = message;
         document.querySelector('.calendar-container').prepend(errorDiv);
-
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 5000);
     }
 
     function updateCalendarHeader() {
@@ -171,28 +168,94 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchActivities(currentDate.getFullYear(), currentDate.getMonth());
     }
 
-    function createDateCell(date) {
-        const cell = document.createElement('div');
-        cell.className = 'calendar-date';
+    async function fetchActivities(year, month) {
+        try {
+            // Remove any existing error messages
+            const existingError = document.querySelector('.calendar-container .alert');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            // Fetch activities
+            const response = await fetch('/api/activities');
+            if (!response.ok) {
+                throw new Error('Failed to load activities');
+            }
+
+            const activities = await response.json();
+            if (!Array.isArray(activities)) {
+                throw new Error('Invalid activities data');
+            }
+
+            // Clear existing activities
+            document.querySelectorAll('.all-day-activities, .timed-activities')
+                .forEach(container => {
+                    container.innerHTML = '';
+                    container.style.height = 'auto';
+                });
+
+            // Filter and display activities
+            activities.forEach(activity => {
+                if (!shouldDisplayActivity(activity)) return;
+                
+                const startDate = new Date(activity.date);
+                const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
+                const dateStr = activity.date;
+                
+                const container = activity.is_all_day ? 
+                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                
+                if (container) {
+                    const element = createActivityElement(activity, dateStr, startDate, endDate);
+                    container.appendChild(element);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading activities:', error);
+            showError('Failed to load activities. Please try again later.');
+        }
+    }
+
+    function createActivityElement(activity, dateStr, startDate, endDate) {
+        const element = document.createElement('div');
+        element.className = 'activity';
+        element.setAttribute('data-activity-id', activity.id);
         
-        if (date) {
-            const dateDiv = document.createElement('div');
-            dateDiv.className = 'date-number';
-            dateDiv.textContent = date.getDate();
-            cell.appendChild(dateDiv);
-            
-            const allDayDiv = document.createElement('div');
-            allDayDiv.className = 'all-day-activities';
-            allDayDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
-            cell.appendChild(allDayDiv);
-            
-            const timedDiv = document.createElement('div');
-            timedDiv.className = 'timed-activities';
-            timedDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
-            cell.appendChild(timedDiv);
+        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
+        element.style.backgroundColor = categoryColor;
+        
+        if (activity.is_all_day) {
+            element.classList.add('all-day');
         }
         
-        return cell;
+        const currentDate = new Date(dateStr);
+        const isStart = startDate.toDateString() === currentDate.toDateString();
+        const isEnd = endDate.toDateString() === currentDate.toDateString();
+        
+        if (startDate < endDate) {
+            element.classList.add('multi-day');
+            if (isStart) {
+                element.classList.add('start');
+            } else if (isEnd) {
+                element.classList.add('end');
+            } else {
+                element.classList.add('middle');
+            }
+        }
+        
+        element.innerHTML = `
+            <div class="activity-content">
+                <div class="title">${activity.title}</div>
+                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
+                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
+                ${activity.enable_reminder ? '<i class="bi bi-bell ms-1"></i>' : ''}
+            </div>
+        `;
+        
+        element.addEventListener('click', () => showActivityDetails(activity));
+        return element;
     }
 
     function renderMonthView() {
@@ -254,129 +317,29 @@ document.addEventListener('DOMContentLoaded', function() {
         calendarDates.appendChild(createDateCell(currentDate));
     }
 
-    function createActivityElement(activity, dateStr, startDate, endDate) {
-        const element = document.createElement('div');
-        element.className = 'activity';
-        element.setAttribute('data-activity-id', activity.id);
+    function createDateCell(date) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-date';
         
-        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
-        element.style.backgroundColor = categoryColor;
-        
-        if (activity.is_all_day) {
-            element.classList.add('all-day');
+        if (date) {
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'date-number';
+            dateDiv.textContent = date.getDate();
+            cell.appendChild(dateDiv);
+            
+            const allDayDiv = document.createElement('div');
+            allDayDiv.className = 'all-day-activities';
+            allDayDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
+            cell.appendChild(allDayDiv);
+            
+            const timedDiv = document.createElement('div');
+            timedDiv.className = 'timed-activities';
+            timedDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
+            cell.appendChild(timedDiv);
         }
         
-        const currentDate = new Date(dateStr);
-        const isStart = startDate.toDateString() === currentDate.toDateString();
-        const isEnd = endDate.toDateString() === currentDate.toDateString();
-        
-        if (startDate < endDate) {
-            element.classList.add('multi-day');
-            if (isStart) {
-                element.classList.add('start');
-            } else if (isEnd) {
-                element.classList.add('end');
-            } else {
-                element.classList.add('middle');
-            }
-        }
-        
-        element.innerHTML = `
-            <div class="activity-content">
-                <div class="title">${activity.title}</div>
-                ${activity.location ? `<div class="location">${activity.location}</div>` : ''}
-                ${activity.is_recurring ? '<i class="bi bi-arrow-repeat ms-1"></i>' : ''}
-            </div>
-        `;
-        
-        element.style.opacity = '0';
-        element.style.transform = 'translateY(10px)';
-        
-        const calculateHeight = () => {
-            const content = element.querySelector('.activity-content');
-            if (!content) return 0;
-            
-            const contentHeight = content.scrollHeight;
-            const minHeight = parseInt(getComputedStyle(document.documentElement)
-                .getPropertyValue('--min-activity-height'));
-            const padding = parseInt(getComputedStyle(document.documentElement)
-                .getPropertyValue('--activity-padding')) * 2;
-            
-            return Math.max(minHeight, contentHeight + padding);
-        };
-        
-        requestAnimationFrame(() => {
-            const finalHeight = calculateHeight();
-            element.setAttribute('data-content-height', finalHeight);
-            
-            element.offsetHeight;
-            
-            element.style.height = `${finalHeight}px`;
-            element.style.opacity = '1';
-            element.style.transform = 'translateY(0)';
-        });
-        
-        element.addEventListener('click', () => showActivityDetails(activity));
-        return element;
+        return cell;
     }
-
-    async function fetchActivities(year, month) {
-        try {
-            const existingError = document.querySelector('.calendar-container .alert');
-            if (existingError) {
-                existingError.remove();
-            }
-
-            const response = await fetch('/api/activities');
-            if (!response.ok) {
-                throw new Error('Failed to load activities');
-            }
-
-            const activities = await response.json();
-            if (!Array.isArray(activities)) {
-                throw new Error('Invalid activities data');
-            }
-
-            // Clear existing activities
-            document.querySelectorAll('.all-day-activities, .timed-activities')
-                .forEach(container => {
-                    container.innerHTML = '';
-                    container.style.height = 'auto';
-                });
-
-            activities.forEach(activity => {
-                if (!shouldDisplayActivity(activity)) return;
-                
-                const startDate = new Date(activity.date);
-                const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-                const dateStr = activity.date;
-                
-                const container = activity.is_all_day ? 
-                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                
-                if (container) {
-                    const element = createActivityElement(activity, dateStr, startDate, endDate);
-                    container.appendChild(element);
-                }
-            });
-
-    } catch (error) {
-        console.error('Error loading activities:', error);
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger';
-        errorDiv.textContent = 'Failed to load activities. Please try again later.';
-        document.querySelector('.calendar-container').prepend(errorDiv);
-    }
-}
-
-function shouldDisplayActivity(activity) {
-    if (activeCategories.has('all')) return true;
-    if (!activity.categories || activity.categories.length === 0) return false;
-    return activity.categories.some(category => 
-        activeCategories.has(category.id.toString())
-    );
-}
 
     function showActivityDetails(activity) {
         const modal = document.getElementById('activityDetailsModal');
@@ -398,6 +361,11 @@ function shouldDisplayActivity(activity) {
                 ` : '<p><strong>Time:</strong> All day</p>'}
                 ${activity.location ? `<p><strong>Location:</strong> ${activity.location}</p>` : ''}
                 ${activity.notes ? `<p><strong>Notes:</strong> ${activity.notes}</p>` : ''}
+                ${activity.enable_reminder ? `
+                    <p>
+                        <strong>Reminder:</strong> ${activity.reminder_minutes} minutes before the event
+                    </p>
+                ` : ''}
                 ${activity.categories && activity.categories.length > 0 ? `
                     <p><strong>Categories:</strong></p>
                     <div class="d-flex flex-wrap gap-1 mb-3">
@@ -412,12 +380,13 @@ function shouldDisplayActivity(activity) {
         const modalInstance = new bootstrap.Modal(modal);
         modalInstance.show();
     }
-
-    // Initialize the calendar
-    updateCalendar();
 });
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString('fr-FR', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
 }
