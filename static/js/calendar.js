@@ -93,8 +93,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function shouldDisplayActivity(activity) {
         if (activeCategories.has('all')) return true;
-        if (!activity.categories || !Array.isArray(activity.categories)) return false;
-        return activity.categories.some(category => activeCategories.has(category.id.toString()));
+        if (!activity.categories || activity.categories.length === 0) return false;
+        return activity.categories.some(category => 
+            activeCategories.has(category.id.toString())
+        );
     }
 
     function showError(message) {
@@ -320,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchActivities(year, month) {
         try {
-            // Remove any existing error messages first
             const existingError = document.querySelector('.calendar-container .alert');
             if (existingError) {
                 existingError.remove();
@@ -330,8 +331,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 throw new Error('Failed to load activities');
             }
+
             const activities = await response.json();
-            
+            if (!Array.isArray(activities)) {
+                throw new Error('Invalid activities data');
+            }
+
             // Clear existing activities
             document.querySelectorAll('.all-day-activities, .timed-activities')
                 .forEach(container => {
@@ -339,107 +344,41 @@ document.addEventListener('DOMContentLoaded', function() {
                     container.style.height = 'auto';
                 });
 
-            if (!Array.isArray(activities)) {
-                throw new Error('Invalid activities data');
-            }
-
-            activities.sort((a, b) => {
-                const aDuration = a.end_date ? 
-                    (new Date(a.end_date) - new Date(a.date)) : 0;
-                const bDuration = b.end_date ? 
-                    (new Date(b.end_date) - new Date(b.date)) : 0;
-                return bDuration - aDuration || new Date(a.date) - new Date(b.date);
-            });
-            
-            const multiDayActivities = new Map();
-            const singleDayActivities = [];
-            
             activities.forEach(activity => {
                 if (!shouldDisplayActivity(activity)) return;
                 
                 const startDate = new Date(activity.date);
                 const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-                
-                if (startDate < endDate) {
-                    multiDayActivities.set(activity.id, {
-                        activity,
-                        elements: [],
-                        startDate,
-                        endDate
-                    });
-                } else {
-                    singleDayActivities.push(activity);
-                }
-            });
-            
-            for (const [_, eventData] of multiDayActivities) {
-                const { activity, startDate, endDate } = eventData;
-                let current = new Date(startDate);
-                
-                while (current <= endDate) {
-                    const dateStr = current.toISOString().split('T')[0];
-                    const container = activity.is_all_day ? 
-                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                    
-                    if (container) {
-                        const element = createActivityElement(activity, dateStr, startDate, endDate);
-                        container.appendChild(element);
-                        eventData.elements.push(element);
-                    }
-                    current.setDate(current.getDate() + 1);
-                }
-            }
-            
-            singleDayActivities.forEach(activity => {
                 const dateStr = activity.date;
+                
                 const container = activity.is_all_day ? 
                     document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                     document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
                 
                 if (container) {
-                    const element = createActivityElement(
-                        activity,
-                        dateStr,
-                        new Date(activity.date),
-                        new Date(activity.date)
-                    );
+                    const element = createActivityElement(activity, dateStr, startDate, endDate);
                     container.appendChild(element);
                 }
             });
-            
-            requestAnimationFrame(() => {
-                multiDayActivities.forEach(({ elements }) => {
-                    if (elements.length > 0) {
-                        const maxHeight = Math.max(...elements.map(el => 
-                            parseInt(el.getAttribute('data-content-height')) || 0
-                        ));
-                        
-                        elements.forEach(element => {
-                            element.style.height = `${maxHeight}px`;
-                        });
-                    }
-                });
-                
-                document.querySelectorAll('.all-day-activities').forEach(container => {
-                    if (container.children.length > 0) {
-                        const totalHeight = Array.from(container.children)
-                            .reduce((acc, child) => acc + child.offsetHeight + 2, 8);
-                        container.style.height = `${totalHeight}px`;
-                    }
-                });
-            });
-            
-        } catch (error) {
-            console.error('Error loading activities:', error);
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger';
-            errorDiv.textContent = 'Failed to load activities. Please try again later.';
-            document.querySelector('.calendar-container').prepend(errorDiv);
-        }
-    }
 
-    async function showActivityDetails(activity) {
+    } catch (error) {
+        console.error('Error loading activities:', error);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.textContent = 'Failed to load activities. Please try again later.';
+        document.querySelector('.calendar-container').prepend(errorDiv);
+    }
+}
+
+function shouldDisplayActivity(activity) {
+    if (activeCategories.has('all')) return true;
+    if (!activity.categories || activity.categories.length === 0) return false;
+    return activity.categories.some(category => 
+        activeCategories.has(category.id.toString())
+    );
+}
+
+    function showActivityDetails(activity) {
         const modal = document.getElementById('activityDetailsModal');
         if (!modal) return;
         
