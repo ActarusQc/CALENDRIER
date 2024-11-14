@@ -1,9 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
     let currentView = 'month';
-    let activeCategories = new Set(['all']);
 
-    loadCategoryFilters();
     updateCalendar();
 
     // Navigation button event listeners
@@ -27,77 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    async function loadCategoryFilters() {
-        try {
-            const response = await fetch('/api/categories');
-            if (!response.ok) {
-                throw new Error('Failed to load categories');
-            }
-            const categories = await response.json();
-            
-            const filterContainer = document.getElementById('categoryFilters');
-            filterContainer.innerHTML = '';
-            
-            categories.forEach(category => {
-                const button = document.createElement('button');
-                button.className = 'btn category-btn me-2';
-                button.setAttribute('data-category', category.id);
-                button.style.backgroundColor = category.color;
-                button.textContent = category.name;
-                button.addEventListener('click', () => toggleCategoryFilter(category.id));
-                filterContainer.appendChild(button);
-            });
-
-            document.querySelector('.show-all-btn').addEventListener('click', resetCategoryFilters);
-        } catch (error) {
-            console.error('Error loading category filters:', error);
-            showError('Failed to load categories. Please try again later.');
-        }
-    }
-
-    function toggleCategoryFilter(categoryId) {
-        const button = document.querySelector(`[data-category="${categoryId}"]`);
-        const showAllBtn = document.querySelector('.show-all-btn');
-        
-        if (!button) return;
-        
-        if (activeCategories.has('all')) {
-            activeCategories.clear();
-            showAllBtn.classList.remove('active');
-        }
-        
-        const categoryIdStr = categoryId.toString();
-        if (activeCategories.has(categoryIdStr)) {
-            activeCategories.delete(categoryIdStr);
-            button.classList.remove('active');
-        } else {
-            activeCategories.add(categoryIdStr);
-            button.classList.add('active');
-        }
-        
-        if (activeCategories.size === 0) {
-            resetCategoryFilters();
-            return;
-        }
-        
-        updateCalendar();
-    }
-
-    function resetCategoryFilters() {
-        activeCategories.clear();
-        activeCategories.add('all');
-        document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector('.show-all-btn').classList.add('active');
-        updateCalendar();
-    }
-
     function shouldDisplayActivity(activity) {
-        if (activeCategories.has('all')) return true;
-        if (!activity.categories || activity.categories.length === 0) return false;
-        
-        return activity.categories.some(category => 
-            activeCategories.has(category.id.toString())
-        );
+        return true; // Always display all activities
     }
 
     function showError(message) {
@@ -170,13 +99,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchActivities(year, month) {
         try {
-            // Remove any existing error messages
             const existingError = document.querySelector('.calendar-container .alert');
             if (existingError) {
                 existingError.remove();
             }
 
-            // Fetch activities
             const response = await fetch('/api/activities');
             if (!response.ok) {
                 throw new Error('Failed to load activities');
@@ -187,14 +114,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Invalid activities data');
             }
 
-            // Clear existing activities
             document.querySelectorAll('.all-day-activities, .timed-activities')
                 .forEach(container => {
                     container.innerHTML = '';
                     container.style.height = 'auto';
                 });
 
-            // Filter and display activities
             activities.forEach(activity => {
                 if (!shouldDisplayActivity(activity)) return;
                 

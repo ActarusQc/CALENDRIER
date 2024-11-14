@@ -68,6 +68,17 @@ translations = {
             'thursday': 'Thursday',
             'friday': 'Friday',
             'saturday': 'Saturday'
+        },
+        'enable_reminder': 'Enable Reminder',
+        'reminder_time': 'Reminder Time',
+        'reminder_minutes_before': 'Set how many minutes before the event to send a reminder',
+        'reminder_options': {
+            '5': '5 minutes before',
+            '15': '15 minutes before',
+            '30': '30 minutes before',
+            '60': '1 hour before',
+            '120': '2 hours before',
+            '1440': '1 day before'
         }
     },
     'fr': {
@@ -139,6 +150,17 @@ translations = {
             'thursday': 'Jeudi',
             'friday': 'Vendredi',
             'saturday': 'Samedi'
+        },
+        'enable_reminder': 'Activer le rappel',
+        'reminder_time': 'Heure du rappel',
+        'reminder_minutes_before': "Définir combien de minutes avant l'événement envoyer un rappel",
+        'reminder_options': {
+            '5': '5 minutes avant',
+            '15': '15 minutes avant',
+            '30': '30 minutes avant',
+            '60': '1 heure avant',
+            '120': '2 heures avant',
+            '1440': '1 jour avant'
         }
     }
 }

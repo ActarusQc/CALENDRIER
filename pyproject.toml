@@ -13,4 +13,5 @@ dependencies = [
     "werkzeug>=3.0.6",
     "requests>=2.32.3",
     "pytz>=2024.2",
+    "apscheduler>=3.10.4",
 ]
