@@ -449,46 +449,52 @@ def export_activity(activity_id):
     
     # Create calendar
     cal = Calendar()
-    cal.add('prodid', '-//CFSJ Calendar//EN')
+    cal.add('prodid', '-//Calendar App//EN')
     cal.add('version', '2.0')
     
     # Create event
     event = Event()
     event.add('summary', activity.title)
+    event.add('description', activity.notes or '')
     
-    # Set event start
-    start_date = activity.date
-    if not activity.is_all_day and activity.time:
-        hours, minutes = map(int, activity.time.split(':'))
-        start_date = datetime.combine(activity.date, datetime.min.time().replace(hour=hours, minute=minutes))
-    event.add('dtstart', start_date)
+    # Add categories if any
+    if activity.categories:
+        event.add('categories', [category.name for category in activity.categories])
     
-    # Set event end
-    if activity.end_date:
-        end_date = activity.end_date
-        if not activity.is_all_day and activity.end_time:
-            hours, minutes = map(int, activity.end_time.split(':'))
-            end_date = datetime.combine(activity.end_date, datetime.min.time().replace(hour=hours, minute=minutes))
-        event.add('dtend', end_date)
-    elif activity.is_all_day:
-        event.add('dtend', activity.date + timedelta(days=1))
-    elif activity.time:
-        hours, minutes = map(int, activity.time.split(':'))
-        end_time = datetime.combine(activity.date, datetime.min.time().replace(hour=hours, minute=minutes)) + timedelta(hours=1)
-        event.add('dtend', end_time)
+    # Handle start date and time
+    if activity.is_all_day:
+        event.add('dtstart', activity.date.date())
+        if activity.end_date:
+            # For all-day events, add 1 day to end date as per iCal spec
+            event.add('dtend', (activity.end_date + timedelta(days=1)).date())
+        else:
+            event.add('dtend', (activity.date + timedelta(days=1)).date())
+    else:
+        if activity.time:
+            hours, minutes = map(int, activity.time.split(':'))
+            start_datetime = datetime.combine(activity.date.date(), 
+                                           datetime.min.time().replace(hour=hours, minute=minutes))
+            event.add('dtstart', start_datetime)
+            
+            if activity.end_date and activity.end_time:
+                end_hours, end_minutes = map(int, activity.end_time.split(':'))
+                end_datetime = datetime.combine(activity.end_date.date(),
+                                             datetime.min.time().replace(hour=end_hours, minute=end_minutes))
+                event.add('dtend', end_datetime)
+            else:
+                # If no end time specified, set duration to 1 hour
+                event.add('dtend', start_datetime + timedelta(hours=1))
+        else:
+            # Fallback to all-day event if no time specified
+            event.add('dtstart', activity.date.date())
+            if activity.end_date:
+                event.add('dtend', (activity.end_date + timedelta(days=1)).date())
+            else:
+                event.add('dtend', (activity.date + timedelta(days=1)).date())
     
     # Add location if available
     if activity.location_obj:
         event.add('location', activity.location_obj.name)
-    
-    # Add description with categories and notes
-    description = ''
-    if activity.categories:
-        description += 'Categories: ' + ', '.join(c.name for c in activity.categories) + '\n\n'
-    if activity.notes:
-        description += activity.notes
-    if description:
-        event.add('description', description)
     
     cal.add_component(event)
     
