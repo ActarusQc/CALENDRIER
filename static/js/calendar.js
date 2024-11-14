@@ -441,33 +441,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function showActivityDetails(activity) {
         const modal = document.getElementById('activityDetailsModal');
+        if (!modal) return;
+        
         const modalBody = modal.querySelector('.modal-body');
-        
-        let dateDisplay = activity.date;
-        if (activity.end_date) {
-            dateDisplay += ` - ${activity.end_date}`;
-        }
-        
-        let timeDisplay = activity.is_all_day ? 'Toute la journée' : 
-            (activity.time ? `${activity.time}${activity.end_time ? ` - ${activity.end_time}` : ''}` : '');
-        
         modalBody.innerHTML = `
+            <h4 class="text-white">${activity.title}</h4>
             <div class="activity-details">
-                <h4>${activity.title}</h4>
-                <p><i class="bi bi-calendar"></i> ${dateDisplay}</p>
-                <p><i class="bi bi-clock"></i> ${timeDisplay}</p>
-                ${activity.location ? `<p><i class="bi bi-geo-alt"></i> ${activity.location}</p>` : ''}
-                ${activity.notes ? `<p><i class="bi bi-sticky"></i> ${activity.notes}</p>` : ''}
-                ${activity.categories.length > 0 ? `
-                    <div class="categories mt-2">
-                        ${activity.categories.map(cat => `
-                            <span class="badge" style="background-color: ${cat.color}">${cat.name}</span>
+                <p>
+                    <strong>Date:</strong> ${formatDate(activity.date)}
+                    ${activity.end_date ? ` - ${formatDate(activity.end_date)}` : ''}
+                </p>
+                ${!activity.is_all_day ? `
+                    <p>
+                        <strong>Time:</strong> ${activity.time || ''}
+                        ${activity.end_time ? ` - ${activity.end_time}` : ''}
+                    </p>
+                ` : '<p><strong>Time:</strong> All day</p>'}
+                ${activity.location ? `<p><strong>Location:</strong> ${activity.location}</p>` : ''}
+                ${activity.notes ? `<p><strong>Notes:</strong> ${activity.notes}</p>` : ''}
+                ${activity.categories && activity.categories.length > 0 ? `
+                    <p><strong>Categories:</strong></p>
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        ${activity.categories.map(category => `
+                            <span class="badge" style="background-color: ${category.color}">${category.name}</span>
                         `).join('')}
                     </div>
                 ` : ''}
                 <div class="mt-3">
-                    <a href="/api/activities/${activity.id}/export" class="btn btn-primary">
-                        <i class="bi bi-calendar-plus"></i> Exporter vers le calendrier
+                    <a href="/api/activities/${activity.id}/export" class="btn btn-outline-light">
+                        <i class="bi bi-calendar-plus"></i> Export to Calendar
                     </a>
                 </div>
             </div>
@@ -480,3 +482,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the calendar
     updateCalendar();
 });
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}

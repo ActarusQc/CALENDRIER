@@ -447,71 +447,54 @@ def delete_location(location_id):
 def export_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     
-    # Create calendar event
+    # Create calendar
     cal = Calendar()
-    cal.add('prodid', '-//CFSJ Calendar//FR')
+    cal.add('prodid', '-//CFSJ Calendar//EN')
     cal.add('version', '2.0')
     
+    # Create event
     event = Event()
     event.add('summary', activity.title)
     
-    # Handle start date/time
+    # Set event start
     start_date = activity.date
-    if activity.is_all_day:
-        event.add('dtstart', start_date.date())
-    else:
-        if activity.time:
-            hours, minutes = map(int, activity.time.split(':'))
-            start_datetime = datetime.combine(start_date.date(), datetime.min.time().replace(hour=hours, minute=minutes))
-            event.add('dtstart', start_datetime)
-        else:
-            event.add('dtstart', start_date)
+    if not activity.is_all_day and activity.time:
+        hours, minutes = map(int, activity.time.split(':'))
+        start_date = datetime.combine(activity.date, datetime.min.time().replace(hour=hours, minute=minutes))
+    event.add('dtstart', start_date)
     
-    # Handle end date/time
+    # Set event end
     if activity.end_date:
         end_date = activity.end_date
-        if activity.is_all_day:
-            # For all-day events, add 1 day to end date as per iCal spec
-            end_date = end_date + timedelta(days=1)
-            event.add('dtend', end_date.date())
-        else:
-            if activity.end_time:
-                hours, minutes = map(int, activity.end_time.split(':'))
-                end_datetime = datetime.combine(end_date.date(), datetime.min.time().replace(hour=hours, minute=minutes))
-                event.add('dtend', end_datetime)
-            else:
-                event.add('dtend', end_date)
-    else:
-        # If no end date, use start date + 1 hour for timed events or next day for all-day events
-        if activity.is_all_day:
-            event.add('dtend', (start_date + timedelta(days=1)).date())
-        else:
-            if activity.time:
-                hours, minutes = map(int, activity.time.split(':'))
-                start_datetime = datetime.combine(start_date.date(), datetime.min.time().replace(hour=hours, minute=minutes))
-                event.add('dtend', start_datetime + timedelta(hours=1))
-            else:
-                event.add('dtend', start_date + timedelta(hours=1))
+        if not activity.is_all_day and activity.end_time:
+            hours, minutes = map(int, activity.end_time.split(':'))
+            end_date = datetime.combine(activity.end_date, datetime.min.time().replace(hour=hours, minute=minutes))
+        event.add('dtend', end_date)
+    elif activity.is_all_day:
+        event.add('dtend', activity.date + timedelta(days=1))
+    elif activity.time:
+        hours, minutes = map(int, activity.time.split(':'))
+        end_time = datetime.combine(activity.date, datetime.min.time().replace(hour=hours, minute=minutes)) + timedelta(hours=1)
+        event.add('dtend', end_time)
     
     # Add location if available
     if activity.location_obj:
         event.add('location', activity.location_obj.name)
     
-    # Add description with notes if available
-    if activity.notes:
-        event.add('description', activity.notes)
-    
-    # Add categories
+    # Add description with categories and notes
+    description = ''
     if activity.categories:
-        event.add('categories', [category.name for category in activity.categories])
+        description += 'Categories: ' + ', '.join(c.name for c in activity.categories) + '\n\n'
+    if activity.notes:
+        description += activity.notes
+    if description:
+        event.add('description', description)
     
     cal.add_component(event)
     
-    # Create the response
-    response = Response(cal.to_ical())
-    response.headers['Content-Type'] = 'text/calendar'
-    response.headers['Content-Disposition'] = f'attachment; filename=event_{activity_id}.ics'
-    
+    # Generate .ics file
+    response = Response(cal.to_ical(), mimetype='text/calendar')
+    response.headers['Content-Disposition'] = f'attachment; filename={activity.title.replace(" ", "_")}.ics'
     return response
 
 @app.route('/api/users')
