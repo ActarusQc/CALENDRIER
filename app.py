@@ -9,6 +9,9 @@ from functools import wraps
 from database import db
 from sqlalchemy import text
 import pytz
+import csv
+from io import StringIO
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "a secret key"
@@ -649,6 +652,64 @@ def init_db():
             db.session.add(activity4)
             
             db.session.commit()
+
+@app.route('/api/import-activities', methods=['POST'])
+@login_required
+def import_activities():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if not file.filename.endswith('.csv'):
+        return jsonify({'error': 'Invalid file type'}), 400
+
+    try:
+        # Read CSV file
+        stream = StringIO(file.stream.read().decode("UTF-8"))
+        csv_reader = csv.DictReader(stream, delimiter=';')
+        
+        activities_to_create = []
+        for row in csv_reader:
+            if not row.get("Date de l'évènement"): continue
+            
+            # Parse date and create activity
+            date_str = row["Date de l'évènement"]
+            try:
+                date = datetime.strptime(date_str, '%d-%m-%Y')
+            except ValueError:
+                continue
+
+            # Find or create location
+            location = Location.query.filter_by(name=row["nom de la salle"]).first()
+            if not location:
+                location = Location(name=row["nom de la salle"])
+                db.session.add(location)
+
+            # Create activity
+            activity = Activity(
+                title=row.get("Nom de l'événement ou de type", 'Imported Event'),
+                date=date,
+                time=row.get("Heure de début"),
+                end_time=row.get("Heure de fin"),
+                location_id=location.id,
+                notes=row.get("nom de l'événement", ''),
+                is_all_day=False
+            )
+            activities_to_create.append(activity)
+
+        # Save all activities
+        for activity in activities_to_create:
+            db.session.add(activity)
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():

@@ -3,6 +3,33 @@ document.addEventListener('DOMContentLoaded', function() {
     loadLocationsAndCategories();
     setupForm();
 
+    // CSV import handler
+    document.getElementById('csvFileInput').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/import-activities', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) throw new Error('Import failed');
+            
+            const result = await response.json();
+            if (result.success) {
+                loadActivities();
+                alert('Activities imported successfully');
+            }
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import activities');
+        }
+    });
+
     // Check for URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const selectedDate = urlParams.get('selected_date');
