@@ -51,63 +51,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategory(categoryId) {
-        const categoryIdStr = categoryId.toString();
-        const allButton = document.querySelector('[data-category="all"]');
         const button = document.querySelector(`[data-category="${categoryId}"]`);
-        
         if (!button) return;
-        
+
         // Remove existing error message if any
         const existingError = document.querySelector('.calendar-container .alert');
         if (existingError) {
             existingError.remove();
         }
-        
-        // Handle "Show All" button
+
         if (categoryId === 'all') {
-            selectedCategories = new Set(['all']);
-            document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
+            // When clicking "Show All", clear other selections
+            selectedCategories.clear();
+            selectedCategories.add('all');
+            // Update button states
+            document.querySelectorAll('.category-filters .btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            allButton.classList.add('active');
+            button.classList.add('active');
         } else {
-            // If "all" was selected, clear it when selecting a specific category
+            // When clicking a specific category
+            const categoryIdStr = categoryId.toString();
+            
+            // If "all" was selected, remove it
             if (selectedCategories.has('all')) {
                 selectedCategories.delete('all');
-                allButton.classList.remove('active');
+                document.querySelector('[data-category="all"]').classList.remove('active');
             }
-            
-            // Toggle the selected category
+
+            // Toggle the category
             if (selectedCategories.has(categoryIdStr)) {
                 selectedCategories.delete(categoryIdStr);
                 button.classList.remove('active');
-                
-                // If no categories are selected, switch back to "all"
-                if (selectedCategories.size === 0) {
-                    selectedCategories.add('all');
-                    allButton.classList.add('active');
-                }
             } else {
                 selectedCategories.add(categoryIdStr);
                 button.classList.add('active');
             }
+
+            // If no categories are selected, revert to "all"
+            if (selectedCategories.size === 0) {
+                selectedCategories.add('all');
+                document.querySelector('[data-category="all"]').classList.add('active');
+            }
         }
-        
+
+        // Refresh the activities display
         fetchActivities();
     }
 
     function shouldDisplayActivity(activity) {
-        // If "all" is selected or no categories are selected, show all activities
         if (selectedCategories.has('all')) {
             return true;
         }
-        
-        // If the activity has no categories, don't show it when filtering
+
         if (!activity.categories || activity.categories.length === 0) {
             return false;
         }
-        
-        // Show the activity if it has any of the selected categories
+
         return activity.categories.some(category => 
             selectedCategories.has(category.id.toString())
         );
