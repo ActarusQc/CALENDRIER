@@ -61,25 +61,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (categoryId === 'all') {
-            // When clicking "Show All", clear other selections
             selectedCategories.clear();
             selectedCategories.add('all');
-            // Update button states
-            document.querySelectorAll('.category-filters .btn').forEach(btn => {
+            document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             button.classList.add('active');
         } else {
-            // When clicking a specific category
-            const categoryIdStr = categoryId.toString();
-            
-            // If "all" was selected, remove it
             if (selectedCategories.has('all')) {
-                selectedCategories.delete('all');
+                selectedCategories.clear();
                 document.querySelector('[data-category="all"]').classList.remove('active');
             }
-
-            // Toggle the category
+            
+            const categoryIdStr = categoryId.toString();
             if (selectedCategories.has(categoryIdStr)) {
                 selectedCategories.delete(categoryIdStr);
                 button.classList.remove('active');
@@ -87,32 +81,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedCategories.add(categoryIdStr);
                 button.classList.add('active');
             }
-
-            // If no categories are selected, revert to "all"
-            if (selectedCategories.size === 0) {
-                selectedCategories.add('all');
-                document.querySelector('[data-category="all"]').classList.add('active');
-            }
         }
 
-        // Refresh the activities display
         fetchActivities();
     }
 
     function shouldDisplayActivity(activity) {
-        if (selectedCategories.has('all')) {
-            return true;
-        }
-
-        if (!activity.categories || activity.categories.length === 0) {
-            return false;
-        }
-
-        return activity.categories.some(category => 
-            selectedCategories.has(category.id.toString())
-        );
+        if (selectedCategories.has('all')) return true;
+        if (!activity.category_ids || activity.category_ids.length === 0) return false;
+        return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
     }
 
+    // Updated fetchActivities function as per manager's instructions
     async function fetchActivities() {
         try {
             const response = await fetch('/api/activities');
