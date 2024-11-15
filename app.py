@@ -35,27 +35,6 @@ login_manager.login_view = 'login'
 
 from models import User, Category, Activity, Location
 
-def generate_recurring_dates(start_date, recurrence_type, end_date):
-    dates = []
-    current_date = start_date
-    
-    while current_date <= end_date:
-        dates.append(current_date)
-        
-        if recurrence_type == 'daily':
-            current_date = current_date + timedelta(days=1)
-        elif recurrence_type == 'weekly':
-            current_date = current_date + timedelta(weeks=1)
-        elif recurrence_type == 'monthly':
-            year = current_date.year + ((current_date.month + 1) // 12)
-            month = ((current_date.month + 1) % 12) or 12
-            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
-            current_date = current_date.replace(year=year, month=month, day=day)
-        elif recurrence_type == 'annually':
-            current_date = current_date.replace(year=current_date.year + 1)
-    
-    return dates
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -163,6 +142,70 @@ def get_activity(activity_id):
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
     })
+
+@app.route('/api/import-activities', methods=['POST'])
+@login_required
+def import_activities():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if not file.filename.endswith('.csv'):
+        return jsonify({'error': 'Invalid file type'}), 400
+
+    try:
+        # Read CSV file
+        stream = StringIO(file.stream.read().decode("UTF-8"))
+        csv_reader = csv.DictReader(stream, delimiter=';')
+        
+        activities_to_create = []
+        for row in csv_reader:
+            if not row.get("Date de l'évènement"): 
+                continue
+            
+            # Parse date
+            date_str = row["Date de l'évènement"].strip()
+            try:
+                date = datetime.strptime(date_str, '%d-%m-%Y')
+            except ValueError:
+                continue
+
+            # Get or create location
+            location_name = row.get('nom de la salle', '').strip()
+            location = None
+            if location_name:
+                location = Location.query.filter_by(name=location_name).first()
+                if not location:
+                    location = Location(name=location_name)
+                    db.session.add(location)
+                    db.session.flush()
+
+            # Create activity
+            activity = Activity(
+                title=row.get("Nom de l'événement ou de type", 'Imported Event').strip(),
+                date=date,
+                time=row.get('Heure de début', '').strip(),
+                end_time=row.get('Heure de fin', '').strip(),
+                location_id=location.id if location else None,
+                notes=row.get("nom de l'événement", '').strip(),
+                is_all_day=not bool(row.get('Heure de début'))
+            )
+            activities_to_create.append(activity)
+
+        # Save all activities
+        for activity in activities_to_create:
+            db.session.add(activity)
+        db.session.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        print('Error importing activities:', str(e))  # For debugging
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activities', methods=['POST'])
 @login_required
@@ -653,63 +696,26 @@ def init_db():
             
             db.session.commit()
 
-@app.route('/api/import-activities', methods=['POST'])
-@login_required
-def import_activities():
-    if not current_user.can_manage_activities():
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-
-    file = request.files['file']
-    if not file.filename.endswith('.csv'):
-        return jsonify({'error': 'Invalid file type'}), 400
-
-    try:
-        # Read CSV file
-        stream = StringIO(file.stream.read().decode("UTF-8"))
-        csv_reader = csv.DictReader(stream, delimiter=';')
+def generate_recurring_dates(start_date, recurrence_type, end_date):
+    dates = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        dates.append(current_date)
         
-        activities_to_create = []
-        for row in csv_reader:
-            if not row.get("Date de l'évènement"): continue
-            
-            # Parse date and create activity
-            date_str = row["Date de l'évènement"]
-            try:
-                date = datetime.strptime(date_str, '%d-%m-%Y')
-            except ValueError:
-                continue
-
-            # Find or create location
-            location = Location.query.filter_by(name=row["nom de la salle"]).first()
-            if not location:
-                location = Location(name=row["nom de la salle"])
-                db.session.add(location)
-
-            # Create activity
-            activity = Activity(
-                title=row.get("Nom de l'événement ou de type", 'Imported Event'),
-                date=date,
-                time=row.get("Heure de début"),
-                end_time=row.get("Heure de fin"),
-                location_id=location.id,
-                notes=row.get("nom de l'événement", ''),
-                is_all_day=False
-            )
-            activities_to_create.append(activity)
-
-        # Save all activities
-        for activity in activities_to_create:
-            db.session.add(activity)
-        db.session.commit()
-
-        return jsonify({'success': True})
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        if recurrence_type == 'daily':
+            current_date = current_date + timedelta(days=1)
+        elif recurrence_type == 'weekly':
+            current_date = current_date + timedelta(weeks=1)
+        elif recurrence_type == 'monthly':
+            year = current_date.year + ((current_date.month + 1) // 12)
+            month = ((current_date.month + 1) % 12) or 12
+            day = min(current_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+            current_date = current_date.replace(year=year, month=month, day=day)
+        elif recurrence_type == 'annually':
+            current_date = current_date.replace(year=current_date.year + 1)
+    
+    return dates
 
 if __name__ == '__main__':
     with app.app_context():
