@@ -51,48 +51,68 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleCategory(categoryId) {
+        const categoryIdStr = categoryId.toString();
+        const allButton = document.querySelector('[data-category="all"]');
         const button = document.querySelector(`[data-category="${categoryId}"]`);
+        
         if (!button) return;
-
+        
         // Remove existing error message if any
         const existingError = document.querySelector('.calendar-container .alert');
         if (existingError) {
             existingError.remove();
         }
-
+        
+        // Handle "Show All" button
         if (categoryId === 'all') {
-            selectedCategories.clear();
-            selectedCategories.add('all');
+            selectedCategories = new Set(['all']);
             document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            button.classList.add('active');
+            allButton.classList.add('active');
         } else {
+            // If "all" was selected, clear it when selecting a specific category
             if (selectedCategories.has('all')) {
-                selectedCategories.clear();
-                document.querySelector('[data-category="all"]').classList.remove('active');
+                selectedCategories.delete('all');
+                allButton.classList.remove('active');
             }
             
-            const categoryIdStr = categoryId.toString();
+            // Toggle the selected category
             if (selectedCategories.has(categoryIdStr)) {
                 selectedCategories.delete(categoryIdStr);
                 button.classList.remove('active');
+                
+                // If no categories are selected, switch back to "all"
+                if (selectedCategories.size === 0) {
+                    selectedCategories.add('all');
+                    allButton.classList.add('active');
+                }
             } else {
                 selectedCategories.add(categoryIdStr);
                 button.classList.add('active');
             }
         }
-
+        
         fetchActivities();
     }
 
     function shouldDisplayActivity(activity) {
-        if (selectedCategories.has('all')) return true;
-        if (!activity.category_ids || activity.category_ids.length === 0) return false;
-        return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
+        // If "all" is selected or no categories are selected, show all activities
+        if (selectedCategories.has('all')) {
+            return true;
+        }
+        
+        // If the activity has no categories, don't show it when filtering
+        if (!activity.categories || activity.categories.length === 0) {
+            return false;
+        }
+        
+        // Show the activity if it has any of the selected categories
+        return activity.categories.some(category => 
+            selectedCategories.has(category.id.toString())
+        );
     }
 
-    // Updated fetchActivities function as per manager's instructions
     async function fetchActivities() {
         try {
             const response = await fetch('/api/activities');

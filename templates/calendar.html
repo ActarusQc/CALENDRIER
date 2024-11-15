@@ -23,12 +23,14 @@
     </h1>
 </div>
 
-<!-- Category Filters -->
+<!-- Enhanced Category Filters -->
 <div class="category-filters mb-3">
     <div class="d-flex align-items-center flex-wrap gap-2">
-        <span class="me-2 fw-bold">{{ trans.categories }}:</span>
+        <span class="me-2 fw-bold text-dark">{{ trans.categories }}:</span>
         <div id="categoryFilters" class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-primary active" data-category="all">{{ trans.show_all }}</button>
+            <!-- Show All button -->
+            <button class="btn btn-sm btn-outline-primary active" data-category="all">{{ trans.show_all }}</button>
+            <!-- Category buttons will be dynamically added here -->
         </div>
     </div>
 </div>
