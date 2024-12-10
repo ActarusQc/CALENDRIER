@@ -399,11 +399,13 @@
     line-height: 1.1;
     color: white;
 }
-.activity {
-    color: white !important;
-}
-
-.activity i {
+.activity,
+.activity *,
+.activity label,
+.activity input[type="checkbox"] + span,
+.activity .form-check-label,
+.activity i.bi,
+.activity .form-check {
     color: white !important;
 }
 
