@@ -399,6 +399,13 @@
     line-height: 1.1;
     color: white;
 }
+.activity {
+    color: white !important;
+}
+
+.activity i {
+    color: white !important;
+}
 
 .navbar-logo {
     height: 32px;
