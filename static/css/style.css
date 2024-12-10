@@ -399,13 +399,25 @@
     line-height: 1.1;
     color: white;
 }
-.activity,
-.activity *,
-.activity label,
-.activity input[type="checkbox"] + span,
-.activity .form-check-label,
-.activity i.bi,
-.activity .form-check {
+/* Style pour les activités dans le calendrier */
+.calendar-date .activity,
+.calendar-date .activity *,
+.calendar-date .activity label,
+.calendar-date .activity input[type="checkbox"] + span,
+.calendar-date .activity .form-check-label,
+.calendar-date .activity i.bi,
+.calendar-date .activity .form-check {
+    color: white !important;
+}
+
+/* Style pour la boîte modale d'ajout d'événements */
+#activityModal .modal-content {
+    color: white;
+}
+
+#activityModal .modal-title,
+#activityModal label,
+#activityModal .form-check-label {
     color: white !important;
 }
 
