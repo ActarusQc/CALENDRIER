@@ -395,11 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const categories = await response.json();
             const categoryFilters = document.getElementById('categoryFilters');
             
-            // Add title for category filters
-            const filterTitle = document.createElement('h5');
-            filterTitle.className = 'w-100 mb-3 text-dark';
-            filterTitle.textContent = 'Filtrer par catégorie';
-            categoryFilters.appendChild(filterTitle);
+            
             
             categories.forEach(category => {
                 const button = document.createElement('button');
