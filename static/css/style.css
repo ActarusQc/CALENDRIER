@@ -318,7 +318,7 @@
 }
 
 .activity {
-    margin: 2px 4px;
+    margin: 2px 0;
     padding: var(--activity-padding) 8px;
     min-height: var(--min-activity-height);
     border-radius: 4px;
@@ -341,7 +341,7 @@
 
 .activity.multi-day {
     position: relative;
-    margin: 0 !important;
+    margin: 2px 0 !important;
     padding: var(--activity-padding) 8px !important;
     height: auto;
     min-height: var(--min-activity-height);
@@ -349,6 +349,7 @@
     width: calc(100% + 2px);
     margin-left: -1px !important;
     margin-right: -1px !important;
+    border: none;
     transition: height var(--transition-duration) ease,
                 min-height var(--transition-duration) ease,
                 opacity var(--transition-duration) ease;
@@ -367,8 +368,7 @@
 
 .activity.multi-day.middle {
     border-radius: 0;
-    margin-left: -1px !important;
-    margin-right: -1px !important;
+    margin: 2px -1px !important;
     width: calc(100% + 2px);
     z-index: 1;
 }
