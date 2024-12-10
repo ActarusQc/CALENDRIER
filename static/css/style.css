@@ -11,12 +11,12 @@
 #categoryFilters {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    padding: 20px;
-    margin: 0 0 20px 0;
+    gap: 8px;
+    padding: 12px;
+    margin: 0 0 16px 0;
     background-color: #ffffff;
-    border-radius: 12px;
-    border: 2px solid #4E8BBF;
+    border-radius: 8px;
+    border: 1px solid #4E8BBF;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     position: relative;
 }
@@ -24,13 +24,14 @@
 #categoryFilters .btn {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
-    font-size: 1rem;
-    border-radius: 25px;
+    padding: 4px 12px;
+    font-size: 0.875rem;
+    border-radius: 16px;
     transition: all 0.2s ease-in-out;
     background-color: white;
-    border: 2px solid #dee2e6;
+    border: 1px solid #dee2e6;
     font-weight: 500;
+    line-height: 1.2;
 }
 
 #categoryFilters .btn:hover {
