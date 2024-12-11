@@ -1,4 +1,131 @@
 document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup checkbox handlers
+    setupCheckboxHandlers();
+    
+    // Load activities
+    loadActivities();
+    loadLocationsAndCategories();
+    setupForm();
+
+    // CSV import handler
+    document.getElementById('csvFileInput').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/import-activities', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) throw new Error('Import failed');
+            
+            const result = await response.json();
+            if (result.success) {
+                loadActivities();
+                alert('Activities imported successfully');
+            }
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import activities');
+        }
+    });
+
+    // Check for URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedDate = urlParams.get('selected_date');
+    const activityId = urlParams.get('activity_id');
+
+    if (activityId) {
+        // If activity_id is present, fetch and load that activity's details
+        fetch(`/api/activities/${activityId}`)
+            .then(response => response.json())
+            .then(activity => {
+                fillActivityForm(activity);
+                const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading activity:', error);
+                alert('Error loading activity: ' + error.message);
+            });
+    } else if (selectedDate) {
+        // Pre-fill the date and show the modal
+        document.getElementById('date').value = selectedDate;
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
+    }
+});
+
+function setupCheckboxHandlers() {
+    // Handle "Select All" checkbox
+    const selectAllCheckbox = document.getElementById('selectAllActivities');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.activity-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateDeleteButtonVisibility();
+        });
+    }
+
+    // Handle individual checkboxes
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('activity-checkbox')) {
+            updateDeleteButtonVisibility();
+        }
+    });
+
+    // Handle delete selected button
+    const deleteSelectedBtn = document.getElementById('deleteSelectedActivities');
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedActivities);
+    }
+}
+
+function updateDeleteButtonVisibility() {
+    const checkedBoxes = document.querySelectorAll('.activity-checkbox:checked');
+    const deleteButton = document.getElementById('deleteSelectedActivities');
+    if (deleteButton) {
+        deleteButton.style.display = checkedBoxes.length > 0 ? 'block' : 'none';
+    }
+}
+
+async function deleteSelectedActivities() {
+    if (!confirm(window.translations.delete_confirmation)) {
+        return;
+    }
+
+    const selectedIds = Array.from(document.querySelectorAll('.activity-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+
+    if (selectedIds.length === 0) return;
+
+    try {
+        const response = await fetch('/api/activities/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ids: selectedIds })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete activities');
+        }
+
+        await loadActivities();
+    } catch (error) {
+        console.error('Error deleting activities:', error);
+        alert('Error deleting activities: ' + error.message);
+    }
+}
     loadActivities();
     loadLocationsAndCategories();
     setupForm();
@@ -209,6 +336,11 @@ async function loadActivities() {
                 const timeStr = formatTime(activity);
                 
                 tr.innerHTML = `
+                    <td class="align-middle">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input activity-checkbox" value="${activity.id}">
+                        </div>
+                    </td>
                     <td class="align-middle">${dateStr}</td>
                     <td class="align-middle">${timeStr}</td>
                     <td class="align-middle">
@@ -241,6 +373,9 @@ async function loadActivities() {
                 `;
                 tbody.appendChild(tr);
             });
+
+        // Update delete button visibility
+        updateDeleteButtonVisibility();
     } catch (error) {
         console.error('Error loading activities:', error);
         alert('Error loading activities: ' + error.message);

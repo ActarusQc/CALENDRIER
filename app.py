@@ -168,14 +168,23 @@ def import_activities():
             content = file.stream.read().decode("UTF-8-sig")  # Handle BOM if present
             print("Reading CSV content...")
             
-            # Skip empty lines at the start
-            lines = [line for line in content.split('\n') if line.strip()]
+            # Print first few lines for debugging
+            lines = content.split('\n')
+            print("First 5 lines of CSV:")
+            for i, line in enumerate(lines[:5]):
+                print(f"Line {i}: {line}")
             
-            # Find the header row (the one containing "Date de l'évènement")
+            # Skip empty lines and metadata at the start
+            lines = [line for line in lines if line.strip()]
+            
+            # Find the header row (looking for key columns)
             header_index = -1
+            key_columns = ["Date de l'évènement", "Nom de la salle", "Heure de début"]
+            
             for i, line in enumerate(lines):
-                if "Date de l'évènement" in line:
+                if any(col in line for col in key_columns):
                     header_index = i
+                    print(f"Found header at line {i}: {line}")
                     break
             
             if header_index == -1:
@@ -407,6 +416,33 @@ def delete_activity(activity_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/activities/bulk-delete', methods=['POST'])
+@login_required
+def bulk_delete_activities():
+    if not current_user.can_manage_activities():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.json
+    if not data or not data.get('ids'):
+        return jsonify({'error': 'No activity IDs provided'}), 400
+    
+    try:
+        # Get all activities to delete
+        activities = Activity.query.filter(Activity.id.in_(data['ids'])).all()
+        
+        # Delete all activities in a single transaction
+        for activity in activities:
+            db.session.delete(activity)
+        
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'count': len(activities),
+            'message': f'Successfully deleted {len(activities)} activities'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
     categories = Category.query.all()
