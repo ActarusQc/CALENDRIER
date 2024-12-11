@@ -163,83 +163,129 @@ def import_activities():
         return jsonify({'error': 'Invalid file type'}), 400
 
     try:
-        # Read CSV file
-        stream = StringIO(file.stream.read().decode("UTF-8-sig"))  # Handle BOM if present
-        csv_reader = csv.DictReader(stream, delimiter=';')
-        
-        activities_to_create = []
-        for row in csv_reader:
-            # Skip empty rows or headers
-            if not row.get("Date de l'évènement") or row.get("Date de l'évènement") == "Date de l'évènement": 
-                continue
+        try:
+            # Read CSV file and skip empty rows at the beginning
+            content = file.stream.read().decode("UTF-8-sig")  # Handle BOM if present
+            print("Reading CSV content...")
             
-            # Parse date
-            date_str = row.get("Date de l'évènement", '').strip()
-            try:
-                date = datetime.strptime(date_str, '%d-%m-%Y')
-            except ValueError as e:
-                print(f"Error parsing date {date_str}: {e}")
-                continue
-
-            # Get or create location
-            location_name = row.get('nom de la salle', '').strip()
-            location = None
-            if location_name and location_name != 'nom de la salle':
-                location = Location.query.filter_by(name=location_name).first()
-                if not location:
-                    location = Location(name=location_name)
-                    db.session.add(location)
-                    db.session.flush()
-
-            # Get event title
-            title = row.get("Nom de l'événement ou de type", '').strip()
-            if not title:
-                title = row.get("nom de l'événement", '').strip()
-            if not title:
-                title = 'Événement importé'
-
-            # Parse times
-            start_time = row.get('Heure de début', '').strip()
-            end_time = row.get('Heure de fin', '').strip()
+            # Skip empty lines at the start
+            lines = [line for line in content.split('\n') if line.strip()]
             
-            # Format times to 24-hour format if they exist
-            if start_time:
+            # Find the header row (the one containing "Date de l'évènement")
+            header_index = -1
+            for i, line in enumerate(lines):
+                if "Date de l'évènement" in line:
+                    header_index = i
+                    break
+            
+            if header_index == -1:
+                print("Could not find header row in CSV")
+                return jsonify({'error': 'Invalid CSV format: header row not found'}), 400
+            
+            # Reconstruct CSV with correct header
+            csv_content = '\n'.join(lines[header_index:])
+            stream = StringIO(csv_content)
+            csv_reader = csv.DictReader(stream, delimiter=';')
+            
+            print("CSV Headers found:", csv_reader.fieldnames)
+            
+            activities_to_create = []
+            for row in csv_reader:
+                # Skip empty rows
+                if not any(row.values()):
+                    continue
+                
                 try:
-                    start_time = datetime.strptime(start_time.upper(), '%HH%M').strftime('%H:%M')
-                except ValueError:
-                    print(f"Error parsing start time {start_time}")
-                    start_time = None
+                    # Parse date
+                    date_str = row.get("Date de l'évènement", '').strip()
+                    if not date_str:
+                        print(f"Skipping row - no date found: {row}")
+                        continue
+                        
+                    try:
+                        date = datetime.strptime(date_str, '%d-%m-%Y')
+                    except ValueError as e:
+                        print(f"Error parsing date {date_str}: {e}")
+                        continue
+
+                    # Get or create location
+                    location_name = row.get('Nom de la salle', '').strip()
+                    location = None
+                    if location_name:
+                        location = Location.query.filter_by(name=location_name).first()
+                        if not location:
+                            location = Location(name=location_name)
+                            db.session.add(location)
+                            db.session.flush()
+
+                    # Get event title
+                    title = row.get("Nom de l'événement ou de type", '').strip()
+                    if not title:
+                        title = row.get("nom de l'événement", '').strip()
+                    if not title:
+                        title = 'Événement importé'
+
+                    # Parse times
+                    start_time = row.get('Heure de début', '').strip()
+                    end_time = row.get('Heure de fin', '').strip()
                     
-            if end_time:
-                try:
-                    end_time = datetime.strptime(end_time.upper(), '%HH%M').strftime('%H:%M')
-                except ValueError:
-                    print(f"Error parsing end time {end_time}")
-                    end_time = None
+                    # Format times to 24-hour format if they exist
+                    if start_time:
+                        try:
+                            # Handle format "07H00"
+                            start_time = start_time.upper().replace('H', ':')
+                            if len(start_time) == 4:  # Format "7:00"
+                                start_time = f"0{start_time}"
+                        except ValueError as e:
+                            print(f"Error parsing start time {start_time}: {e}")
+                            start_time = None
+                            
+                    if end_time:
+                        try:
+                            # Handle format "07H00"
+                            end_time = end_time.upper().replace('H', ':')
+                            if len(end_time) == 4:  # Format "7:00"
+                                end_time = f"0{end_time}"
+                        except ValueError as e:
+                            print(f"Error parsing end time {end_time}: {e}")
+                            end_time = None
+
+                    print(f"Processing row: Date={date_str}, Title={title}, Time={start_time}-{end_time}, Location={location_name}")
 
             # Create activity with all available information
-            activity = Activity(
-                title=title,
-                date=date,
-                time=start_time,
-                end_time=end_time,
-                location_id=location.id if location else None,
-                notes=row.get("notes", '').strip(),
-                is_all_day=not bool(start_time),
-                is_recurring=False
-            )
-            activities_to_create.append(activity)
+                    activity = Activity(
+                        title=title,
+                        date=date,
+                        time=start_time,
+                        end_time=end_time,
+                        location_id=location.id if location else None,
+                        notes=row.get("Contrat #", '').strip(),  # Using contract number as notes
+                        is_all_day=not bool(start_time),
+                        is_recurring=False
+                    )
+                    activities_to_create.append(activity)
+                    print(f"Activity prepared: {activity.title} on {activity.date}")
+                    
+                except Exception as row_error:
+                    print(f"Error processing row: {row_error}")
+                    continue
 
-        if not activities_to_create:
-            return jsonify({'error': 'No valid activities found in CSV'}), 400
+            if not activities_to_create:
+                print("No valid activities found in CSV")
+                return jsonify({'error': 'No valid activities found in CSV'}), 400
 
-        # Save all activities
-        for activity in activities_to_create:
-            print(f"Creating activity: {activity.title} on {activity.date} at {activity.time}")
-            db.session.add(activity)
-        
-        db.session.commit()
-        return jsonify({'success': True, 'count': len(activities_to_create)})
+            # Save all activities
+            print(f"Attempting to save {len(activities_to_create)} activities...")
+            for activity in activities_to_create:
+                db.session.add(activity)
+            
+            db.session.commit()
+            print(f"Successfully imported {len(activities_to_create)} activities")
+            return jsonify({'success': True, 'count': len(activities_to_create)})
+            
+        except Exception as e:
+            print(f"Error processing CSV: {str(e)}")
+            return jsonify({'error': f'Error processing CSV: {str(e)}'}), 500
 
     except Exception as e:
         db.session.rollback()
