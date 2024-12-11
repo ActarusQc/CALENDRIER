@@ -327,37 +327,40 @@ async function editActivity(id) {
         }
         const activity = await response.json();
         
-        // Wait for locations and categories to load
+        // Wait for locations and categories to load first
         await loadLocationsAndCategories();
         
-        // Set form values
-        document.getElementById('activityId').value = id;
-        document.getElementById('title').value = activity.title;
-        document.getElementById('date').value = activity.date;
-        document.getElementById('end_date').value = activity.end_date || '';
-        document.getElementById('is_all_day').checked = activity.is_all_day;
-        document.getElementById('time').value = activity.time || '';
-        document.getElementById('end_time').value = activity.end_time || '';
-        document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
-        document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
-        document.getElementById('location').value = activity.location_id || '';
-        document.getElementById('notes').value = activity.notes || '';
-        
-        // Set recurring fields
-        document.getElementById('is_recurring').checked = activity.is_recurring;
-        document.getElementById('recurrence_type').value = activity.recurrence_type || '';
-        document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
-        document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
-
-        // Wait for categories to load before setting them
-        const checkInterval = setInterval(() => {
-            const checkboxes = document.querySelectorAll('input[name="categories"]');
-            if (checkboxes.length > 0) {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
-                });
-                clearInterval(checkInterval);
+        // Set form values after a short delay to ensure dropdowns are populated
+        setTimeout(() => {
+            // Set basic form values
+            document.getElementById('activityId').value = id;
+            document.getElementById('title').value = activity.title;
+            document.getElementById('date').value = activity.date;
+            document.getElementById('end_date').value = activity.end_date || '';
+            document.getElementById('is_all_day').checked = activity.is_all_day;
+            document.getElementById('time').value = activity.time || '';
+            document.getElementById('end_time').value = activity.end_time || '';
+            document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
+            document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
+            document.getElementById('notes').value = activity.notes || '';
+            
+            // Set location
+            const locationSelect = document.getElementById('location');
+            if (locationSelect) {
+                locationSelect.value = activity.location_id || '';
             }
+            
+            // Set recurring fields
+            document.getElementById('is_recurring').checked = activity.is_recurring;
+            document.getElementById('recurrence_type').value = activity.recurrence_type || '';
+            document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
+            document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
+
+            // Set categories
+            const checkboxes = document.querySelectorAll('input[name="categories"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
+            });
         }, 100);
 
         // Show modal
