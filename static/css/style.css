@@ -352,26 +352,21 @@
     margin-right: -1px !important;
     border: none;
     border-radius: 0;
-    z-index: 1;
-    background-clip: padding-box;
+    z-index: 2;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-right: 0 !important;
+    margin-right: -1px !important;
     margin-left: 0 !important;
     width: calc(100% + 1px);
-    z-index: 2;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    margin: 2px 0 !important;
+    margin: 2px -1px !important;
     width: calc(100% + 2px);
-    margin-left: -1px !important;
-    margin-right: -1px !important;
-    z-index: 1;
 }
 
 .activity.multi-day.end {
@@ -380,7 +375,6 @@
     margin-left: -1px !important;
     margin-right: 0 !important;
     width: calc(100% + 1px);
-    z-index: 1;
 }
 
 .activity-content {
