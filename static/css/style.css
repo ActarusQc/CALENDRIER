@@ -341,13 +341,12 @@
 }
 
 .activity.multi-day {
-    position: relative;
+    position: absolute;
     left: 0;
-    right: 0;
-    margin: 2px 0 !important;
+    right: -1px;
+    margin: 0 !important;
     padding: var(--activity-padding) 8px !important;
-    height: auto;
-    min-height: var(--min-activity-height);
+    height: var(--min-activity-height);
     box-sizing: border-box;
     border: none;
     border-radius: 0;
@@ -357,27 +356,34 @@
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-right: -1px !important;
     z-index: 3;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    margin-left: -1px !important;
-    margin-right: -1px !important;
+    left: -1px;
+    right: -1px;
     z-index: 2;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    margin-left: -1px !important;
+    left: -1px;
+    right: 0;
     z-index: 2;
 }
 
-.all-day-activities .activity.multi-day + .activity.multi-day {
-    margin-top: calc(var(--min-activity-height) + 4px) !important;
+.all-day-activities {
+    position: relative;
+    min-height: var(--min-activity-height);
 }
+
+.all-day-activities .activity.multi-day:nth-child(1) { top: 2px; }
+.all-day-activities .activity.multi-day:nth-child(2) { top: calc(var(--min-activity-height) + 6px); }
+.all-day-activities .activity.multi-day:nth-child(3) { top: calc(2 * var(--min-activity-height) + 10px); }
+.all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * var(--min-activity-height) + 14px); }
+.all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * var(--min-activity-height) + 18px); }
 
 .activity-content {
     width: 100%;
