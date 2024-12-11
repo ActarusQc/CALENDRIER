@@ -419,6 +419,9 @@
 .activity.multi-day .activity-content {
     overflow: visible;
     white-space: nowrap;
+    position: relative;
+    width: auto;
+    min-width: 100%;
 }
 
 .activity-content .title {
@@ -427,12 +430,15 @@
     color: white;
     overflow: hidden;
     text-overflow: ellipsis;
+    position: relative;
 }
 
 .activity.multi-day .title {
     white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
+    position: absolute;
+    width: max-content;
 }
 
 .activity-content .location {
