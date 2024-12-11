@@ -164,53 +164,86 @@ def import_activities():
 
     try:
         # Read CSV file
-        stream = StringIO(file.stream.read().decode("UTF-8"))
+        stream = StringIO(file.stream.read().decode("UTF-8-sig"))  # Handle BOM if present
         csv_reader = csv.DictReader(stream, delimiter=';')
         
         activities_to_create = []
         for row in csv_reader:
-            if not row.get("Date de l'évènement"): 
+            # Skip empty rows or headers
+            if not row.get("Date de l'évènement") or row.get("Date de l'évènement") == "Date de l'évènement": 
                 continue
             
             # Parse date
-            date_str = row["Date de l'évènement"].strip()
+            date_str = row.get("Date de l'évènement", '').strip()
             try:
                 date = datetime.strptime(date_str, '%d-%m-%Y')
-            except ValueError:
+            except ValueError as e:
+                print(f"Error parsing date {date_str}: {e}")
                 continue
 
             # Get or create location
             location_name = row.get('nom de la salle', '').strip()
             location = None
-            if location_name:
+            if location_name and location_name != 'nom de la salle':
                 location = Location.query.filter_by(name=location_name).first()
                 if not location:
                     location = Location(name=location_name)
                     db.session.add(location)
                     db.session.flush()
 
-            # Create activity
+            # Get event title
+            title = row.get("Nom de l'événement ou de type", '').strip()
+            if not title:
+                title = row.get("nom de l'événement", '').strip()
+            if not title:
+                title = 'Événement importé'
+
+            # Parse times
+            start_time = row.get('Heure de début', '').strip()
+            end_time = row.get('Heure de fin', '').strip()
+            
+            # Format times to 24-hour format if they exist
+            if start_time:
+                try:
+                    start_time = datetime.strptime(start_time.upper(), '%HH%M').strftime('%H:%M')
+                except ValueError:
+                    print(f"Error parsing start time {start_time}")
+                    start_time = None
+                    
+            if end_time:
+                try:
+                    end_time = datetime.strptime(end_time.upper(), '%HH%M').strftime('%H:%M')
+                except ValueError:
+                    print(f"Error parsing end time {end_time}")
+                    end_time = None
+
+            # Create activity with all available information
             activity = Activity(
-                title=row.get("Nom de l'événement ou de type", 'Imported Event').strip(),
+                title=title,
                 date=date,
-                time=row.get('Heure de début', '').strip(),
-                end_time=row.get('Heure de fin', '').strip(),
+                time=start_time,
+                end_time=end_time,
                 location_id=location.id if location else None,
-                notes=row.get("nom de l'événement", '').strip(),
-                is_all_day=not bool(row.get('Heure de début'))
+                notes=row.get("notes", '').strip(),
+                is_all_day=not bool(start_time),
+                is_recurring=False
             )
             activities_to_create.append(activity)
 
+        if not activities_to_create:
+            return jsonify({'error': 'No valid activities found in CSV'}), 400
+
         # Save all activities
         for activity in activities_to_create:
+            print(f"Creating activity: {activity.title} on {activity.date} at {activity.time}")
             db.session.add(activity)
+        
         db.session.commit()
-
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'count': len(activities_to_create)})
 
     except Exception as e:
         db.session.rollback()
-        print('Error importing activities:', str(e))  # For debugging
+        print('Error importing activities:', str(e))
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/activities', methods=['POST'])
