@@ -321,69 +321,67 @@ async function saveActivity() {
 
 async function editActivity(id) {
     try {
+        console.log('Editing activity:', id);
         const response = await fetch(`/api/activities/${id}`);
         if (!response.ok) {
             throw new Error('Failed to load activity');
         }
         const activity = await response.json();
+        console.log('Activity data received:', activity);
         
-        // Wait for locations and categories to load first and get references
+        // Load locations and categories first
         await loadLocationsAndCategories();
-        
-        function setFormValues() {
-            return new Promise((resolve) => {
-                const checkForElements = setInterval(() => {
-                    const locationSelect = document.getElementById('location');
-                    const categoriesContainer = document.getElementById('categoriesContainer');
-                    const checkboxes = document.querySelectorAll('input[name="categories"]');
-                    
-                    if (locationSelect && locationSelect.options.length > 1 && 
-                        categoriesContainer && checkboxes.length > 0) {
-                        clearInterval(checkForElements);
-                        
-                        // Set basic form values
-                        document.getElementById('activityId').value = id;
-                        document.getElementById('title').value = activity.title;
-                        document.getElementById('date').value = activity.date;
-                        document.getElementById('end_date').value = activity.end_date || '';
-                        document.getElementById('is_all_day').checked = activity.is_all_day;
-                        document.getElementById('time').value = activity.time || '';
-                        document.getElementById('end_time').value = activity.end_time || '';
-                        document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
-                        document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
-                        document.getElementById('notes').value = activity.notes || '';
-                        
-                        // Set location
-                        locationSelect.value = activity.location_id || '';
-                        
-                        // Set recurring fields
-                        document.getElementById('is_recurring').checked = activity.is_recurring;
-                        document.getElementById('recurrence_type').value = activity.recurrence_type || '';
-                        document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
-                        document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
-                        
-                        // Set categories
-                        checkboxes.forEach(checkbox => {
-                            checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
-                        });
-                        
-                        resolve();
-                    }
-                }, 50); // Check every 50ms
-                
-                // Timeout after 5 seconds
-                setTimeout(() => {
-                    clearInterval(checkForElements);
-                    resolve();
-                }, 5000);
-            });
-        }
-        
-        // Wait for form values to be set
-        await setFormValues();
-        
-        // Show modal
+        console.log('Locations and categories loaded');
+
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+
+        // Set form values once modal is shown
+        document.getElementById('activityModal').addEventListener('shown.bs.modal', async function onModalShown() {
+            try {
+                // Remove the event listener to prevent multiple executions
+                document.getElementById('activityModal').removeEventListener('shown.bs.modal', onModalShown);
+
+                // Set basic form values
+                document.getElementById('activityId').value = id;
+                document.getElementById('title').value = activity.title;
+                document.getElementById('date').value = activity.date;
+                document.getElementById('end_date').value = activity.end_date || '';
+                document.getElementById('is_all_day').checked = activity.is_all_day;
+                document.getElementById('time').value = activity.time || '';
+                document.getElementById('end_time').value = activity.end_time || '';
+                document.getElementById('notes').value = activity.notes || '';
+
+                // Set location with retry
+                const locationSelect = document.getElementById('location');
+                if (locationSelect && activity.location_id) {
+                    console.log('Setting location:', activity.location_id);
+                    locationSelect.value = activity.location_id;
+                }
+
+                // Set time fields visibility
+                document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
+                document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
+
+                // Set recurring fields
+                document.getElementById('is_recurring').checked = activity.is_recurring;
+                document.getElementById('recurrence_type').value = activity.recurrence_type || '';
+                document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
+                document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
+
+                // Set categories with retry
+                const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
+                if (activity.category_ids && activity.category_ids.length > 0) {
+                    console.log('Setting categories:', activity.category_ids);
+                    categoryCheckboxes.forEach(checkbox => {
+                        checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
+                    });
+                }
+            } catch (error) {
+                console.error('Error setting form values:', error);
+            }
+        });
+
+        // Show the modal
         modal.show();
     } catch (error) {
         console.error('Error loading activity:', error);

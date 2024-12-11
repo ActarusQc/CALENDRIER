@@ -122,7 +122,11 @@ def get_activities():
 @app.route('/api/activities/<int:activity_id>', methods=['GET'])
 def get_activity(activity_id):
     activity = Activity.query.get_or_404(activity_id)
-    return jsonify({
+    print(f"Fetching activity {activity_id}:")
+    print(f"Location ID: {activity.location_id}")
+    print(f"Category IDs: {[c.id for c in activity.categories]}")
+    
+    response_data = {
         'id': activity.id,
         'title': activity.title,
         'date': activity.date.strftime('%Y-%m-%d'),
@@ -141,7 +145,9 @@ def get_activity(activity_id):
         'category_ids': [category.id for category in activity.categories],
         'recurrence_type': activity.recurrence_type,
         'recurrence_end_date': activity.recurrence_end_date.strftime('%Y-%m-%d') if activity.recurrence_end_date else None
-    })
+    }
+    print("Response data:", response_data)
+    return jsonify(response_data)
 
 @app.route('/api/import-activities', methods=['POST'])
 @login_required
