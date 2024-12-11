@@ -353,7 +353,8 @@
     border-radius: 0;
     z-index: 2;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 2px !important;
 }
 
 .activity.multi-day.start {
@@ -430,6 +431,10 @@
     position: relative;
     width: auto;
     min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
 }
 
 .activity-content .title {
@@ -447,6 +452,7 @@
     text-overflow: clip;
     position: absolute;
     width: max-content;
+    top: 0;
 }
 
 .activity-content .location {
