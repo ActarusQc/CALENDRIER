@@ -407,19 +407,28 @@
 
 .activity-content {
     width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     padding: 2px 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+}
+
+.activity.multi-day .activity-content {
+    overflow: visible;
+    white-space: normal;
 }
 
 .activity-content .title {
     font-weight: 500;
     line-height: 1.2;
     color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity.multi-day .title {
+    white-space: normal;
+    overflow: visible;
 }
 
 .activity-content .location {
@@ -427,6 +436,14 @@
     opacity: 0.9;
     line-height: 1.1;
     color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity.multi-day .location {
+    white-space: normal;
+    overflow: visible;
 }
 /* Style pour les activités dans le calendrier */
 .calendar-date .activity,
