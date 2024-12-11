@@ -346,11 +346,14 @@
     right: -1px;
     margin: 0 !important;
     padding: var(--activity-padding) 8px !important;
-    height: var(--min-activity-height);
+    min-height: var(--min-activity-height);
+    height: auto;
     box-sizing: border-box;
     border: none;
     border-radius: 0;
     z-index: 2;
+    display: flex;
+    align-items: center;
 }
 
 .activity.multi-day.start {
@@ -415,7 +418,7 @@
 
 .activity.multi-day .activity-content {
     overflow: visible;
-    white-space: normal;
+    white-space: nowrap;
 }
 
 .activity-content .title {
@@ -427,8 +430,9 @@
 }
 
 .activity.multi-day .title {
-    white-space: normal;
+    white-space: nowrap;
     overflow: visible;
+    text-overflow: clip;
 }
 
 .activity-content .location {
@@ -442,8 +446,9 @@
 }
 
 .activity.multi-day .location {
-    white-space: normal;
+    white-space: nowrap;
     overflow: visible;
+    text-overflow: clip;
 }
 /* Style pour les activités dans le calendrier */
 .calendar-date .activity,
