@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadLocationsAndCategories();
     setupForm();
 
+    // Setup time filter handler
+    document.getElementById('timeFilter').addEventListener('change', loadActivities);
+
     // CSV import handler
     document.getElementById('csvFileInput').addEventListener('change', async (event) => {
         const file = event.target.files[0];
@@ -272,8 +275,20 @@ async function loadActivities() {
         
         const tbody = document.getElementById('activitiesList');
         tbody.innerHTML = '';
+
+        const timeFilter = document.getElementById('timeFilter').value;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        activities.sort((a, b) => new Date(b.date) - new Date(a.date))
+        const filteredActivities = activities.filter(activity => {
+            if (timeFilter === 'current') {
+                const endDate = activity.end_date ? new Date(activity.end_date) : new Date(activity.date);
+                return endDate >= today;
+            }
+            return true;
+        });
+        
+        filteredActivities.sort((a, b) => new Date(b.date) - new Date(a.date))
             .forEach(activity => {
                 const tr = document.createElement('tr');
                 const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
