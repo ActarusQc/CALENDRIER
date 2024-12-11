@@ -327,42 +327,61 @@ async function editActivity(id) {
         }
         const activity = await response.json();
         
-        // Wait for locations and categories to load first
+        // Wait for locations and categories to load first and get references
         await loadLocationsAndCategories();
         
-        // Set form values after a short delay to ensure dropdowns are populated
-        setTimeout(() => {
-            // Set basic form values
-            document.getElementById('activityId').value = id;
-            document.getElementById('title').value = activity.title;
-            document.getElementById('date').value = activity.date;
-            document.getElementById('end_date').value = activity.end_date || '';
-            document.getElementById('is_all_day').checked = activity.is_all_day;
-            document.getElementById('time').value = activity.time || '';
-            document.getElementById('end_time').value = activity.end_time || '';
-            document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
-            document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
-            document.getElementById('notes').value = activity.notes || '';
-            
-            // Set location
-            const locationSelect = document.getElementById('location');
-            if (locationSelect) {
-                locationSelect.value = activity.location_id || '';
-            }
-            
-            // Set recurring fields
-            document.getElementById('is_recurring').checked = activity.is_recurring;
-            document.getElementById('recurrence_type').value = activity.recurrence_type || '';
-            document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
-            document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
-
-            // Set categories
-            const checkboxes = document.querySelectorAll('input[name="categories"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
+        function setFormValues() {
+            return new Promise((resolve) => {
+                const checkForElements = setInterval(() => {
+                    const locationSelect = document.getElementById('location');
+                    const categoriesContainer = document.getElementById('categoriesContainer');
+                    const checkboxes = document.querySelectorAll('input[name="categories"]');
+                    
+                    if (locationSelect && locationSelect.options.length > 1 && 
+                        categoriesContainer && checkboxes.length > 0) {
+                        clearInterval(checkForElements);
+                        
+                        // Set basic form values
+                        document.getElementById('activityId').value = id;
+                        document.getElementById('title').value = activity.title;
+                        document.getElementById('date').value = activity.date;
+                        document.getElementById('end_date').value = activity.end_date || '';
+                        document.getElementById('is_all_day').checked = activity.is_all_day;
+                        document.getElementById('time').value = activity.time || '';
+                        document.getElementById('end_time').value = activity.end_time || '';
+                        document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
+                        document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
+                        document.getElementById('notes').value = activity.notes || '';
+                        
+                        // Set location
+                        locationSelect.value = activity.location_id || '';
+                        
+                        // Set recurring fields
+                        document.getElementById('is_recurring').checked = activity.is_recurring;
+                        document.getElementById('recurrence_type').value = activity.recurrence_type || '';
+                        document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
+                        document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
+                        
+                        // Set categories
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
+                        });
+                        
+                        resolve();
+                    }
+                }, 50); // Check every 50ms
+                
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    clearInterval(checkForElements);
+                    resolve();
+                }, 5000);
             });
-        }, 100);
-
+        }
+        
+        // Wait for form values to be set
+        await setFormValues();
+        
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
         modal.show();
