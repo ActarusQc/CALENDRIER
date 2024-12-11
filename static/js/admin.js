@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     loadActivities();
     loadLocationsAndCategories();
     setupForm();
+    setupMultipleSelection();
 
     // CSV import handler
     document.getElementById('csvFileInput').addEventListener('change', async (event) => {
@@ -40,47 +42,174 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/api/activities/${activityId}`)
             .then(response => response.json())
             .then(activity => {
-                document.getElementById('activityId').value = activity.id;
-                document.getElementById('title').value = activity.title;
-                document.getElementById('date').value = activity.date;
-                document.getElementById('end_date').value = activity.end_date || '';
-                document.getElementById('is_all_day').checked = activity.is_all_day;
-                document.getElementById('time').value = activity.time || '';
-                document.getElementById('end_time').value = activity.end_time || '';
-                document.getElementById('location').value = activity.location_id || '';
-                document.getElementById('notes').value = activity.notes || '';
-                
-                // Set recurring fields
-                document.getElementById('is_recurring').checked = activity.is_recurring;
-                document.getElementById('recurrence_type').value = activity.recurrence_type || '';
-                document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
-                
-                // Update form display based on activity type
-                const timeField = document.getElementById('timeField');
-                const endTimeField = document.getElementById('endTimeField');
-                const recurrenceFields = document.getElementById('recurrenceFields');
-                
-                if (timeField && endTimeField) {
-                    timeField.style.display = activity.is_all_day ? 'none' : 'block';
-                    endTimeField.style.display = activity.is_all_day ? 'none' : 'block';
-                }
-                
-                if (recurrenceFields) {
-                    recurrenceFields.style.display = activity.is_recurring ? 'block' : 'none';
-                }
+                fillFormWithActivity(activity);
+                const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error loading activity:', error);
+                alert('Error loading activity: ' + error.message);
+            });
+    } else if (selectedDate) {
+        // Pre-fill the date and show the modal
+        document.getElementById('date').value = selectedDate;
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal.show();
+    }
+});
 
-                // Wait for categories to load before setting them
-                const checkInterval = setInterval(() => {
-                    const checkboxes = document.querySelectorAll('input[name="categories"]');
-                    if (checkboxes.length > 0) {
-                        checkboxes.forEach(checkbox => {
-                            checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
-                        });
-                        clearInterval(checkInterval);
-                    }
-                }, 100);
+function setupMultipleSelection() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const deleteSelectedBtn = document.getElementById('deleteSelected');
 
-                // Show modal
+    // Select all checkbox handler
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.activity-select');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateDeleteButtonVisibility();
+    });
+
+    // Delete selected button handler
+    deleteSelectedBtn.addEventListener('click', async function() {
+        if (!confirm(window.translations.delete_confirmation)) {
+            return;
+        }
+
+        const selectedIds = Array.from(document.querySelectorAll('.activity-select:checked'))
+            .map(checkbox => checkbox.value);
+
+        if (selectedIds.length === 0) return;
+
+        try {
+            const response = await fetch('/api/activities/bulk-delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to delete activities');
+            }
+
+            await loadActivities();
+        } catch (error) {
+            console.error('Error deleting activities:', error);
+            alert('Error deleting activities: ' + error.message);
+        }
+    });
+}
+
+function updateDeleteButtonVisibility() {
+    const deleteSelectedBtn = document.getElementById('deleteSelected');
+    const checkedBoxes = document.querySelectorAll('.activity-select:checked');
+    deleteSelectedBtn.style.display = checkedBoxes.length > 0 ? 'block' : 'none';
+}
+
+async function loadActivities() {
+    try {
+        const response = await fetch('/api/activities');
+        const activities = await response.json();
+        
+        const tbody = document.getElementById('activitiesList');
+        tbody.innerHTML = '';
+        
+        activities.sort((a, b) => new Date(b.date) - new Date(a.date))
+            .forEach(activity => {
+                const tr = document.createElement('tr');
+                const categoryColor = activity.categories.length > 0 ? activity.categories[0].color : '#6f42c1';
+                const dateStr = formatDate(activity.date);
+                const timeStr = formatTime(activity);
+                
+                tr.innerHTML = `
+                    <td class="align-middle">
+                        <div class="form-check">
+                            <input class="form-check-input activity-select" type="checkbox" value="${activity.id}" onchange="updateDeleteButtonVisibility()">
+                        </div>
+                    </td>
+                    <td class="align-middle">${dateStr}</td>
+                    <td class="align-middle">${timeStr}</td>
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center">
+                            <div class="color-dot me-2" style="background-color: ${categoryColor}; width: 12px; height: 12px; border-radius: 50%;"></div>
+                            <div>
+                                <div class="fw-bold">${activity.title}</div>
+                                ${activity.is_recurring ? '<small class="text-muted"><i class="bi bi-arrow-repeat"></i> Recurring</small>' : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle">${activity.location || ''}</td>
+                    <td class="align-middle">
+                        <div class="d-flex flex-wrap gap-1">
+                            ${activity.categories.map(c => `
+                                <span class="badge" style="background-color: ${c.color}">${c.name}</span>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editActivity(${activity.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteActivity(${activity.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+    } catch (error) {
+        console.error('Error loading activities:', error);
+        alert('Error loading activities: ' + error.message);
+    }
+}
+    loadActivities();
+    loadLocationsAndCategories();
+    setupForm();
+    setupMultipleSelection();
+
+    // CSV import handler
+    document.getElementById('csvFileInput').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/import-activities', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) throw new Error('Import failed');
+            
+            const result = await response.json();
+            if (result.success) {
+                loadActivities();
+                alert('Activities imported successfully');
+            }
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import activities');
+        }
+    });
+
+    // Check for URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedDate = urlParams.get('selected_date');
+    const activityId = urlParams.get('activity_id');
+
+    if (activityId) {
+        // If activity_id is present, fetch and load that activity's details
+        fetch(`/api/activities/${activityId}`)
+            .then(response => response.json())
+            .then(activity => {
+                fillFormWithActivity(activity);
                 const modal = new bootstrap.Modal(document.getElementById('activityModal'));
                 modal.show();
             })
@@ -99,27 +228,64 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('a[href*="/admin"].btn').addEventListener('click', function(e) {
         if (window.location.pathname === '/admin') {
             e.preventDefault();
-            // Clear form fields
-            document.getElementById('activityId').value = '';
-            document.getElementById('title').value = '';
-            document.getElementById('date').value = '';
-            document.getElementById('end_date').value = '';
-            document.getElementById('time').value = '';
-            document.getElementById('end_time').value = '';
-            document.getElementById('is_all_day').checked = false;
-            document.getElementById('is_recurring').checked = false;
-            document.getElementById('notes').value = '';
-            document.getElementById('location').value = '';
-            
-            // Uncheck all category checkboxes
-            document.querySelectorAll('input[name="categories"]').forEach(cb => cb.checked = false);
-            
-            // Show modal
+            clearForm();
             const modal = new bootstrap.Modal(document.getElementById('activityModal'));
             modal.show();
         }
     });
 });
+
+function setupMultipleSelection() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const deleteSelectedBtn = document.getElementById('deleteSelected');
+
+    // Select all checkbox handler
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.activity-select');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateDeleteButtonVisibility();
+    });
+
+    // Delete selected button handler
+    deleteSelectedBtn.addEventListener('click', async function() {
+        if (!confirm(window.translations.delete_confirmation)) {
+            return;
+        }
+
+        const selectedIds = Array.from(document.querySelectorAll('.activity-select:checked'))
+            .map(checkbox => checkbox.value);
+
+        if (selectedIds.length === 0) return;
+
+        try {
+            const response = await fetch('/api/activities/bulk-delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to delete activities');
+            }
+
+            await loadActivities();
+        } catch (error) {
+            console.error('Error deleting activities:', error);
+            alert('Error deleting activities: ' + error.message);
+        }
+    });
+}
+
+function updateDeleteButtonVisibility() {
+    const deleteSelectedBtn = document.getElementById('deleteSelected');
+    const checkedBoxes = document.querySelectorAll('.activity-select:checked');
+    deleteSelectedBtn.style.display = checkedBoxes.length > 0 ? 'block' : 'none';
+}
 
 async function loadLocationsAndCategories() {
     try {
@@ -163,7 +329,6 @@ function setupForm() {
     const recurrenceFields = document.getElementById('recurrenceFields');
     
     if (allDayCheckbox && timeField && endTimeField) {
-        // Set initial state
         timeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
         endTimeField.style.display = allDayCheckbox.checked ? 'none' : 'block';
         
@@ -186,11 +351,6 @@ function setupForm() {
             }
         });
     }
-
-    // Add event listener for modal show
-    document.getElementById('activityModal').addEventListener('show.bs.modal', function () {
-        loadLocationsAndCategories();
-    });
 }
 
 async function loadActivities() {
@@ -209,6 +369,11 @@ async function loadActivities() {
                 const timeStr = formatTime(activity);
                 
                 tr.innerHTML = `
+                    <td class="align-middle">
+                        <div class="form-check">
+                            <input class="form-check-input activity-select" type="checkbox" value="${activity.id}" onchange="updateDeleteButtonVisibility()">
+                        </div>
+                    </td>
                     <td class="align-middle">${dateStr}</td>
                     <td class="align-middle">${timeStr}</td>
                     <td class="align-middle">
@@ -237,8 +402,7 @@ async function loadActivities() {
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
-                    </td>
-                `;
+                    </td>`;
                 tbody.appendChild(tr);
             });
     } catch (error) {
@@ -265,6 +429,69 @@ function formatTime(activity) {
     return timeStr;
 }
 
+function fillFormWithActivity(activity) {
+    document.getElementById('activityId').value = activity.id;
+    document.getElementById('title').value = activity.title;
+    document.getElementById('date').value = activity.date;
+    document.getElementById('end_date').value = activity.end_date || '';
+    document.getElementById('is_all_day').checked = activity.is_all_day;
+    document.getElementById('time').value = activity.time || '';
+    document.getElementById('end_time').value = activity.end_time || '';
+    document.getElementById('location').value = activity.location_id || '';
+    document.getElementById('notes').value = activity.notes || '';
+    
+    // Set recurring fields
+    document.getElementById('is_recurring').checked = activity.is_recurring;
+    document.getElementById('recurrence_type').value = activity.recurrence_type || '';
+    document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
+    
+    // Update form display based on activity type
+    const timeField = document.getElementById('timeField');
+    const endTimeField = document.getElementById('endTimeField');
+    const recurrenceFields = document.getElementById('recurrenceFields');
+    
+    if (timeField && endTimeField) {
+        timeField.style.display = activity.is_all_day ? 'none' : 'block';
+        endTimeField.style.display = activity.is_all_day ? 'none' : 'block';
+    }
+    
+    if (recurrenceFields) {
+        recurrenceFields.style.display = activity.is_recurring ? 'block' : 'none';
+    }
+
+    // Wait for categories to load before setting them
+    const checkInterval = setInterval(() => {
+        const checkboxes = document.querySelectorAll('input[name="categories"]');
+        if (checkboxes.length > 0) {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = activity.category_ids && activity.category_ids.includes(parseInt(checkbox.value));
+            });
+            clearInterval(checkInterval);
+        }
+    }, 100);
+}
+
+function clearForm() {
+    document.getElementById('activityId').value = '';
+    document.getElementById('title').value = '';
+    document.getElementById('date').value = '';
+    document.getElementById('end_date').value = '';
+    document.getElementById('time').value = '';
+    document.getElementById('end_time').value = '';
+    document.getElementById('is_all_day').checked = false;
+    document.getElementById('is_recurring').checked = false;
+    document.getElementById('notes').value = '';
+    document.getElementById('location').value = '';
+    
+    // Uncheck all category checkboxes
+    document.querySelectorAll('input[name="categories"]').forEach(cb => cb.checked = false);
+    
+    // Reset display of conditional fields
+    document.getElementById('timeField').style.display = 'block';
+    document.getElementById('endTimeField').style.display = 'block';
+    document.getElementById('recurrenceFields').style.display = 'none';
+}
+
 async function saveActivity() {
     try {
         const activity = {
@@ -287,7 +514,6 @@ async function saveActivity() {
             return;
         }
 
-        // Add validation for end date
         if (activity.end_date && activity.date > activity.end_date) {
             alert('End date cannot be before start date');
             return;
@@ -321,67 +547,16 @@ async function saveActivity() {
 
 async function editActivity(id) {
     try {
-        console.log('Editing activity:', id);
         const response = await fetch(`/api/activities/${id}`);
         if (!response.ok) {
             throw new Error('Failed to load activity');
         }
         const activity = await response.json();
-        console.log('Activity data received:', activity);
         
-        // Load locations and categories first
         await loadLocationsAndCategories();
-        console.log('Locations and categories loaded');
-
+        fillFormWithActivity(activity);
+        
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
-
-        // Set form values once modal is shown
-        document.getElementById('activityModal').addEventListener('shown.bs.modal', async function onModalShown() {
-            try {
-                // Remove the event listener to prevent multiple executions
-                document.getElementById('activityModal').removeEventListener('shown.bs.modal', onModalShown);
-
-                // Set basic form values
-                document.getElementById('activityId').value = id;
-                document.getElementById('title').value = activity.title;
-                document.getElementById('date').value = activity.date;
-                document.getElementById('end_date').value = activity.end_date || '';
-                document.getElementById('is_all_day').checked = activity.is_all_day;
-                document.getElementById('time').value = activity.time || '';
-                document.getElementById('end_time').value = activity.end_time || '';
-                document.getElementById('notes').value = activity.notes || '';
-
-                // Set location with retry
-                const locationSelect = document.getElementById('location');
-                if (locationSelect && activity.location_id) {
-                    console.log('Setting location:', activity.location_id);
-                    locationSelect.value = activity.location_id;
-                }
-
-                // Set time fields visibility
-                document.getElementById('timeField').style.display = activity.is_all_day ? 'none' : 'block';
-                document.getElementById('endTimeField').style.display = activity.is_all_day ? 'none' : 'block';
-
-                // Set recurring fields
-                document.getElementById('is_recurring').checked = activity.is_recurring;
-                document.getElementById('recurrence_type').value = activity.recurrence_type || '';
-                document.getElementById('recurrence_end_date').value = activity.recurrence_end_date || '';
-                document.getElementById('recurrenceFields').style.display = activity.is_recurring ? 'block' : 'none';
-
-                // Set categories with retry
-                const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-                if (activity.category_ids && activity.category_ids.length > 0) {
-                    console.log('Setting categories:', activity.category_ids);
-                    categoryCheckboxes.forEach(checkbox => {
-                        checkbox.checked = activity.category_ids.includes(parseInt(checkbox.value));
-                    });
-                }
-            } catch (error) {
-                console.error('Error setting form values:', error);
-            }
-        });
-
-        // Show the modal
         modal.show();
     } catch (error) {
         console.error('Error loading activity:', error);
