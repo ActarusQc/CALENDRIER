@@ -392,8 +392,6 @@ def update_activity(activity_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
-@login_required
 @app.route('/api/activities/bulk-delete', methods=['POST'])
 @login_required
 def bulk_delete_activities():
@@ -414,6 +412,9 @@ def bulk_delete_activities():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/activities/<int:activity_id>', methods=['DELETE'])
+@login_required
 def delete_activity(activity_id):
     if not current_user.can_manage_activities():
         return jsonify({'error': 'Unauthorized'}), 403
