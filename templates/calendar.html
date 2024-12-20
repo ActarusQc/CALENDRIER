@@ -57,65 +57,105 @@
 
 <!-- Quick Add Activity Modal -->
 <div class="modal fade" id="quickAddActivityModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title text-white">Ajouter un événement</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="quickAddActivityForm">
-                    <div class="mb-3">
-                        <label for="quickAddTitle" class="form-label">Entrez le titre de l'activité</label>
+                <form id="quickAddActivityForm" class="admin-form row g-3">
+                    <input type="hidden" id="activityId">
+
+                    <!-- Title -->
+                    <div class="col-12">
+                        <label class="form-label">Titre</label>
+                        <small class="form-text d-block mb-2">Entrez le titre de l'activité</small>
                         <input type="text" class="form-control" id="quickAddTitle" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="quickAddDate" class="form-label">Date</label>
+
+                    <!-- Dates Section -->
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <small class="form-text d-block mb-2">Sélectionnez la date de l'activité</small>
                         <input type="date" class="form-control" id="quickAddDate" required>
-                        <div class="form-text text-white-50">Sélectionnez la date de l'activité</div>
                     </div>
-                    <div class="mb-3">
-                        <label for="quickAddEndDate" class="form-label">Date de fin</label>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Date de fin</label>
+                        <small class="form-text d-block mb-2">Sélectionnez la date de fin (pour les événements sur plusieurs jours)</small>
                         <input type="date" class="form-control" id="quickAddEndDate">
-                        <div class="form-text text-white-50">Sélectionnez quand l'activité récurrente doit se terminer (Obligatoire)</div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check">
+
+                    <!-- Time Section -->
+                    <div class="col-12">
+                        <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="quickAddIsAllDay">
                             <label class="form-check-label" for="quickAddIsAllDay">Événement toute la journée</label>
                         </div>
                     </div>
-                    <div class="mb-3" id="quickAddTimeContainer">
-                        <label for="quickAddTime" class="form-label">Heure</label>
+
+                    <div class="col-md-6" id="quickAddTimeContainer">
+                        <label class="form-label">Heure</label>
+                        <small class="form-text d-block mb-2">Sélectionnez l'heure de l'activité</small>
                         <input type="time" class="form-control" id="quickAddTime">
-                        <div class="form-text text-white-50">Sélectionnez l'heure de l'activité (optionnel)</div>
                     </div>
-                    <div class="mb-3" id="quickAddEndTimeContainer">
-                        <label for="quickAddEndTime" class="form-label">Heure de fin</label>
+
+                    <div class="col-md-6" id="quickAddEndTimeContainer">
+                        <label class="form-label">Heure de fin</label>
+                        <small class="form-text d-block mb-2">Sélectionnez l'heure de fin de l'activité</small>
                         <input type="time" class="form-control" id="quickAddEndTime">
-                        <div class="form-text text-white-50">Sélectionnez l'heure de fin</div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check">
+
+                    <!-- Recurring Section -->
+                    <div class="col-12">
+                        <div class="form-check mb-2">
                             <input type="checkbox" class="form-check-input" id="quickAddIsRecurring">
                             <label class="form-check-label" for="quickAddIsRecurring">Activité récurrente</label>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="quickAddLocation" class="form-label">Lieu</label>
+
+                    <div id="quickAddRecurrenceFields" style="display: none;" class="col-12">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Type de récurrence</label>
+                                <small class="form-text d-block mb-2">Sélectionnez la fréquence de répétition</small>
+                                <select class="form-control" id="quickAddRecurrenceType">
+                                    <option value="daily">Quotidien</option>
+                                    <option value="weekly">Hebdomadaire</option>
+                                    <option value="monthly">Mensuel</option>
+                                    <option value="annually">Annuel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date de fin de récurrence</label>
+                                <small class="form-text d-block mb-2">Sélectionnez quand l'activité récurrente doit se terminer</small>
+                                <input type="date" class="form-control" id="quickAddRecurrenceEndDate">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location and Categories -->
+                    <div class="col-md-6">
+                        <label class="form-label">Lieu</label>
+                        <small class="form-text d-block mb-2">Sélectionnez le lieu où se déroulera l'activité</small>
                         <select class="form-control" id="quickAddLocation">
                             <option value="">Sélectionner un lieu</option>
                         </select>
-                        <div class="form-text text-white-50">Sélectionnez le lieu où se déroulera l'activité</div>
                     </div>
-                    <div class="mb-3">
+
+                    <div class="col-md-6">
                         <label class="form-label">Catégories</label>
-                        <div id="quickAddCategories" class="d-flex flex-wrap gap-2">
+                        <small class="form-text d-block mb-2">Sélectionnez une ou plusieurs catégories</small>
+                        <div id="quickAddCategories" class="border rounded p-3">
+                            <!-- Categories will be dynamically added here -->
                         </div>
-                        <div class="form-text text-white-50">Sélectionnez une ou plusieurs catégories pour l'activité</div>
                     </div>
-                    <div class="mb-3">
-                        <label for="quickAddNotes" class="form-label">Notes</label>
+
+                    <!-- Notes -->
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <small class="form-text d-block mb-2">Ajoutez des notes ou des détails supplémentaires</small>
                         <textarea class="form-control" id="quickAddNotes" rows="3"></textarea>
                     </div>
                 </form>

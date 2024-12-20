@@ -429,6 +429,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalInstance = new bootstrap.Modal(modal);
         modalInstance.show();
     }
+
+    const quickAddIsAllDay = document.getElementById('quickAddIsAllDay');
+    const quickAddTimeContainer = document.getElementById('quickAddTimeContainer');
+    const quickAddEndTimeContainer = document.getElementById('quickAddEndTimeContainer');
+    const quickAddIsRecurring = document.getElementById('quickAddIsRecurring');
+    const quickAddRecurrenceFields = document.getElementById('quickAddRecurrenceFields');
+
+    if (quickAddIsAllDay && quickAddTimeContainer && quickAddEndTimeContainer) {
+        quickAddIsAllDay.addEventListener('change', function() {
+            quickAddTimeContainer.style.display = this.checked ? 'none' : 'block';
+            quickAddEndTimeContainer.style.display = this.checked ? 'none' : 'block';
+            if (this.checked) {
+                document.getElementById('quickAddTime').value = '';
+                document.getElementById('quickAddEndTime').value = '';
+            }
+        });
+    }
+
+    if (quickAddIsRecurring && quickAddRecurrenceFields) {
+        quickAddIsRecurring.addEventListener('change', function() {
+            quickAddRecurrenceFields.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                document.getElementById('quickAddRecurrenceType').value = 'daily';
+                document.getElementById('quickAddRecurrenceEndDate').value = '';
+            }
+        });
+    }
 });
 
 function formatDate(dateString) {
@@ -453,7 +480,11 @@ async function saveQuickAddActivity() {
             category_ids: Array.from(document.querySelectorAll('input[name="quickAddCategories"]:checked'))
                 .map(cb => parseInt(cb.value)),
             notes: document.getElementById('quickAddNotes').value.trim(),
-            is_recurring: document.getElementById('quickAddIsRecurring').checked
+            is_recurring: document.getElementById('quickAddIsRecurring').checked,
+            recurrence_type: document.getElementById('quickAddIsRecurring').checked ?
+                document.getElementById('quickAddRecurrenceType').value : null,
+            recurrence_end_date: document.getElementById('quickAddIsRecurring').checked ?
+                document.getElementById('quickAddRecurrenceEndDate').value : null
         };
 
         if (!activity.title || !activity.date) {
@@ -470,6 +501,12 @@ async function saveQuickAddActivity() {
         // Validate end time if not all day
         if (!activity.is_all_day && activity.time && activity.end_time && activity.time > activity.end_time) {
             alert('L\'heure de fin ne peut pas être antérieure à l\'heure de début');
+            return;
+        }
+
+        // Validate recurrence end date
+        if (activity.is_recurring && !activity.recurrence_end_date) {
+            alert('Veuillez spécifier une date de fin pour l\'activité récurrente');
             return;
         }
 
@@ -491,6 +528,7 @@ async function saveQuickAddActivity() {
 
         // Reset form
         document.getElementById('quickAddTitle').value = '';
+        document.getElementById('quickAddDate').value = '';
         document.getElementById('quickAddEndDate').value = '';
         document.getElementById('quickAddIsAllDay').checked = false;
         document.getElementById('quickAddTime').value = '';
@@ -498,6 +536,9 @@ async function saveQuickAddActivity() {
         document.getElementById('quickAddLocation').value = '';
         document.getElementById('quickAddNotes').value = '';
         document.getElementById('quickAddIsRecurring').checked = false;
+        document.getElementById('quickAddRecurrenceType').value = 'daily';
+        document.getElementById('quickAddRecurrenceEndDate').value = '';
+        document.getElementById('quickAddRecurrenceFields').style.display = 'none';
         document.querySelectorAll('input[name="quickAddCategories"]').forEach(cb => cb.checked = false);
 
         // Refresh calendar
@@ -507,20 +548,3 @@ async function saveQuickAddActivity() {
         alert('Erreur lors de l\'enregistrement de l\'activité: ' + error.message);
     }
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const quickAddIsAllDay = document.getElementById('quickAddIsAllDay');
-    const quickAddTimeContainer = document.getElementById('quickAddTimeContainer');
-    const quickAddEndTimeContainer = document.getElementById('quickAddEndTimeContainer');
-
-    if (quickAddIsAllDay && quickAddTimeContainer && quickAddEndTimeContainer) {
-        quickAddIsAllDay.addEventListener('change', function() {
-            quickAddTimeContainer.style.display = this.checked ? 'none' : 'block';
-            quickAddEndTimeContainer.style.display = this.checked ? 'none' : 'block';
-            if (this.checked) {
-                document.getElementById('quickAddTime').value = '';
-                document.getElementById('quickAddEndTime').value = '';
-            }
-        });
-    }
-});
