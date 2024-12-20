@@ -183,12 +183,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Navigation button event listeners
     document.getElementById('prevMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
+        switch (currentView) {
+            case 'day':
+                currentDate.setDate(currentDate.getDate() - 1);
+                break;
+            case 'week':
+            case 'business-week':
+                currentDate.setDate(currentDate.getDate() - 7);
+                break;
+            default: // month view
+                currentDate.setMonth(currentDate.getMonth() - 1);
+        }
         updateCalendar();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
+        switch (currentView) {
+            case 'day':
+                currentDate.setDate(currentDate.getDate() + 1);
+                break;
+            case 'week':
+            case 'business-week':
+                currentDate.setDate(currentDate.getDate() + 7);
+                break;
+            default: // month view
+                currentDate.setMonth(currentDate.getMonth() + 1);
+        }
         updateCalendar();
     });
 
