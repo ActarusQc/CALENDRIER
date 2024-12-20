@@ -32,6 +32,7 @@
     border: 1px solid #dee2e6;
     font-weight: 500;
     line-height: 1.2;
+    color: #6c757d;  /* Couleur grise par défaut */
 }
 
 #categoryFilters .btn:hover {
