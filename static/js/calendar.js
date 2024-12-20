@@ -40,11 +40,12 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
         }
     }
 
+    // Create content div
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'activity-content';
+
     // Only show content for single-day events or the first day of multi-day events
     if (!isMultiDay || isStart) {
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'activity-content';
-
         const titleDiv = document.createElement('div');
         titleDiv.className = 'title';
         titleDiv.textContent = activity.title;
@@ -62,10 +63,9 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
             icon.className = 'bi bi-arrow-repeat ms-1';
             contentDiv.appendChild(icon);
         }
-
-        element.appendChild(contentDiv);
     }
 
+    element.appendChild(contentDiv);
     element.addEventListener('click', () => showActivityDetails(activity));
     return element;
 }
@@ -79,18 +79,24 @@ async function fetchActivities() {
         const activities = await response.json();
 
         // Clear existing activities
-        document.querySelectorAll('.all-day-activities, .timed-activities')
-            .forEach(container => {
-                container.innerHTML = '';
-                container.style.height = 'auto';
-            });
+        document.querySelectorAll('.all-day-activities, .timed-activities').forEach(container => {
+            container.innerHTML = '';
+        });
 
-        // Sort activities by creation date (newest first)
-        activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        // Sort activities by start date and duration
+        activities.sort((a, b) => {
+            const startA = new Date(a.date);
+            const startB = new Date(b.date);
+            if (startA.getTime() !== startB.getTime()) {
+                return startA - startB;
+            }
+            // If start dates are equal, sort by duration (longer events first)
+            const endA = a.end_date ? new Date(a.end_date) : startA;
+            const endB = b.end_date ? new Date(b.end_date) : startB;
+            return (endB - startB) - (endA - startA);
+        });
 
-        // Group activities by date
-        const groupedActivities = new Map();
-
+        // Process activities
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -101,41 +107,19 @@ async function fetchActivities() {
             let currentDate = new Date(startDate);
             while (currentDate <= endDate) {
                 const dateStr = currentDate.toISOString().split('T')[0];
+                const container = activity.is_all_day ?
+                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
 
-                if (!groupedActivities.has(dateStr)) {
-                    groupedActivities.set(dateStr, []);
+                if (container) {
+                    const element = createActivityElement(activity, dateStr, startDate, endDate);
+                    container.appendChild(element);
                 }
-                groupedActivities.get(dateStr).push({
-                    activity,
-                    startDate,
-                    endDate
-                });
 
-                // Move to next day
-                currentDate = new Date(currentDate);
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         });
 
-        // Render grouped activities
-        for (const [dateStr, dateActivities] of groupedActivities) {
-            const allDayContainer = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
-            const timedContainer = document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-
-            if (allDayContainer && timedContainer) {
-                dateActivities.forEach(({ activity, startDate, endDate }) => {
-                    const container = activity.is_all_day ? allDayContainer : timedContainer;
-                    const element = createActivityElement(activity, dateStr, startDate, endDate);
-
-                    // Insert new element at the beginning of container
-                    if (container.firstChild) {
-                        container.insertBefore(element, container.firstChild);
-                    } else {
-                        container.appendChild(element);
-                    }
-                });
-            }
-        }
     } catch (error) {
         console.error('Error:', error);
         showError('Failed to load activities. Please try again later.');
