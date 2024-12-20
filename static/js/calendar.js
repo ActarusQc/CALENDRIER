@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/categories');
             const categories = await response.json();
             const categoryFilters = document.getElementById('categoryFilters');
-            
+
             categories.forEach(category => {
                 const button = document.createElement('button');
                 button.className = 'btn btn-sm btn-outline-secondary';
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedCategories.clear();
                 document.querySelector('[data-category="all"]').classList.remove('active');
             }
-            
+
             const categoryIdStr = categoryId.toString();
             if (selectedCategories.has(categoryIdStr)) {
                 selectedCategories.delete(categoryIdStr);
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Network response was not ok');
             }
             const activities = await response.json();
-            
+
             document.querySelectorAll('.all-day-activities, .timed-activities')
                 .forEach(container => {
                     container.innerHTML = '';
@@ -107,22 +107,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
             activities.forEach(activity => {
                 if (!shouldDisplayActivity(activity)) return;
-                
+
                 const startDate = new Date(activity.date);
                 const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-                
+
                 let currentDate = new Date(startDate);
                 while (currentDate <= endDate) {
                     const dateStr = currentDate.toISOString().split('T')[0];
-                    const container = activity.is_all_day ? 
+                    const container = activity.is_all_day ?
                         document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                         document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-                    
+
                     if (container) {
                         const element = createActivityElement(activity, dateStr, startDate, endDate);
                         container.appendChild(element);
                     }
-                    
+
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
             });
@@ -138,15 +138,15 @@ document.addEventListener('DOMContentLoaded', function() {
         element.className = 'activity';
         element.setAttribute('data-activity-id', activity.id);
         element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
-        
+
         const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
         element.style.backgroundColor = categoryColor;
-        
+
         const currentDate = new Date(dateStr);
         const isStart = startDate.toDateString() === currentDate.toDateString();
         const isEnd = endDate.toDateString() === currentDate.toDateString();
         const isMultiDay = startDate < endDate;
-        
+
         if (activity.is_all_day) {
             element.classList.add('all-day');
         }
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isMultiDay || isStart) {
             const contentDiv = document.createElement('div');
             contentDiv.className = 'activity-content';
-            
+
             const titleDiv = document.createElement('div');
             titleDiv.className = 'title';
             titleDiv.textContent = activity.title;
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             element.appendChild(contentDiv);
         }
-        
+
         element.addEventListener('click', () => showActivityDetails(activity));
         return element;
     }
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCalendarHeader() {
         const daysContainer = document.querySelector('.calendar-days');
         if (!daysContainer) return;
-        
+
         const days = {
             'month': ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
             'week': ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
@@ -210,27 +210,27 @@ document.addEventListener('DOMContentLoaded', function() {
             daysContainer.appendChild(div);
         });
 
-        const monthYear = currentDate.toLocaleString('fr-FR', { 
-            month: 'long', 
-            year: 'numeric' 
+        const monthYear = currentDate.toLocaleString('fr-FR', {
+            month: 'long',
+            year: 'numeric'
         });
-        document.getElementById('currentMonth').textContent = 
+        document.getElementById('currentMonth').textContent =
             monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
     }
 
     function updateCalendar() {
         const calendarGrid = document.querySelector('.calendar-grid');
         if (!calendarGrid) return;
-        
+
         calendarGrid.className = `calendar-grid ${currentView}`;
         updateCalendarHeader();
-        
+
         const calendarDates = document.getElementById('calendarDates');
         if (!calendarDates) return;
-        
+
         calendarDates.innerHTML = '';
-        
-        switch(currentView) {
+
+        switch (currentView) {
             case 'month':
                 renderMonthView();
                 break;
@@ -251,20 +251,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderMonthView() {
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
-        
+
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
-        
+
         for (let i = 0; i < firstDay.getDay(); i++) {
             calendarDates.appendChild(createDateCell());
         }
-        
+
         for (let date = 1; date <= lastDay.getDate(); date++) {
             calendarDates.appendChild(createDateCell(new Date(year, month, date)));
         }
-        
+
         const remainingDays = (7 - ((firstDay.getDay() + lastDay.getDate()) % 7)) % 7;
         for (let i = 0; i < remainingDays; i++) {
             calendarDates.appendChild(createDateCell());
@@ -274,10 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderWeekView() {
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
-        
+
         const startOfWeek = new Date(currentDate);
         startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-        
+
         for (let i = 0; i < 7; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
@@ -288,12 +288,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderBusinessWeekView() {
         const calendarDates = document.getElementById('calendarDates');
         calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
-        
+
         const startOfWeek = new Date(currentDate);
         const day = startOfWeek.getDay();
         const diff = day === 0 ? -6 : 1 - day;
         startOfWeek.setDate(startOfWeek.getDate() + diff);
-        
+
         for (let i = 0; i < 5; i++) {
             const date = new Date(startOfWeek);
             date.setDate(startOfWeek.getDate() + i);
@@ -310,31 +310,43 @@ document.addEventListener('DOMContentLoaded', function() {
     function createDateCell(date) {
         const cell = document.createElement('div');
         cell.className = 'calendar-date';
-        
+
         if (date) {
             const dateDiv = document.createElement('div');
             dateDiv.className = 'date-number';
             dateDiv.textContent = date.getDate();
             cell.appendChild(dateDiv);
-            
+
             const allDayDiv = document.createElement('div');
             allDayDiv.className = 'all-day-activities';
             allDayDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
             cell.appendChild(allDayDiv);
-            
+
             const timedDiv = document.createElement('div');
             timedDiv.className = 'timed-activities';
             timedDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
             cell.appendChild(timedDiv);
+
+            // Add quick add button
+            const quickAddButton = document.createElement('button');
+            quickAddButton.className = 'quick-add-button';
+            quickAddButton.innerHTML = '<i class="bi bi-plus"></i>';
+            quickAddButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('quickAddActivityModal'));
+                document.getElementById('quickAddDate').value = date.toISOString().split('T')[0];
+                modal.show();
+            });
+            cell.appendChild(quickAddButton);
         }
-        
+
         return cell;
     }
 
     function showActivityDetails(activity) {
         const modal = document.getElementById('activityDetailsModal');
         if (!modal) return;
-        
+
         const modalBody = modal.querySelector('.modal-body');
         modalBody.innerHTML = `
             <h4 class="text-white">${activity.title}</h4>
@@ -361,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ` : ''}
             </div>
         `;
-        
+
         const modalInstance = new bootstrap.Modal(modal);
         modalInstance.show();
     }
@@ -369,9 +381,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
+    return date.toLocaleDateString('fr-FR', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
     });
 }
+
+// Add the function to save quick add activity
+async function saveQuickAddActivity() {
+    try {
+        const activity = {
+            title: document.getElementById('quickAddTitle').value.trim(),
+            date: document.getElementById('quickAddDate').value,
+            is_all_day: document.getElementById('quickAddIsAllDay').checked,
+            time: document.getElementById('quickAddIsAllDay').checked ? null : document.getElementById('quickAddTime').value,
+            category_ids: [],
+            notes: '',
+            is_recurring: false
+        };
+
+        if (!activity.title || !activity.date) {
+            alert('Veuillez remplir tous les champs obligatoires');
+            return;
+        }
+
+        const response = await fetch('/api/activities', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(activity)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Échec de l\'enregistrement de l\'activité');
+        }
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddActivityModal'));
+        modal.hide();
+
+        // Reset form
+        document.getElementById('quickAddTitle').value = '';
+        document.getElementById('quickAddIsAllDay').checked = false;
+        document.getElementById('quickAddTime').value = '';
+
+        // Refresh calendar
+        await fetchActivities();
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement de l\'activité:', error);
+        alert('Erreur lors de l\'enregistrement de l\'activité: ' + error.message);
+    }
+}
+
+// Add event listener for all-day checkbox in quick add modal
+document.addEventListener('DOMContentLoaded', function() {
+    const quickAddIsAllDay = document.getElementById('quickAddIsAllDay');
+    const quickAddTimeContainer = document.getElementById('quickAddTimeContainer');
+
+    if (quickAddIsAllDay && quickAddTimeContainer) {
+        quickAddIsAllDay.addEventListener('change', function() {
+            quickAddTimeContainer.style.display = this.checked ? 'none' : 'block';
+            if (this.checked) {
+                document.getElementById('quickAddTime').value = '';
+            }
+        });
+    }
+});
