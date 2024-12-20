@@ -27,45 +27,40 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
 
     if (activity.is_all_day) {
         element.classList.add('all-day');
-    }
-
-    if (isMultiDay) {
-        element.classList.add('multi-day');
-        if (isStart) {
-            element.classList.add('start');
-        } else if (isEnd) {
-            element.classList.add('end');
-        } else {
-            element.classList.add('middle');
+        if (isMultiDay) {
+            element.classList.add('multi-day');
+            if (isStart) {
+                element.classList.add('start');
+            } else if (isEnd) {
+                element.classList.add('end');
+            } else {
+                element.classList.add('middle');
+            }
         }
     }
 
-    // Only show content for single-day events or the first day of multi-day events
-    if (!isMultiDay || isStart) {
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'activity-content';
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'activity-content';
 
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'title';
-        titleDiv.textContent = activity.title;
-        contentDiv.appendChild(titleDiv);
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'title';
+    titleDiv.textContent = activity.title;
+    contentDiv.appendChild(titleDiv);
 
-        if (activity.location) {
-            const locationDiv = document.createElement('div');
-            locationDiv.className = 'location';
-            locationDiv.textContent = activity.location;
-            contentDiv.appendChild(locationDiv);
-        }
-
-        if (activity.is_recurring) {
-            const icon = document.createElement('i');
-            icon.className = 'bi bi-arrow-repeat ms-1';
-            contentDiv.appendChild(icon);
-        }
-
-        element.appendChild(contentDiv);
+    if (activity.location) {
+        const locationDiv = document.createElement('div');
+        locationDiv.className = 'location';
+        locationDiv.textContent = activity.location;
+        contentDiv.appendChild(locationDiv);
     }
 
+    if (activity.is_recurring) {
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-arrow-repeat ms-1';
+        contentDiv.appendChild(icon);
+    }
+
+    element.appendChild(contentDiv);
     element.addEventListener('click', () => showActivityDetails(activity));
     return element;
 }

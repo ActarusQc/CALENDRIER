@@ -165,7 +165,7 @@
 }
 
 /* Multi-day Activity Styles */
-.activity.multi-day {
+.activity.multi-day, .activity.all-day {
     position: absolute;
     left: 0;
     right: -1px;
@@ -175,11 +175,10 @@
     height: auto;
     box-sizing: border-box;
     border: none;
-    border-radius: 0;
+    border-radius: 4px;
     z-index: 2;
     display: flex;
     align-items: flex-start;
-    padding: 4px 8px !important;
 }
 
 .activity.multi-day.start {
@@ -202,6 +201,43 @@
     right: 0;
     z-index: 2;
 }
+
+/* All-day Activities Container */
+.all-day-activities {
+    padding: 4px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    min-height: 32px;
+    height: auto;
+    background-color: rgba(222, 226, 230, 0.2);
+}
+
+/* Ajuster la hauteur du conteneur en fonction du nombre d'événements */
+.all-day-activities:has(.activity:nth-child(2)) {
+    min-height: calc(2 * var(--min-activity-height) + 10px);
+}
+
+.all-day-activities:has(.activity:nth-child(3)) {
+    min-height: calc(3 * var(--min-activity-height) + 14px);
+}
+
+.all-day-activities:has(.activity:nth-child(4)) {
+    min-height: calc(4 * var(--min-activity-height) + 18px);
+}
+
+.all-day-activities:has(.activity:nth-child(5)) {
+    min-height: calc(5 * var(--min-activity-height) + 22px);
+}
+
+/* Positionner chaque événement avec un espacement précis */
+.all-day-activities .activity:nth-child(1) { top: 2px; }
+.all-day-activities .activity:nth-child(2) { top: calc(var(--min-activity-height) + 6px); }
+.all-day-activities .activity:nth-child(3) { top: calc(2 * var(--min-activity-height) + 10px); }
+.all-day-activities .activity:nth-child(4) { top: calc(3 * var(--min-activity-height) + 14px); }
+.all-day-activities .activity:nth-child(5) { top: calc(4 * var(--min-activity-height) + 18px); }
 
 /* Activity Content Styles */
 .activity-content {
@@ -331,29 +367,6 @@
     background-color: rgba(222, 226, 230, 0.2);
 }
 
-/* Ajuster la hauteur du conteneur en fonction du nombre d'événements */
-.all-day-activities:has(.activity.multi-day:nth-child(2)) {
-    min-height: calc(2 * var(--min-activity-height) + 10px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(3)) {
-    min-height: calc(3 * var(--min-activity-height) + 14px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(4)) {
-    min-height: calc(4 * var(--min-activity-height) + 18px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(5)) {
-    min-height: calc(5 * var(--min-activity-height) + 22px);
-}
-
-/* Positionner chaque événement multi-jours avec un espacement précis */
-.all-day-activities .activity.multi-day:nth-child(1) { top: 2px; }
-.all-day-activities .activity.multi-day:nth-child(2) { top: calc(var(--min-activity-height) + 6px); }
-.all-day-activities .activity.multi-day:nth-child(3) { top: calc(2 * var(--min-activity-height) + 10px); }
-.all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * var(--min-activity-height) + 14px); }
-.all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * var(--min-activity-height) + 18px); }
 
 /* Styles pour le contenu des activités */
 .activity-content {
