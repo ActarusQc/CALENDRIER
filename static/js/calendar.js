@@ -1,7 +1,131 @@
+// Helper functions
+function showError(message) {
+    const container = document.querySelector('.calendar-container');
+    const existingError = container.querySelector('.alert');
+    if (existingError) {
+        existingError.remove();
+    }
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.textContent = message;
+    container.insertBefore(errorDiv, container.firstChild);
+}
+
+function createActivityElement(activity, dateStr, startDate, endDate) {
+    const element = document.createElement('div');
+    element.className = 'activity';
+    element.setAttribute('data-activity-id', activity.id);
+    element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
+
+    const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
+    element.style.backgroundColor = categoryColor;
+
+    const currentDate = new Date(dateStr);
+    const isStart = startDate.toDateString() === currentDate.toDateString();
+    const isEnd = endDate.toDateString() === currentDate.toDateString();
+    const isMultiDay = startDate < endDate;
+
+    if (activity.is_all_day) {
+        element.classList.add('all-day');
+    }
+
+    if (isMultiDay) {
+        element.classList.add('multi-day');
+        if (isStart) {
+            element.classList.add('start');
+        } else if (isEnd) {
+            element.classList.add('end');
+        } else {
+            element.classList.add('middle');
+        }
+    }
+
+    // Only show content for single-day events or the first day of multi-day events
+    if (!isMultiDay || isStart) {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'activity-content';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'title';
+        titleDiv.textContent = activity.title;
+        contentDiv.appendChild(titleDiv);
+
+        if (activity.location) {
+            const locationDiv = document.createElement('div');
+            locationDiv.className = 'location';
+            locationDiv.textContent = activity.location;
+            contentDiv.appendChild(locationDiv);
+        }
+
+        if (activity.is_recurring) {
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-arrow-repeat ms-1';
+            contentDiv.appendChild(icon);
+        }
+
+        element.appendChild(contentDiv);
+    }
+
+    element.addEventListener('click', () => showActivityDetails(activity));
+    return element;
+}
+
+async function fetchActivities() {
+    try {
+        const response = await fetch('/api/activities');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const activities = await response.json();
+
+        document.querySelectorAll('.all-day-activities, .timed-activities')
+            .forEach(container => {
+                container.innerHTML = '';
+                container.style.height = 'auto';
+            });
+
+        activities.forEach(activity => {
+            if (!shouldDisplayActivity(activity)) return;
+
+            const startDate = new Date(activity.date);
+            const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
+
+            let currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const container = activity.is_all_day ?
+                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+
+                if (container) {
+                    const element = createActivityElement(activity, dateStr, startDate, endDate);
+                    container.appendChild(element);
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Failed to load activities. Please try again later.');
+    }
+}
+
+function shouldDisplayActivity(activity) {
+    const selectedCategories = window.selectedCategories || new Set(['all']);
+    if (selectedCategories.has('all')) return true;
+    if (!activity.category_ids || activity.category_ids.length === 0) return false;
+    return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
+}
+
+// Move shouldDisplayActivity outside of DOMContentLoaded
+
+
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
     let currentView = 'month';
-    let selectedCategories = new Set(['all']);
+    window.selectedCategories = new Set(['all']);
 
     updateCalendar();
     loadCategories();
@@ -120,112 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchActivities();
     }
 
-    function shouldDisplayActivity(activity) {
-        if (selectedCategories.has('all')) return true;
-        if (!activity.category_ids || activity.category_ids.length === 0) return false;
-        return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
-    }
-
-    async function fetchActivities() {
-        try {
-            const response = await fetch('/api/activities');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const activities = await response.json();
-
-            document.querySelectorAll('.all-day-activities, .timed-activities')
-                .forEach(container => {
-                    container.innerHTML = '';
-                    container.style.height = 'auto';
-                });
-
-            activities.forEach(activity => {
-                if (!shouldDisplayActivity(activity)) return;
-
-                const startDate = new Date(activity.date);
-                const endDate = activity.end_date ? new Date(activity.end_date) : startDate;
-
-                let currentDate = new Date(startDate);
-                while (currentDate <= endDate) {
-                    const dateStr = currentDate.toISOString().split('T')[0];
-                    const container = activity.is_all_day ?
-                        document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                        document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
-
-                    if (container) {
-                        const element = createActivityElement(activity, dateStr, startDate, endDate);
-                        container.appendChild(element);
-                    }
-
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-            });
-
-        } catch (error) {
-            console.error('Error:', error);
-            showError('Failed to load activities. Please try again later.');
-        }
-    }
-
-    function createActivityElement(activity, dateStr, startDate, endDate) {
-        const element = document.createElement('div');
-        element.className = 'activity';
-        element.setAttribute('data-activity-id', activity.id);
-        element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
-
-        const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
-        element.style.backgroundColor = categoryColor;
-
-        const currentDate = new Date(dateStr);
-        const isStart = startDate.toDateString() === currentDate.toDateString();
-        const isEnd = endDate.toDateString() === currentDate.toDateString();
-        const isMultiDay = startDate < endDate;
-
-        if (activity.is_all_day) {
-            element.classList.add('all-day');
-        }
-
-        if (isMultiDay) {
-            element.classList.add('multi-day');
-            if (isStart) {
-                element.classList.add('start');
-            } else if (isEnd) {
-                element.classList.add('end');
-            } else {
-                element.classList.add('middle');
-            }
-        }
-
-        // Only show content for single-day events or the first day of multi-day events
-        if (!isMultiDay || isStart) {
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'activity-content';
-
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'title';
-            titleDiv.textContent = activity.title;
-            contentDiv.appendChild(titleDiv);
-
-            if (activity.location) {
-                const locationDiv = document.createElement('div');
-                locationDiv.className = 'location';
-                locationDiv.textContent = activity.location;
-                contentDiv.appendChild(locationDiv);
-            }
-
-            if (activity.is_recurring) {
-                const icon = document.createElement('i');
-                icon.className = 'bi bi-arrow-repeat ms-1';
-                contentDiv.appendChild(icon);
-            }
-
-            element.appendChild(contentDiv);
-        }
-
-        element.addEventListener('click', () => showActivityDetails(activity));
-        return element;
-    }
 
     function updateCalendarHeader() {
         const daysContainer = document.querySelector('.calendar-days');
