@@ -40,32 +40,28 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
         }
     }
 
-    // Only show content for single-day events or the first day of multi-day events
-    if (!isMultiDay || isStart) {
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'activity-content';
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'activity-content';
 
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'title';
-        titleDiv.textContent = activity.title;
-        contentDiv.appendChild(titleDiv);
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'title';
+    titleDiv.textContent = activity.title;
+    contentDiv.appendChild(titleDiv);
 
-        if (activity.location) {
-            const locationDiv = document.createElement('div');
-            locationDiv.className = 'location';
-            locationDiv.textContent = activity.location;
-            contentDiv.appendChild(locationDiv);
-        }
-
-        if (activity.is_recurring) {
-            const icon = document.createElement('i');
-            icon.className = 'bi bi-arrow-repeat ms-1';
-            contentDiv.appendChild(icon);
-        }
-
-        element.appendChild(contentDiv);
+    if (activity.location) {
+        const locationDiv = document.createElement('div');
+        locationDiv.className = 'location';
+        locationDiv.textContent = activity.location;
+        contentDiv.appendChild(locationDiv);
     }
 
+    if (activity.is_recurring) {
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-arrow-repeat ms-1';
+        contentDiv.appendChild(icon);
+    }
+
+    element.appendChild(contentDiv);
     element.addEventListener('click', () => showActivityDetails(activity));
     return element;
 }
@@ -85,8 +81,17 @@ async function fetchActivities() {
                 container.style.height = 'auto';
             });
 
-        // Sort activities by date (oldest first) to maintain consistent stacking order
-        activities.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Sort activities by start date and then by duration (longer events first)
+        activities.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            if (dateA.getTime() === dateB.getTime()) {
+                const durationA = a.end_date ? (new Date(a.end_date) - dateA) : 0;
+                const durationB = b.end_date ? (new Date(b.end_date) - dateB) : 0;
+                return durationB - durationA; // Longer events first
+            }
+            return dateA - dateB;
+        });
 
         // Process activities by date
         activities.forEach(activity => {
@@ -106,7 +111,6 @@ async function fetchActivities() {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
                     container.appendChild(element);
 
-                    // Update container class if it has events
                     if (container.classList.contains('all-day-activities')) {
                         container.classList.add('has-events');
                     }
