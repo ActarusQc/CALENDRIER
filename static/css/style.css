@@ -191,7 +191,6 @@
     margin-left: -1px;
     margin-right: -1px;
     width: calc(100% + 2px);
-    border-radius: 0;
 }
 
 .activity.multi-day.end {
@@ -224,8 +223,7 @@
     overflow: visible;
     white-space: normal;
     position: relative;
-    width: auto;
-    min-width: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -256,7 +254,21 @@
     text-overflow: ellipsis;
 }
 
+/* Handle multi-day event continuity */
+.calendar-date {
+    position: relative;
+    border-right: 1px solid #dee2e6;
+}
 
+.activity.multi-day.middle,
+.activity.multi-day.end {
+    margin-left: -1px !important;
+}
+
+.activity.multi-day.middle,
+.activity.multi-day.start {
+    margin-right: -1px !important;
+}
 
 /* Calendar Grid Styles */
 .calendar-grid {
