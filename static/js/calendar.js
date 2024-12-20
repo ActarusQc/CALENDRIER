@@ -85,8 +85,27 @@ async function fetchActivities() {
                 container.style.height = 'auto';
             });
 
-        // Sort activities by date (oldest first) to maintain consistent stacking order
-        activities.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // Sort activities: first by all-day status (all-day events first), then by date, then by duration (longer events first)
+        activities.sort((a, b) => {
+            if (a.is_all_day !== b.is_all_day) {
+                return b.is_all_day ? 1 : -1;
+            }
+
+            const aStartDate = new Date(a.date);
+            const bStartDate = new Date(b.date);
+
+            if (aStartDate.getTime() !== bStartDate.getTime()) {
+                return aStartDate - bStartDate;
+            }
+
+            const aEndDate = a.end_date ? new Date(a.end_date) : aStartDate;
+            const bEndDate = b.end_date ? new Date(b.end_date) : bStartDate;
+
+            const aDuration = aEndDate - aStartDate;
+            const bDuration = bEndDate - bStartDate;
+
+            return bDuration - aDuration;
+        });
 
         // Process activities by date
         activities.forEach(activity => {
