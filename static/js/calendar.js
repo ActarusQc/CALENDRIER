@@ -99,9 +99,7 @@ async function fetchActivities() {
             let currentDate = new Date(startDate);
             while (currentDate <= endDate) {
                 const dateStr = currentDate.toISOString().split('T')[0];
-                const container = activity.is_all_day ?
-                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
-                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
+                const container = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
 
                 if (container) {
                     // Initialiser la position pour cette date si nécessaire
@@ -111,11 +109,15 @@ async function fetchActivities() {
 
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
 
-                    // Positionner l'élément à la bonne hauteur
-                    if (activity.is_all_day && element.classList.contains('multi-day')) {
+                    // Appliquer le même positionnement vertical pour tous les événements all-day
+                    if (activity.is_all_day) {
                         const currentPos = datePositions.get(dateStr);
                         element.style.top = `${currentPos * (32 + 4)}px`; // hauteur + marge
                         datePositions.set(dateStr, currentPos + 1);
+
+                        // Ajuster la hauteur du conteneur si nécessaire
+                        const newHeight = (currentPos + 1) * (32 + 4) + 8; // +8 pour le padding
+                        container.style.minHeight = `${newHeight}px`;
                     }
 
                     container.appendChild(element);
