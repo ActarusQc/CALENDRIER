@@ -16,8 +16,6 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
     element.className = 'activity';
     element.setAttribute('data-activity-id', activity.id);
     element.setAttribute('data-category-ids', JSON.stringify(activity.categories.map(c => c.id)));
-    element.setAttribute('data-start-date', startDate.toISOString());
-    element.setAttribute('data-end-date', endDate.toISOString());
 
     const categoryColor = activity.categories?.[0]?.color || '#6f42c1';
     element.style.backgroundColor = categoryColor;
@@ -42,22 +40,32 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
         }
     }
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'activity-content';
+    // Only show content for single-day events or the first day of multi-day events
+    if (!isMultiDay || isStart) {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'activity-content';
 
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'title';
-    titleDiv.textContent = activity.title;
-    contentDiv.appendChild(titleDiv);
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'title';
+        titleDiv.textContent = activity.title;
+        contentDiv.appendChild(titleDiv);
 
-    if (activity.location) {
-        const locationDiv = document.createElement('div');
-        locationDiv.className = 'location';
-        locationDiv.textContent = activity.location;
-        contentDiv.appendChild(locationDiv);
+        if (activity.location) {
+            const locationDiv = document.createElement('div');
+            locationDiv.className = 'location';
+            locationDiv.textContent = activity.location;
+            contentDiv.appendChild(locationDiv);
+        }
+
+        if (activity.is_recurring) {
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-arrow-repeat ms-1';
+            contentDiv.appendChild(icon);
+        }
+
+        element.appendChild(contentDiv);
     }
 
-    element.appendChild(contentDiv);
     element.addEventListener('click', () => showActivityDetails(activity));
     return element;
 }
@@ -70,40 +78,17 @@ async function fetchActivities() {
         }
         const activities = await response.json();
 
-        // Clear existing activities
-        document.querySelectorAll('.all-day-activities, .timed-activities').forEach(container => {
-            container.innerHTML = '';
-        });
+        // Clear all containers first
+        document.querySelectorAll('.all-day-activities, .timed-activities')
+            .forEach(container => {
+                container.innerHTML = '';
+                container.style.height = 'auto';
+            });
 
-        // Sort activities by start date, then duration, then all-day status
-        activities.sort((a, b) => {
-            const aStart = new Date(a.date);
-            const bStart = new Date(b.date);
-            const aEnd = a.end_date ? new Date(a.end_date) : aStart;
-            const bEnd = b.end_date ? new Date(b.end_date) : bStart;
-            const aDuration = aEnd - aStart;
-            const bDuration = bEnd - bStart;
+        // Sort activities by date (oldest first) to maintain consistent stacking order
+        activities.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            // Sort by start date first
-            if (aStart.getTime() !== bStart.getTime()) {
-                return aStart - bStart;
-            }
-
-            // Then by duration (longer events first)
-            if (aDuration !== bDuration) {
-                return bDuration - aDuration;
-            }
-
-            // Then by all-day status (all-day events first)
-            if (a.is_all_day !== b.is_all_day) {
-                return a.is_all_day ? -1 : 1;
-            }
-
-            // Finally by creation date (newer first)
-            return new Date(b.created_at) - new Date(a.created_at);
-        });
-
-        // Process activities
+        // Process activities by date
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -120,6 +105,11 @@ async function fetchActivities() {
                 if (container) {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
                     container.appendChild(element);
+
+                    // Update container class if it has events
+                    if (container.classList.contains('all-day-activities')) {
+                        container.classList.add('has-events');
+                    }
                 }
 
                 currentDate.setDate(currentDate.getDate() + 1);
@@ -132,49 +122,86 @@ async function fetchActivities() {
     }
 }
 
-async function loadCategories() {
-    try {
-        const response = await fetch('/api/categories');
-        const categories = await response.json();
-        const categoryFilters = document.getElementById('categoryFilters');
+function shouldDisplayActivity(activity) {
+    const selectedCategories = window.selectedCategories || new Set(['all']);
+    if (selectedCategories.has('all')) return true;
+    if (!activity.category_ids || activity.category_ids.length === 0) return false;
+    return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
+}
 
-        categories.forEach(category => {
-            const button = document.createElement('button');
-            button.className = 'btn btn-sm btn-outline-secondary';
-            button.setAttribute('data-category', category.id);
-            button.innerHTML = `
+
+document.addEventListener('DOMContentLoaded', function() {
+    let currentDate = new Date();
+    let currentView = 'month';
+    window.selectedCategories = new Set(['all']);
+
+    updateCalendar();
+    loadCategories();
+
+    // Navigation button event listeners
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        updateCalendar();
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        updateCalendar();
+    });
+
+    // View switching buttons
+    document.querySelectorAll('[data-view]').forEach(button => {
+        button.addEventListener('click', function() {
+            currentView = this.dataset.view;
+            document.querySelectorAll('[data-view]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            updateCalendar();
+        });
+    });
+
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/categories');
+            const categories = await response.json();
+            const categoryFilters = document.getElementById('categoryFilters');
+
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-sm btn-outline-secondary';
+                button.setAttribute('data-category', category.id);
+                button.innerHTML = `
                     <span class="color-dot" style="background-color: ${category.color}"></span>
                     ${category.name}
                 `;
-            button.addEventListener('click', () => toggleCategory(category.id));
-            categoryFilters.appendChild(button);
-        });
-    } catch (error) {
-        console.error('Error loading categories:', error);
-        showError('Failed to load categories');
+                button.addEventListener('click', () => toggleCategory(category.id));
+                categoryFilters.appendChild(button);
+            });
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            showError('Failed to load categories');
+        }
     }
-}
 
-async function loadQuickAddFormData() {
-    try {
-        // Load locations
-        const locationsResponse = await fetch('/api/locations');
-        const locations = await locationsResponse.json();
-        const locationSelect = document.getElementById('quickAddLocation');
-        locationSelect.innerHTML = '<option value="">Sélectionner un lieu</option>';
-        locations.forEach(location => {
-            locationSelect.innerHTML += `<option value="${location.id}">${location.name}</option>`;
-        });
+    async function loadQuickAddFormData() {
+        try {
+            // Load locations
+            const locationsResponse = await fetch('/api/locations');
+            const locations = await locationsResponse.json();
+            const locationSelect = document.getElementById('quickAddLocation');
+            locationSelect.innerHTML = '<option value="">Sélectionner un lieu</option>';
+            locations.forEach(location => {
+                locationSelect.innerHTML += `<option value="${location.id}">${location.name}</option>`;
+            });
 
-        // Load categories
-        const categoriesResponse = await fetch('/api/categories');
-        const categories = await categoriesResponse.json();
-        const categoriesContainer = document.getElementById('quickAddCategories');
-        categoriesContainer.innerHTML = '';
-        categories.forEach(category => {
-            const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'form-check';
-            categoryDiv.innerHTML = `
+            // Load categories
+            const categoriesResponse = await fetch('/api/categories');
+            const categories = await categoriesResponse.json();
+            const categoriesContainer = document.getElementById('quickAddCategories');
+            categoriesContainer.innerHTML = '';
+            categories.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'form-check';
+                categoryDiv.innerHTML = `
                     <input type="checkbox" class="form-check-input" id="quickAdd_category_${category.id}" 
                            name="quickAddCategories" value="${category.id}">
                     <label class="form-check-label" for="quickAdd_category_${category.id}">
@@ -182,208 +209,208 @@ async function loadQuickAddFormData() {
                         ${category.name}
                     </label>
                 `;
-            categoriesContainer.appendChild(categoryDiv);
-        });
-    } catch (error) {
-        console.error('Error loading form data:', error);
-        alert('Erreur lors du chargement des données du formulaire');
-    }
-}
-
-function toggleCategory(categoryId) {
-    const button = document.querySelector(`[data-category="${categoryId}"]`);
-    if (!button) return;
-
-    const existingError = document.querySelector('.calendar-container .alert');
-    if (existingError) {
-        existingError.remove();
+                categoriesContainer.appendChild(categoryDiv);
+            });
+        } catch (error) {
+            console.error('Error loading form data:', error);
+            alert('Erreur lors du chargement des données du formulaire');
+        }
     }
 
-    if (categoryId === 'all') {
-        selectedCategories.clear();
-        selectedCategories.add('all');
-        document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        button.classList.add('active');
-    } else {
-        if (selectedCategories.has('all')) {
+    function toggleCategory(categoryId) {
+        const button = document.querySelector(`[data-category="${categoryId}"]`);
+        if (!button) return;
+
+        const existingError = document.querySelector('.calendar-container .alert');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        if (categoryId === 'all') {
             selectedCategories.clear();
-            document.querySelector('[data-category="all"]').classList.remove('active');
-        }
-
-        const categoryIdStr = categoryId.toString();
-        if (selectedCategories.has(categoryIdStr)) {
-            selectedCategories.delete(categoryIdStr);
-            button.classList.remove('active');
-        } else {
-            selectedCategories.add(categoryIdStr);
+            selectedCategories.add('all');
+            document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
             button.classList.add('active');
+        } else {
+            if (selectedCategories.has('all')) {
+                selectedCategories.clear();
+                document.querySelector('[data-category="all"]').classList.remove('active');
+            }
+
+            const categoryIdStr = categoryId.toString();
+            if (selectedCategories.has(categoryIdStr)) {
+                selectedCategories.delete(categoryIdStr);
+                button.classList.remove('active');
+            } else {
+                selectedCategories.add(categoryIdStr);
+                button.classList.add('active');
+            }
+        }
+
+        fetchActivities();
+    }
+
+
+    function updateCalendarHeader() {
+        const daysContainer = document.querySelector('.calendar-days');
+        if (!daysContainer) return;
+
+        const days = {
+            'month': ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+            'week': ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+            'business-week': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
+            'day': [currentDate.toLocaleString('fr-FR', { weekday: 'long' })]
+        };
+
+        daysContainer.innerHTML = '';
+        days[currentView].forEach(day => {
+            const div = document.createElement('div');
+            div.textContent = day;
+            daysContainer.appendChild(div);
+        });
+
+        const monthYear = currentDate.toLocaleString('fr-FR', {
+            month: 'long',
+            year: 'numeric'
+        });
+        document.getElementById('currentMonth').textContent =
+            monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
+    }
+
+    function updateCalendar() {
+        const calendarGrid = document.querySelector('.calendar-grid');
+        if (!calendarGrid) return;
+
+        calendarGrid.className = `calendar-grid ${currentView}`;
+        updateCalendarHeader();
+
+        const calendarDates = document.getElementById('calendarDates');
+        if (!calendarDates) return;
+
+        calendarDates.innerHTML = '';
+
+        switch (currentView) {
+            case 'month':
+                renderMonthView();
+                break;
+            case 'week':
+                renderWeekView();
+                break;
+            case 'business-week':
+                renderBusinessWeekView();
+                break;
+            case 'day':
+                renderDayView();
+                break;
+        }
+
+        fetchActivities();
+    }
+
+    function renderMonthView() {
+        const calendarDates = document.getElementById('calendarDates');
+        calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        for (let i = 0; i < firstDay.getDay(); i++) {
+            calendarDates.appendChild(createDateCell());
+        }
+
+        for (let date = 1; date <= lastDay.getDate(); date++) {
+            calendarDates.appendChild(createDateCell(new Date(year, month, date)));
+        }
+
+        const remainingDays = (7 - ((firstDay.getDay() + lastDay.getDate()) % 7)) % 7;
+        for (let i = 0; i < remainingDays; i++) {
+            calendarDates.appendChild(createDateCell());
         }
     }
 
-    fetchActivities();
-}
+    function renderWeekView() {
+        const calendarDates = document.getElementById('calendarDates');
+        calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
 
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
 
-function updateCalendarHeader() {
-    const daysContainer = document.querySelector('.calendar-days');
-    if (!daysContainer) return;
-
-    const days = {
-        'month': ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
-        'week': ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
-        'business-week': ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'],
-        'day': [currentDate.toLocaleString('fr-FR', { weekday: 'long' })]
-    };
-
-    daysContainer.innerHTML = '';
-    days[currentView].forEach(day => {
-        const div = document.createElement('div');
-        div.textContent = day;
-        daysContainer.appendChild(div);
-    });
-
-    const monthYear = currentDate.toLocaleString('fr-FR', {
-        month: 'long',
-        year: 'numeric'
-    });
-    document.getElementById('currentMonth').textContent =
-        monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
-}
-
-function updateCalendar() {
-    const calendarGrid = document.querySelector('.calendar-grid');
-    if (!calendarGrid) return;
-
-    calendarGrid.className = `calendar-grid ${currentView}`;
-    updateCalendarHeader();
-
-    const calendarDates = document.getElementById('calendarDates');
-    if (!calendarDates) return;
-
-    calendarDates.innerHTML = '';
-
-    switch (currentView) {
-        case 'month':
-            renderMonthView();
-            break;
-        case 'week':
-            renderWeekView();
-            break;
-        case 'business-week':
-            renderBusinessWeekView();
-            break;
-        case 'day':
-            renderDayView();
-            break;
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            calendarDates.appendChild(createDateCell(date));
+        }
     }
 
-    fetchActivities();
-}
+    function renderBusinessWeekView() {
+        const calendarDates = document.getElementById('calendarDates');
+        calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
 
-function renderMonthView() {
-    const calendarDates = document.getElementById('calendarDates');
-    calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        const startOfWeek = new Date(currentDate);
+        const day = startOfWeek.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        startOfWeek.setDate(startOfWeek.getDate() + diff);
 
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    for (let i = 0; i < firstDay.getDay(); i++) {
-        calendarDates.appendChild(createDateCell());
+        for (let i = 0; i < 5; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            calendarDates.appendChild(createDateCell(date));
+        }
     }
 
-    for (let date = 1; date <= lastDay.getDate(); date++) {
-        calendarDates.appendChild(createDateCell(new Date(year, month, date)));
+    function renderDayView() {
+        const calendarDates = document.getElementById('calendarDates');
+        calendarDates.style.gridTemplateColumns = '1fr';
+        calendarDates.appendChild(createDateCell(currentDate));
     }
 
-    const remainingDays = (7 - ((firstDay.getDay() + lastDay.getDate()) % 7)) % 7;
-    for (let i = 0; i < remainingDays; i++) {
-        calendarDates.appendChild(createDateCell());
-    }
-}
+    function createDateCell(date) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-date';
 
-function renderWeekView() {
-    const calendarDates = document.getElementById('calendarDates');
-    calendarDates.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        if (date) {
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'date-number';
+            dateDiv.textContent = date.getDate();
+            cell.appendChild(dateDiv);
 
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+            const allDayDiv = document.createElement('div');
+            allDayDiv.className = 'all-day-activities';
+            allDayDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
+            cell.appendChild(allDayDiv);
 
-    for (let i = 0; i < 7; i++) {
-        const date = new Date(startOfWeek);
-        date.setDate(startOfWeek.getDate() + i);
-        calendarDates.appendChild(createDateCell(date));
-    }
-}
+            const timedDiv = document.createElement('div');
+            timedDiv.className = 'timed-activities';
+            timedDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
+            cell.appendChild(timedDiv);
 
-function renderBusinessWeekView() {
-    const calendarDates = document.getElementById('calendarDates');
-    calendarDates.style.gridTemplateColumns = 'repeat(5, 1fr)';
+            // Add quick add button
+            const quickAddButton = document.createElement('button');
+            quickAddButton.className = 'quick-add-button';
+            quickAddButton.innerHTML = '<i class="bi bi-plus"></i>';
+            quickAddButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('quickAddActivityModal'));
+                document.getElementById('quickAddDate').value = date.toISOString().split('T')[0];
+                loadQuickAddFormData(); // Load locations and categories
+                modal.show();
+            });
+            cell.appendChild(quickAddButton);
+        }
 
-    const startOfWeek = new Date(currentDate);
-    const day = startOfWeek.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    startOfWeek.setDate(startOfWeek.getDate() + diff);
-
-    for (let i = 0; i < 5; i++) {
-        const date = new Date(startOfWeek);
-        date.setDate(startOfWeek.getDate() + i);
-        calendarDates.appendChild(createDateCell(date));
-    }
-}
-
-function renderDayView() {
-    const calendarDates = document.getElementById('calendarDates');
-    calendarDates.style.gridTemplateColumns = '1fr';
-    calendarDates.appendChild(createDateCell(currentDate));
-}
-
-function createDateCell(date) {
-    const cell = document.createElement('div');
-    cell.className = 'calendar-date';
-
-    if (date) {
-        const dateDiv = document.createElement('div');
-        dateDiv.className = 'date-number';
-        dateDiv.textContent = date.getDate();
-        cell.appendChild(dateDiv);
-
-        const allDayDiv = document.createElement('div');
-        allDayDiv.className = 'all-day-activities';
-        allDayDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
-        cell.appendChild(allDayDiv);
-
-        const timedDiv = document.createElement('div');
-        timedDiv.className = 'timed-activities';
-        timedDiv.setAttribute('data-date', date.toISOString().split('T')[0]);
-        cell.appendChild(timedDiv);
-
-        // Add quick add button
-        const quickAddButton = document.createElement('button');
-        quickAddButton.className = 'quick-add-button';
-        quickAddButton.innerHTML = '<i class="bi bi-plus"></i>';
-        quickAddButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            const modal = new bootstrap.Modal(document.getElementById('quickAddActivityModal'));
-            document.getElementById('quickAddDate').value = date.toISOString().split('T')[0];
-            loadQuickAddFormData(); // Load locations and categories
-            modal.show();
-        });
-        cell.appendChild(quickAddButton);
+        return cell;
     }
 
-    return cell;
-}
+    function showActivityDetails(activity) {
+        const modal = document.getElementById('activityDetailsModal');
+        if (!modal) return;
 
-function showActivityDetails(activity) {
-    const modal = document.getElementById('activityDetailsModal');
-    if (!modal) return;
-
-    const modalBody = modal.querySelector('.modal-body');
-    modalBody.innerHTML = `
+        const modalBody = modal.querySelector('.modal-body');
+        modalBody.innerHTML = `
             <h4 class="text-white">${activity.title}</h4>
             <div class="activity-details">
                 <p>
@@ -409,73 +436,36 @@ function showActivityDetails(activity) {
             </div>
         `;
 
-    const modalInstance = new bootstrap.Modal(modal);
-    modalInstance.show();
-}
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+    }
 
-const quickAddIsAllDay = document.getElementById('quickAddIsAllDay');
-const quickAddTimeContainer = document.getElementById('quickAddTimeContainer');
-const quickAddEndTimeContainer = document.getElementById('quickAddEndTimeContainer');
-const quickAddIsRecurring = document.getElementById('quickAddIsRecurring');
-const quickAddRecurrenceFields = document.getElementById('quickAddRecurrenceFields');
+    const quickAddIsAllDay = document.getElementById('quickAddIsAllDay');
+    const quickAddTimeContainer = document.getElementById('quickAddTimeContainer');
+    const quickAddEndTimeContainer = document.getElementById('quickAddEndTimeContainer');
+    const quickAddIsRecurring = document.getElementById('quickAddIsRecurring');
+    const quickAddRecurrenceFields = document.getElementById('quickAddRecurrenceFields');
 
-if (quickAddIsAllDay && quickAddTimeContainer && quickAddEndTimeContainer) {
-    quickAddIsAllDay.addEventListener('change', function() {
-        quickAddTimeContainer.style.display = this.checked ? 'none' : 'block';
-        quickAddEndTimeContainer.style.display = this.checked ? 'none' : 'block';
-        if (this.checked) {
-            document.getElementById('quickAddTime').value = '';
-            document.getElementById('quickAddEndTime').value = '';
-        }
-    });
-}
-
-if (quickAddIsRecurring && quickAddRecurrenceFields) {
-    quickAddIsRecurring.addEventListener('change', function() {
-        quickAddRecurrenceFields.style.display = this.checked ? 'block' : 'none';
-        if (!this.checked) {
-            document.getElementById('quickAddRecurrenceType').value = 'daily';
-            document.getElementById('quickAddRecurrenceEndDate').value = '';
-        }
-    });
-}
-
-function shouldDisplayActivity(activity) {
-    const selectedCategories = window.selectedCategories || new Set(['all']);
-    if (selectedCategories.has('all')) return true;
-    if (!activity.category_ids || activity.category_ids.length === 0) return false;
-    return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    let currentDate = new Date();
-    let currentView = 'month';
-    window.selectedCategories = new Set(['all']);
-
-    updateCalendar();
-    loadCategories();
-    loadQuickAddFormData();
-
-    // Navigation button event listeners
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        updateCalendar();
-    });
-
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        updateCalendar();
-    });
-
-    // View switching buttons
-    document.querySelectorAll('[data-view]').forEach(button => {
-        button.addEventListener('click', function() {
-            currentView = this.dataset.view;
-            document.querySelectorAll('[data-view]').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            updateCalendar();
+    if (quickAddIsAllDay && quickAddTimeContainer && quickAddEndTimeContainer) {
+        quickAddIsAllDay.addEventListener('change', function() {
+            quickAddTimeContainer.style.display = this.checked ? 'none' : 'block';
+            quickAddEndTimeContainer.style.display = this.checked ? 'none' : 'block';
+            if (this.checked) {
+                document.getElementById('quickAddTime').value = '';
+                document.getElementById('quickAddEndTime').value = '';
+            }
         });
-    });
+    }
+
+    if (quickAddIsRecurring && quickAddRecurrenceFields) {
+        quickAddIsRecurring.addEventListener('change', function() {
+            quickAddRecurrenceFields.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                document.getElementById('quickAddRecurrenceType').value = 'daily';
+                document.getElementById('quickAddRecurrenceEndDate').value = '';
+            }
+        });
+    }
 });
 
 function formatDate(dateString) {
