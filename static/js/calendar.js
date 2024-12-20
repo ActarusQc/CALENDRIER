@@ -78,12 +78,17 @@ async function fetchActivities() {
         }
         const activities = await response.json();
 
+        // Sort activities by creation date (oldest first to maintain highest z-index)
+        activities.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
         document.querySelectorAll('.all-day-activities, .timed-activities')
             .forEach(container => {
                 container.innerHTML = '';
                 container.style.height = 'auto';
             });
 
+        // Group activities by date for proper stacking
+        const groupedActivities = new Map();
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -93,6 +98,33 @@ async function fetchActivities() {
             let currentDate = new Date(startDate);
             while (currentDate <= endDate) {
                 const dateStr = currentDate.toISOString().split('T')[0];
+                if (!groupedActivities.has(dateStr)) {
+                    groupedActivities.set(dateStr, []);
+                }
+                groupedActivities.get(dateStr).push({
+                    activity,
+                    startDate,
+                    endDate,
+                    isStart: startDate.toDateString() === currentDate.toDateString(),
+                    isEnd: endDate.toDateString() === currentDate.toDateString()
+                });
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        });
+
+        // Render grouped activities
+        groupedActivities.forEach((dateActivities, dateStr) => {
+            // Sort activities by duration (longer events first) and creation date
+            dateActivities.sort((a, b) => {
+                const durationA = a.endDate - a.startDate;
+                const durationB = b.endDate - b.startDate;
+                if (durationA !== durationB) {
+                    return durationB - durationA; // Longer duration first
+                }
+                return new Date(a.activity.created_at) - new Date(b.activity.created_at);
+            });
+
+            dateActivities.forEach(({ activity, startDate, endDate, isStart, isEnd }) => {
                 const container = activity.is_all_day ?
                     document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                     document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
@@ -101,9 +133,7 @@ async function fetchActivities() {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
                     container.appendChild(element);
                 }
-
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
+            });
         });
 
     } catch (error) {
