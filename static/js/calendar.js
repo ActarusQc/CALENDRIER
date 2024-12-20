@@ -46,6 +46,14 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
 
     // Only show content for single-day events or the first day of multi-day events
     if (!isMultiDay || isStart) {
+        // Add time if not all-day event
+        if (!activity.is_all_day && activity.time) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'activity-time';
+            timeDiv.textContent = `${activity.time}${activity.end_time ? ' - ' + activity.end_time : ''}`;
+            contentDiv.appendChild(timeDiv);
+        }
+
         const titleDiv = document.createElement('div');
         titleDiv.className = 'title';
         titleDiv.textContent = activity.title;

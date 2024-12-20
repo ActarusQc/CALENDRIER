@@ -208,15 +208,18 @@
 .activity-content {
     flex: 1;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 2px;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+}
+
+.activity-time {
+    font-size: 0.65rem;
+    opacity: 0.9;
+    margin-bottom: 1px;
 }
 
 .activity-content .title {
-    flex: 1;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -224,7 +227,6 @@
 }
 
 .activity-content .location {
-    max-width: 30%;
     font-size: 0.7rem;
     opacity: 0.9;
     overflow: hidden;
