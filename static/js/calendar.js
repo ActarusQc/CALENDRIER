@@ -528,14 +528,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </p>
                 ${!activity.is_all_day ? `
                     <p>
-                        <strong>Time:</strong> ${activity.time || ''}
+                        <strong>Heure:</strong> ${activity.time || ''}
                         ${activity.end_time ? ` - ${activity.end_time}` : ''}
                     </p>
-                ` : '<p><strong>Time:</strong> All day</p>'}
-                ${activity.location ? `<p><strong>Location:</strong> ${activity.location}</p>` : ''}
+                ` : '<p><strong>Durée:</strong> Toute la journée</p>'}
+                ${activity.location ? `<p><strong>Lieu:</strong> ${activity.location}</p>` : ''}
                 ${activity.notes ? `<p><strong>Notes:</strong> ${activity.notes}</p>` : ''}
                 ${activity.categories && activity.categories.length > 0 ? `
-                    <p><strong>Categories:</strong></p>
+                    <p><strong>Catégories:</strong></p>
                     <div class="d-flex flex-wrap gap-1 mb-3">
                         ${activity.categories.map(category => `
                             <span class="badge" style="background-color: ${category.color}">${category.name}</span>
