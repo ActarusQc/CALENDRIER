@@ -141,7 +141,7 @@
 
 /* Activity Base Styles */
 .activity {
-    margin: 2px 4px;
+    margin: 2px 0;
     padding: var(--activity-padding) 8px;
     min-height: var(--min-activity-height);
     border-radius: 4px;
@@ -178,23 +178,26 @@
     box-sizing: border-box;
     display: flex;
     align-items: center;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin-right: -1px;
+    margin-right: 0 !important;
 }
 
 .activity.multi-day.middle {
-    margin-left: -1px;
-    margin-right: -1px;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    margin-left: -1px;
+    margin-left: 0 !important;
 }
 
 /* Activity Content Styles */
@@ -238,17 +241,11 @@
     position: relative;
 }
 
-
-.all-day-activities .activity:not(:first-child) {
-    margin-left: -1px;
-}
-
 .all-day-activities:has(.activity) {
     min-height: calc(var(--min-activity-height) + 8px);
 }
 
 
-/* Calendar Grid Styles */
 .calendar-grid {
     display: grid;
     gap: 0;
@@ -384,6 +381,7 @@
                 opacity var(--transition-duration) ease;
     box-sizing: border-box;
 }
+
 
 
 .activity.multi-day {
