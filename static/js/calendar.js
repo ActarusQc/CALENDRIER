@@ -84,6 +84,9 @@ async function fetchActivities() {
                 container.style.height = 'auto';
             });
 
+        // Trier les activités par date de création (les plus récentes en premier)
+        activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -99,7 +102,12 @@ async function fetchActivities() {
 
                 if (container) {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
-                    container.appendChild(element);
+                    // Insérer le nouvel élément au début du conteneur
+                    if (container.firstChild) {
+                        container.insertBefore(element, container.firstChild);
+                    } else {
+                        container.appendChild(element);
+                    }
                 }
 
                 currentDate.setDate(currentDate.getDate() + 1);
