@@ -27,40 +27,45 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
 
     if (activity.is_all_day) {
         element.classList.add('all-day');
-        if (isMultiDay) {
-            element.classList.add('multi-day');
-            if (isStart) {
-                element.classList.add('start');
-            } else if (isEnd) {
-                element.classList.add('end');
-            } else {
-                element.classList.add('middle');
-            }
+    }
+
+    if (isMultiDay) {
+        element.classList.add('multi-day');
+        if (isStart) {
+            element.classList.add('start');
+        } else if (isEnd) {
+            element.classList.add('end');
+        } else {
+            element.classList.add('middle');
         }
     }
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'activity-content';
+    // Only show content for single-day events or the first day of multi-day events
+    if (!isMultiDay || isStart) {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'activity-content';
 
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'title';
-    titleDiv.textContent = activity.title;
-    contentDiv.appendChild(titleDiv);
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'title';
+        titleDiv.textContent = activity.title;
+        contentDiv.appendChild(titleDiv);
 
-    if (activity.location) {
-        const locationDiv = document.createElement('div');
-        locationDiv.className = 'location';
-        locationDiv.textContent = activity.location;
-        contentDiv.appendChild(locationDiv);
+        if (activity.location) {
+            const locationDiv = document.createElement('div');
+            locationDiv.className = 'location';
+            locationDiv.textContent = activity.location;
+            contentDiv.appendChild(locationDiv);
+        }
+
+        if (activity.is_recurring) {
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-arrow-repeat ms-1';
+            contentDiv.appendChild(icon);
+        }
+
+        element.appendChild(contentDiv);
     }
 
-    if (activity.is_recurring) {
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-arrow-repeat ms-1';
-        contentDiv.appendChild(icon);
-    }
-
-    element.appendChild(contentDiv);
     element.addEventListener('click', () => showActivityDetails(activity));
     return element;
 }
@@ -94,7 +99,9 @@ async function fetchActivities() {
             let currentDate = new Date(startDate);
             while (currentDate <= endDate) {
                 const dateStr = currentDate.toISOString().split('T')[0];
-                const container = document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`);
+                const container = activity.is_all_day ?
+                    document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
+                    document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
 
                 if (container) {
                     // Initialiser la position pour cette date si nécessaire
@@ -104,15 +111,11 @@ async function fetchActivities() {
 
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
 
-                    // Appliquer le même positionnement vertical pour tous les événements all-day
-                    if (activity.is_all_day) {
+                    // Positionner l'élément à la bonne hauteur
+                    if (activity.is_all_day && element.classList.contains('multi-day')) {
                         const currentPos = datePositions.get(dateStr);
                         element.style.top = `${currentPos * (32 + 4)}px`; // hauteur + marge
                         datePositions.set(dateStr, currentPos + 1);
-
-                        // Ajuster la hauteur du conteneur si nécessaire
-                        const newHeight = (currentPos + 1) * (32 + 4) + 8; // +8 pour le padding
-                        container.style.minHeight = `${newHeight}px`;
                     }
 
                     container.appendChild(element);
