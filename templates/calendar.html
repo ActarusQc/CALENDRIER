@@ -76,9 +76,32 @@
                             <label class="form-check-label" for="quickAddIsAllDay">Toute la journée</label>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="quickAddEndDate" class="form-label">Date de fin</label>
+                        <input type="date" class="form-control" id="quickAddEndDate">
+                    </div>
                     <div class="mb-3" id="quickAddTimeContainer">
-                        <label for="quickAddTime" class="form-label">Heure</label>
+                        <label for="quickAddTime" class="form-label">Heure de début</label>
                         <input type="time" class="form-control" id="quickAddTime">
+                    </div>
+                    <div class="mb-3" id="quickAddEndTimeContainer">
+                        <label for="quickAddEndTime" class="form-label">Heure de fin</label>
+                        <input type="time" class="form-control" id="quickAddEndTime">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickAddLocation" class="form-label">Lieu</label>
+                        <select class="form-control" id="quickAddLocation">
+                            <option value="">Sélectionner un lieu</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Catégories</label>
+                        <div id="quickAddCategories" class="d-flex flex-wrap gap-2">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickAddNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="quickAddNotes" rows="3"></textarea>
                     </div>
                 </form>
             </div>

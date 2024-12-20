@@ -50,6 +50,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function loadQuickAddFormData() {
+        try {
+            // Load locations
+            const locationsResponse = await fetch('/api/locations');
+            const locations = await locationsResponse.json();
+            const locationSelect = document.getElementById('quickAddLocation');
+            locationSelect.innerHTML = '<option value="">Sélectionner un lieu</option>';
+            locations.forEach(location => {
+                locationSelect.innerHTML += `<option value="${location.id}">${location.name}</option>`;
+            });
+
+            // Load categories
+            const categoriesResponse = await fetch('/api/categories');
+            const categories = await categoriesResponse.json();
+            const categoriesContainer = document.getElementById('quickAddCategories');
+            categoriesContainer.innerHTML = '';
+            categories.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'form-check';
+                categoryDiv.innerHTML = `
+                    <input type="checkbox" class="form-check-input" id="quickAdd_category_${category.id}" 
+                           name="quickAddCategories" value="${category.id}">
+                    <label class="form-check-label" for="quickAdd_category_${category.id}">
+                        <span class="color-dot" style="background-color: ${category.color}"></span>
+                        ${category.name}
+                    </label>
+                `;
+                categoriesContainer.appendChild(categoryDiv);
+            });
+        } catch (error) {
+            console.error('Error loading form data:', error);
+            alert('Erreur lors du chargement des données du formulaire');
+        }
+    }
+
     function toggleCategory(categoryId) {
         const button = document.querySelector(`[data-category="${categoryId}"]`);
         if (!button) return;
@@ -335,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 const modal = new bootstrap.Modal(document.getElementById('quickAddActivityModal'));
                 document.getElementById('quickAddDate').value = date.toISOString().split('T')[0];
+                loadQuickAddFormData(); // Load locations and categories
                 modal.show();
             });
             cell.appendChild(quickAddButton);
@@ -388,21 +424,30 @@ function formatDate(dateString) {
     });
 }
 
-// Add the function to save quick add activity
 async function saveQuickAddActivity() {
     try {
         const activity = {
             title: document.getElementById('quickAddTitle').value.trim(),
             date: document.getElementById('quickAddDate').value,
+            end_date: document.getElementById('quickAddEndDate').value || null,
             is_all_day: document.getElementById('quickAddIsAllDay').checked,
             time: document.getElementById('quickAddIsAllDay').checked ? null : document.getElementById('quickAddTime').value,
-            category_ids: [],
-            notes: '',
+            end_time: document.getElementById('quickAddIsAllDay').checked ? null : document.getElementById('quickAddEndTime').value,
+            location_id: document.getElementById('quickAddLocation').value || null,
+            category_ids: Array.from(document.querySelectorAll('input[name="quickAddCategories"]:checked'))
+                .map(cb => parseInt(cb.value)),
+            notes: document.getElementById('quickAddNotes').value.trim(),
             is_recurring: false
         };
 
         if (!activity.title || !activity.date) {
             alert('Veuillez remplir tous les champs obligatoires');
+            return;
+        }
+
+        // Validate end date
+        if (activity.end_date && activity.date > activity.end_date) {
+            alert('La date de fin ne peut pas être antérieure à la date de début');
             return;
         }
 
@@ -424,8 +469,13 @@ async function saveQuickAddActivity() {
 
         // Reset form
         document.getElementById('quickAddTitle').value = '';
+        document.getElementById('quickAddEndDate').value = '';
         document.getElementById('quickAddIsAllDay').checked = false;
         document.getElementById('quickAddTime').value = '';
+        document.getElementById('quickAddEndTime').value = '';
+        document.getElementById('quickAddLocation').value = '';
+        document.getElementById('quickAddNotes').value = '';
+        document.querySelectorAll('input[name="quickAddCategories"]').forEach(cb => cb.checked = false);
 
         // Refresh calendar
         await fetchActivities();
@@ -435,16 +485,18 @@ async function saveQuickAddActivity() {
     }
 }
 
-// Add event listener for all-day checkbox in quick add modal
 document.addEventListener('DOMContentLoaded', function() {
     const quickAddIsAllDay = document.getElementById('quickAddIsAllDay');
     const quickAddTimeContainer = document.getElementById('quickAddTimeContainer');
+    const quickAddEndTimeContainer = document.getElementById('quickAddEndTimeContainer');
 
-    if (quickAddIsAllDay && quickAddTimeContainer) {
+    if (quickAddIsAllDay && quickAddTimeContainer && quickAddEndTimeContainer) {
         quickAddIsAllDay.addEventListener('change', function() {
             quickAddTimeContainer.style.display = this.checked ? 'none' : 'block';
+            quickAddEndTimeContainer.style.display = this.checked ? 'none' : 'block';
             if (this.checked) {
                 document.getElementById('quickAddTime').value = '';
+                document.getElementById('quickAddEndTime').value = '';
             }
         });
     }
