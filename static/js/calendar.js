@@ -90,7 +90,6 @@ async function fetchActivities() {
             if (startA.getTime() !== startB.getTime()) {
                 return startA - startB;
             }
-            // If start dates are equal, sort by duration (longer events first)
             const endA = a.end_date ? new Date(a.end_date) : startA;
             const endB = b.end_date ? new Date(b.end_date) : startB;
             return (endB - startB) - (endA - startA);
@@ -120,10 +119,50 @@ async function fetchActivities() {
             }
         });
 
+        // Uniformiser la hauteur des sections "all-day-activities" par semaine
+        uniformizeAllDayHeights();
+
     } catch (error) {
         console.error('Error:', error);
         showError('Failed to load activities. Please try again later.');
     }
+}
+
+function uniformizeAllDayHeights() {
+    const allDayContainers = document.querySelectorAll('.all-day-activities');
+    const weekMap = new Map();
+
+    // Grouper les conteneurs par semaine
+    allDayContainers.forEach(container => {
+        const date = new Date(container.dataset.date);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay()); // Début de la semaine (dimanche)
+        const weekKey = weekStart.toISOString().split('T')[0];
+
+        if (!weekMap.has(weekKey)) {
+            weekMap.set(weekKey, []);
+        }
+        weekMap.get(weekKey).push(container);
+    });
+
+    // Pour chaque semaine, trouver la hauteur maximale et l'appliquer à tous les conteneurs
+    weekMap.forEach(containers => {
+        let maxHeight = 0;
+
+        // Réinitialiser les hauteurs et trouver le maximum
+        containers.forEach(container => {
+            container.style.height = 'auto';
+            const height = container.offsetHeight;
+            maxHeight = Math.max(maxHeight, height);
+        });
+
+        // Appliquer la hauteur maximale à tous les conteneurs de la semaine
+        if (maxHeight > 0) {
+            containers.forEach(container => {
+                container.style.minHeight = `${maxHeight}px`;
+            });
+        }
+    });
 }
 
 function shouldDisplayActivity(activity) {
