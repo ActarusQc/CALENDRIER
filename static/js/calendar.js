@@ -119,8 +119,6 @@ function shouldDisplayActivity(activity) {
     return activity.category_ids.some(categoryId => selectedCategories.has(categoryId.toString()));
 }
 
-// Move shouldDisplayActivity outside of DOMContentLoaded
-
 
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
@@ -455,7 +453,7 @@ async function saveQuickAddActivity() {
             category_ids: Array.from(document.querySelectorAll('input[name="quickAddCategories"]:checked'))
                 .map(cb => parseInt(cb.value)),
             notes: document.getElementById('quickAddNotes').value.trim(),
-            is_recurring: false
+            is_recurring: document.getElementById('quickAddIsRecurring').checked
         };
 
         if (!activity.title || !activity.date) {
@@ -466,6 +464,12 @@ async function saveQuickAddActivity() {
         // Validate end date
         if (activity.end_date && activity.date > activity.end_date) {
             alert('La date de fin ne peut pas être antérieure à la date de début');
+            return;
+        }
+
+        // Validate end time if not all day
+        if (!activity.is_all_day && activity.time && activity.end_time && activity.time > activity.end_time) {
+            alert('L\'heure de fin ne peut pas être antérieure à l\'heure de début');
             return;
         }
 
@@ -493,6 +497,7 @@ async function saveQuickAddActivity() {
         document.getElementById('quickAddEndTime').value = '';
         document.getElementById('quickAddLocation').value = '';
         document.getElementById('quickAddNotes').value = '';
+        document.getElementById('quickAddIsRecurring').checked = false;
         document.querySelectorAll('input[name="quickAddCategories"]').forEach(cb => cb.checked = false);
 
         // Refresh calendar

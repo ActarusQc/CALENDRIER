@@ -65,39 +65,54 @@
             </div>
             <div class="modal-body">
                 <form id="quickAddActivityForm">
-                    <input type="hidden" id="quickAddDate">
                     <div class="mb-3">
-                        <label for="quickAddTitle" class="form-label">Titre</label>
+                        <label for="quickAddTitle" class="form-label">Entrez le titre de l'activité</label>
                         <input type="text" class="form-control" id="quickAddTitle" required>
                     </div>
                     <div class="mb-3">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="quickAddIsAllDay">
-                            <label class="form-check-label" for="quickAddIsAllDay">Toute la journée</label>
-                        </div>
+                        <label for="quickAddDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="quickAddDate" required>
+                        <div class="form-text text-white-50">Sélectionnez la date de l'activité</div>
                     </div>
                     <div class="mb-3">
                         <label for="quickAddEndDate" class="form-label">Date de fin</label>
                         <input type="date" class="form-control" id="quickAddEndDate">
+                        <div class="form-text text-white-50">Sélectionnez quand l'activité récurrente doit se terminer (Obligatoire)</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="quickAddIsAllDay">
+                            <label class="form-check-label" for="quickAddIsAllDay">Événement toute la journée</label>
+                        </div>
                     </div>
                     <div class="mb-3" id="quickAddTimeContainer">
-                        <label for="quickAddTime" class="form-label">Heure de début</label>
+                        <label for="quickAddTime" class="form-label">Heure</label>
                         <input type="time" class="form-control" id="quickAddTime">
+                        <div class="form-text text-white-50">Sélectionnez l'heure de l'activité (optionnel)</div>
                     </div>
                     <div class="mb-3" id="quickAddEndTimeContainer">
                         <label for="quickAddEndTime" class="form-label">Heure de fin</label>
                         <input type="time" class="form-control" id="quickAddEndTime">
+                        <div class="form-text text-white-50">Sélectionnez l'heure de fin</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="quickAddIsRecurring">
+                            <label class="form-check-label" for="quickAddIsRecurring">Activité récurrente</label>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="quickAddLocation" class="form-label">Lieu</label>
                         <select class="form-control" id="quickAddLocation">
                             <option value="">Sélectionner un lieu</option>
                         </select>
+                        <div class="form-text text-white-50">Sélectionnez le lieu où se déroulera l'activité</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Catégories</label>
                         <div id="quickAddCategories" class="d-flex flex-wrap gap-2">
                         </div>
+                        <div class="form-text text-white-50">Sélectionnez une ou plusieurs catégories pour l'activité</div>
                     </div>
                     <div class="mb-3">
                         <label for="quickAddNotes" class="form-label">Notes</label>
