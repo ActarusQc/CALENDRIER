@@ -334,12 +334,46 @@ document.addEventListener('DOMContentLoaded', function() {
             daysContainer.appendChild(div);
         });
 
-        const monthYear = currentDate.toLocaleString('fr-FR', {
-            month: 'long',
-            year: 'numeric'
-        });
+        let headerText = '';
+        switch (currentView) {
+            case 'day':
+                headerText = currentDate.toLocaleString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                break;
+            case 'week':
+            case 'business-week':
+                const startOfWeek = new Date(currentDate);
+                if (currentView === 'business-week') {
+                    // Ajuster au lundi
+                    const day = startOfWeek.getDay();
+                    const diff = day === 0 ? -6 : 1 - day;
+                    startOfWeek.setDate(startOfWeek.getDate() + diff);
+                } else {
+                    // Ajuster au dimanche
+                    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+                }
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + (currentView === 'business-week' ? 4 : 6));
+
+                // Format différent si même mois ou mois différents
+                if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+                    headerText = `${startOfWeek.getDate()} au ${endOfWeek.getDate()} ${endOfWeek.toLocaleString('fr-FR', { month: 'long', year: 'numeric' })}`;
+                } else {
+                    headerText = `${startOfWeek.getDate()} ${startOfWeek.toLocaleString('fr-FR', { month: 'long' })} au ${endOfWeek.getDate()} ${endOfWeek.toLocaleString('fr-FR', { month: 'long', year: 'numeric' })}`;
+                }
+                break;
+            default: // month view
+                headerText = currentDate.toLocaleString('fr-FR', {
+                    month: 'long',
+                    year: 'numeric'
+                });
+        }
+
         document.getElementById('currentMonth').textContent =
-            monthYear.charAt(0).toUpperCase() + monthYear.slice(1);
+            headerText.charAt(0).toUpperCase() + headerText.slice(1);
     }
 
     function updateCalendar() {
