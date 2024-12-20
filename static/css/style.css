@@ -154,12 +154,7 @@
     flex-direction: column;
     justify-content: flex-start;
     height: auto;
-    transition: height var(--transition-duration) ease,
-                min-height var(--transition-duration) ease,
-                margin var(--transition-duration) ease,
-                padding var(--transition-duration) ease,
-                opacity var(--transition-duration) ease;
-    box-sizing: border-box;
+    transition: all var(--transition-duration) ease;
 }
 
 .activity.filtered {
@@ -171,16 +166,13 @@
     position: absolute;
     left: 0;
     right: -1px;
-    margin: 0 !important;
-    padding: var(--activity-padding) 8px !important;
+    margin: 0;
+    padding: var(--activity-padding) 8px;
     min-height: var(--min-activity-height);
-    height: auto;
+    height: var(--min-activity-height);
     box-sizing: border-box;
-    border: none;
     border-radius: 0;
     z-index: 2;
-    display: flex;
-    align-items: flex-start;
 }
 
 .activity.multi-day.start {
@@ -207,77 +199,70 @@
 /* All-day Activities Container */
 .all-day-activities {
     position: relative;
-    min-height: var(--min-activity-height);
-    padding-bottom: 4px;
-    margin-bottom: 4px;
+    padding: 4px;
     border-bottom: 1px solid #dee2e6;
+    min-height: var(--min-activity-height);
     background-color: rgba(222, 226, 230, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Dynamic height adjustments for multiple events */
+.all-day-activities:has(.activity.multi-day:nth-child(1)) {
+    min-height: calc(1 * (var(--min-activity-height) + 8px));
 }
 
 .all-day-activities:has(.activity.multi-day:nth-child(2)) {
-    min-height: calc(2 * var(--min-activity-height) + 10px);
+    min-height: calc(2 * (var(--min-activity-height) + 8px));
 }
 
 .all-day-activities:has(.activity.multi-day:nth-child(3)) {
-    min-height: calc(3 * var(--min-activity-height) + 14px);
+    min-height: calc(3 * (var(--min-activity-height) + 8px));
 }
 
 .all-day-activities:has(.activity.multi-day:nth-child(4)) {
-    min-height: calc(4 * var(--min-activity-height) + 18px);
+    min-height: calc(4 * (var(--min-activity-height) + 8px));
 }
 
 .all-day-activities:has(.activity.multi-day:nth-child(5)) {
-    min-height: calc(5 * var(--min-activity-height) + 22px);
+    min-height: calc(5 * (var(--min-activity-height) + 8px));
 }
 
-.all-day-activities .activity.multi-day:nth-child(1) { top: 2px; }
-.all-day-activities .activity.multi-day:nth-child(2) { top: calc(var(--min-activity-height) + 6px); }
-.all-day-activities .activity.multi-day:nth-child(3) { top: calc(2 * var(--min-activity-height) + 10px); }
-.all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * var(--min-activity-height) + 14px); }
-.all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * var(--min-activity-height) + 18px); }
+/* Positioning for each multi-day event */
+.all-day-activities .activity.multi-day:nth-child(1) { top: 4px; }
+.all-day-activities .activity.multi-day:nth-child(2) { top: calc(1 * (var(--min-activity-height) + 8px)); }
+.all-day-activities .activity.multi-day:nth-child(3) { top: calc(2 * (var(--min-activity-height) + 8px)); }
+.all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * (var(--min-activity-height) + 8px)); }
+.all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * (var(--min-activity-height) + 8px)); }
 
-/* Timed Activities Container */
-.timed-activities {
-    flex: 1;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    position: relative;
-    height: auto;
-    min-height: 60px;
-    overflow: visible;
-    z-index: 1;
-}
-
-/* Activity Content Styles */
+/* Activity Content */
 .activity-content {
     width: 100%;
     overflow: hidden;
-    padding: 2px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .activity-content .title {
     font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     line-height: 1.2;
 }
 
 .activity-content .location {
     font-size: 0.7rem;
     opacity: 0.9;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     line-height: 1.1;
 }
 
-/* Calendar Grid Styles */
+/* Calendar Container and Grid */
+.calendar-container {
+    margin: 20px 0;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
 .calendar-grid {
     display: grid;
     gap: 0;
