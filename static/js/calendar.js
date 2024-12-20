@@ -78,16 +78,12 @@ async function fetchActivities() {
         }
         const activities = await response.json();
 
-        // Sort activities by date (older dates first)
-        activities.sort((a, b) => new Date(a.date) - new Date(b.date));
-
         document.querySelectorAll('.all-day-activities, .timed-activities')
             .forEach(container => {
                 container.innerHTML = '';
+                container.style.height = 'auto';
             });
 
-        // Group activities by date
-        const groupedActivities = new Map();
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -97,21 +93,6 @@ async function fetchActivities() {
             let currentDate = new Date(startDate);
             while (currentDate <= endDate) {
                 const dateStr = currentDate.toISOString().split('T')[0];
-                if (!groupedActivities.has(dateStr)) {
-                    groupedActivities.set(dateStr, []);
-                }
-                groupedActivities.get(dateStr).push({
-                    activity,
-                    startDate,
-                    endDate
-                });
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-        });
-
-        // Render activities for each date
-        groupedActivities.forEach((dateActivities, dateStr) => {
-            dateActivities.forEach(({ activity, startDate, endDate }) => {
                 const container = activity.is_all_day ?
                     document.querySelector(`div.all-day-activities[data-date="${dateStr}"]`) :
                     document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
@@ -120,7 +101,9 @@ async function fetchActivities() {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
                     container.appendChild(element);
                 }
-            });
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
         });
 
     } catch (error) {
