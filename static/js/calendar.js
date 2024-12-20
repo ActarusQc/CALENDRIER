@@ -75,20 +75,21 @@ async function fetchActivities() {
             container.innerHTML = '';
         });
 
-        // Sort activities by date, duration, and all-day status
+        // Sort activities by start date, then duration, then all-day status
         activities.sort((a, b) => {
-            // Sort by start date first
             const aStart = new Date(a.date);
             const bStart = new Date(b.date);
+            const aEnd = a.end_date ? new Date(a.end_date) : aStart;
+            const bEnd = b.end_date ? new Date(b.end_date) : bStart;
+            const aDuration = aEnd - aStart;
+            const bDuration = bEnd - bStart;
+
+            // Sort by start date first
             if (aStart.getTime() !== bStart.getTime()) {
                 return aStart - bStart;
             }
 
             // Then by duration (longer events first)
-            const aEnd = a.end_date ? new Date(a.end_date) : aStart;
-            const bEnd = b.end_date ? new Date(b.end_date) : bStart;
-            const aDuration = aEnd - aStart;
-            const bDuration = bEnd - bStart;
             if (aDuration !== bDuration) {
                 return bDuration - aDuration;
             }
