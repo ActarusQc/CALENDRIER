@@ -181,7 +181,6 @@
     z-index: 2;
     display: flex;
     align-items: flex-start;
-    padding: 4px 8px !important;
 }
 
 .activity.multi-day.start {
@@ -237,7 +236,6 @@
 .all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * var(--min-activity-height) + 14px); }
 .all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * var(--min-activity-height) + 18px); }
 
-
 /* Timed Activities Container */
 .timed-activities {
     flex: 1;
@@ -283,7 +281,7 @@
 .calendar-grid {
     display: grid;
     gap: 0;
-    background-color: white; /* Changed background color to white */
+    background-color: white;
     border: 1px solid #dee2e6;
 }
 
@@ -308,7 +306,7 @@
     grid-template-columns: repeat(7, 1fr);
     background-color: white;
     min-height: 600px;
-    border-top: 1px solid #dee2e6; /* Added border-top */
+    border-top: 1px solid #dee2e6;
 }
 
 .business-week .calendar-days,
