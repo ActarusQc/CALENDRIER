@@ -84,11 +84,8 @@ async function fetchActivities() {
                 container.style.height = 'auto';
             });
 
-        // Trier les activités par date de création (les plus anciennes en premier)
-        activities.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-        // Garder une trace de la position verticale pour chaque date
-        const datePositions = new Map();
+        // Trier les activités par date de création (les plus récentes en premier)
+        activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
@@ -104,21 +101,13 @@ async function fetchActivities() {
                     document.querySelector(`div.timed-activities[data-date="${dateStr}"]`);
 
                 if (container) {
-                    // Initialiser la position pour cette date si nécessaire
-                    if (!datePositions.has(dateStr)) {
-                        datePositions.set(dateStr, 0);
-                    }
-
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
-
-                    // Positionner l'élément à la bonne hauteur
-                    if (activity.is_all_day && element.classList.contains('multi-day')) {
-                        const currentPos = datePositions.get(dateStr);
-                        element.style.top = `${currentPos * (32 + 4)}px`; // hauteur + marge
-                        datePositions.set(dateStr, currentPos + 1);
+                    // Insérer le nouvel élément au début du conteneur
+                    if (container.firstChild) {
+                        container.insertBefore(element, container.firstChild);
+                    } else {
+                        container.appendChild(element);
                     }
-
-                    container.appendChild(element);
                 }
 
                 currentDate.setDate(currentDate.getDate() + 1);
