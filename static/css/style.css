@@ -166,67 +166,67 @@
 
 /* Multi-day Activity Styles */
 .activity.multi-day {
-    position: absolute;
-    left: 0;
-    right: -1px;
-    margin: 0 !important;
-    padding: var(--activity-padding) 8px !important;
+    margin: 2px 0;
+    padding: var(--activity-padding) 8px;
     min-height: var(--min-activity-height);
-    height: var(--min-activity-height);  /* Fixed height */
+    height: var(--min-activity-height);
     box-sizing: border-box;
     border: none;
     border-radius: 0;
     z-index: 2;
     display: flex;
     align-items: center;
+    position: relative;
+    width: 100%;
 }
 
 .activity.multi-day.start {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    z-index: 3;
+    margin-left: 0;
 }
 
 .activity.multi-day.middle {
     border-radius: 0;
-    left: -1px;
-    right: -1px;
-    z-index: 2;
+    margin-left: -1px;
+    margin-right: -1px;
 }
 
 .activity.multi-day.end {
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
-    left: -1px;
-    right: 0;
-    z-index: 2;
+    margin-right: 0;
+    margin-left: -1px;
 }
 
 /* Activity Content Styles */
 .activity-content {
     width: 100%;
     overflow: hidden;
-    padding: 2px 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 8px;
 }
 
 .activity-content .title {
     font-weight: 500;
-    white-space: nowrap;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.2;
 }
 
 .activity-content .location {
     font-size: 0.7rem;
     opacity: 0.9;
-    white-space: nowrap;
+    margin: 0;
+    max-width: 30%;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.1;
 }
 
 /* Container Styles */
@@ -234,19 +234,27 @@
     padding: 4px;
     border-bottom: 1px solid #dee2e6;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 0;
     position: relative;
-    min-height: 32px;
+    min-height: var(--min-activity-height);
     height: auto;
     background-color: #f8f9fa;
-    transition: height var(--transition-duration) ease;
+    overflow: visible;
 }
 
-.all-day-activities.has-events {
-    min-height: fit-content;
-    padding-bottom: 8px;
+
+/* Ensure proper spacing between activities */
+.all-day-activities .activity:not(:first-child) {
+    margin-left: -1px;
 }
+
+/* Handle multiple events */
+.all-day-activities:has(.activity) {
+    min-height: calc(var(--min-activity-height) + 8px);
+}
+
 
 /* Calendar Grid Styles */
 .calendar-grid {
@@ -430,73 +438,6 @@
     margin-bottom: 4px;
     border-bottom: 1px solid #dee2e6;
     background-color: rgba(222, 226, 230, 0.2);
-}
-
-/* Dynamic container height based on number of events */
-.all-day-activities:has(.activity.multi-day:nth-child(1)) {
-    min-height: calc(var(--min-activity-height) + 8px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(2)) {
-    min-height: calc(2 * var(--min-activity-height) + 12px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(3)) {
-    min-height: calc(3 * var(--min-activity-height) + 16px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(4)) {
-    min-height: calc(4 * var(--min-activity-height) + 20px);
-}
-
-.all-day-activities:has(.activity.multi-day:nth-child(5)) {
-    min-height: calc(5 * var(--min-activity-height) + 24px);
-}
-
-/* Precise positioning for each multi-day event */
-.all-day-activities .activity.multi-day:nth-child(1) { top: 4px; }
-.all-day-activities .activity.multi-day:nth-child(2) { top: calc(var(--min-activity-height) + 8px); }
-.all-day-activities .activity.multi-day:nth-child(3) { top: calc(2 * var(--min-activity-height) + 12px); }
-.all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * var(--min-activity-height) + 16px); }
-.all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * var(--min-activity-height) + 20px); }
-
-/* Activity Content Styles */
-.activity-content {
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.activity.multi-day .activity-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.activity-content .title {
-    font-weight: 500;
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.activity.multi-day .title {
-    flex: 1;
-    min-width: 0;
-}
-
-.activity-content .location {
-    font-size: 0.7rem;
-    opacity: 0.9;
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.activity.multi-day .location {
-    max-width: 30%;
-    min-width: 0;
 }
 
 /* Style pour les activités dans le calendrier */
