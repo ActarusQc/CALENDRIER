@@ -78,15 +78,17 @@ async function fetchActivities() {
         }
         const activities = await response.json();
 
+        // Clear all containers first
         document.querySelectorAll('.all-day-activities, .timed-activities')
             .forEach(container => {
                 container.innerHTML = '';
                 container.style.height = 'auto';
             });
 
-        // Trier les activités par date de création (les plus récentes en premier)
-        activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        // Sort activities by date (oldest first) to maintain consistent stacking order
+        activities.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+        // Process activities by date
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -102,11 +104,11 @@ async function fetchActivities() {
 
                 if (container) {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
-                    // Insérer le nouvel élément au début du conteneur
-                    if (container.firstChild) {
-                        container.insertBefore(element, container.firstChild);
-                    } else {
-                        container.appendChild(element);
+                    container.appendChild(element);
+
+                    // Update container class if it has events
+                    if (container.classList.contains('all-day-activities')) {
+                        container.classList.add('has-events');
                     }
                 }
 

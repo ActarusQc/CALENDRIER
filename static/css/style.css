@@ -194,6 +194,39 @@
     width: 100%;
 }
 
+/* All-day Activities Container */
+.all-day-activities {
+    padding: 4px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    min-height: 32px;
+    height: auto;
+    background-color: #f8f9fa;
+    transition: height var(--transition-duration) ease;
+}
+
+.all-day-activities.has-events {
+    min-height: fit-content;
+    padding-bottom: 8px;
+}
+
+/* Timed Activities Container */
+.timed-activities {
+    flex: 1;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    height: auto;
+    min-height: 60px;
+    overflow: visible;
+    z-index: 1;
+}
+
 /* Activity Content Styles */
 .activity-content {
     width: 100%;
@@ -219,25 +252,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.1;
-}
-
-/* Container Styles */
-.all-day-activities {
-    padding: 4px;
-    border-bottom: 1px solid #dee2e6;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    position: relative;
-    min-height: 32px;
-    height: auto;
-    background-color: #f8f9fa;
-    transition: height var(--transition-duration) ease;
-}
-
-.all-day-activities.has-events {
-    min-height: fit-content;
-    padding-bottom: 8px;
 }
 
 /* Calendar Grid Styles */
