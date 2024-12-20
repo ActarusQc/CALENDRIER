@@ -290,12 +290,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (categoryId === 'all') {
+            // Activer toutes les catégories
             selectedCategories.clear();
             selectedCategories.add('all');
             document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
-                btn.classList.remove('active');
+                btn.classList.add('active');
+                const catId = btn.getAttribute('data-category');
+                if (catId !== 'all') {
+                    selectedCategories.add(catId);
+                }
             });
-            button.classList.add('active');
         } else {
             if (selectedCategories.has('all')) {
                 selectedCategories.clear();
