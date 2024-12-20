@@ -40,28 +40,32 @@ function createActivityElement(activity, dateStr, startDate, endDate) {
         }
     }
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'activity-content';
+    // Only show content for single-day events or the first day of multi-day events
+    if (!isMultiDay || isStart) {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'activity-content';
 
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'title';
-    titleDiv.textContent = activity.title;
-    contentDiv.appendChild(titleDiv);
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'title';
+        titleDiv.textContent = activity.title;
+        contentDiv.appendChild(titleDiv);
 
-    if (activity.location) {
-        const locationDiv = document.createElement('div');
-        locationDiv.className = 'location';
-        locationDiv.textContent = activity.location;
-        contentDiv.appendChild(locationDiv);
+        if (activity.location) {
+            const locationDiv = document.createElement('div');
+            locationDiv.className = 'location';
+            locationDiv.textContent = activity.location;
+            contentDiv.appendChild(locationDiv);
+        }
+
+        if (activity.is_recurring) {
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-arrow-repeat ms-1';
+            contentDiv.appendChild(icon);
+        }
+
+        element.appendChild(contentDiv);
     }
 
-    if (activity.is_recurring) {
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-arrow-repeat ms-1';
-        contentDiv.appendChild(icon);
-    }
-
-    element.appendChild(contentDiv);
     element.addEventListener('click', () => showActivityDetails(activity));
     return element;
 }
@@ -74,26 +78,15 @@ async function fetchActivities() {
         }
         const activities = await response.json();
 
-        // Clear all containers first
         document.querySelectorAll('.all-day-activities, .timed-activities')
             .forEach(container => {
                 container.innerHTML = '';
                 container.style.height = 'auto';
             });
 
-        // Sort activities by start date and then by duration (longer events first)
-        activities.sort((a, b) => {
-            const dateA = new Date(a.date);
-            const dateB = new Date(b.date);
-            if (dateA.getTime() === dateB.getTime()) {
-                const durationA = a.end_date ? (new Date(a.end_date) - dateA) : 0;
-                const durationB = b.end_date ? (new Date(b.end_date) - dateB) : 0;
-                return durationB - durationA; // Longer events first
-            }
-            return dateA - dateB;
-        });
+        // Trier les activités par date de création (les plus récentes en premier)
+        activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-        // Process activities by date
         activities.forEach(activity => {
             if (!shouldDisplayActivity(activity)) return;
 
@@ -109,10 +102,11 @@ async function fetchActivities() {
 
                 if (container) {
                     const element = createActivityElement(activity, dateStr, startDate, endDate);
-                    container.appendChild(element);
-
-                    if (container.classList.contains('all-day-activities')) {
-                        container.classList.add('has-events');
+                    // Insérer le nouvel élément au début du conteneur
+                    if (container.firstChild) {
+                        container.insertBefore(element, container.firstChild);
+                    } else {
+                        container.appendChild(element);
                     }
                 }
 

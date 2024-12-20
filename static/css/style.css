@@ -167,7 +167,7 @@
 /* Multi-day Activity Styles */
 .activity.multi-day {
     position: relative;
-    margin: 2px 0 !important;
+    margin: 0 !important;
     padding: var(--activity-padding) 8px !important;
     border-radius: 0;
     box-sizing: border-box;
@@ -183,7 +183,7 @@
 }
 
 .activity.multi-day.middle {
-    margin: 2px -1px !important;
+    margin: 0 -1px !important;
     width: calc(100% + 2px);
 }
 
@@ -194,42 +194,10 @@
     width: 100%;
 }
 
-/* All-day Activities Container */
-.all-day-activities {
-    padding: 4px;
-    border-bottom: 1px solid #dee2e6;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    position: relative;
-    min-height: 32px;
-    height: auto;
-    background-color: #f8f9fa;
-    transition: height var(--transition-duration) ease;
-}
-
-.all-day-activities.has-events {
-    min-height: fit-content;
-    padding: 4px 4px 8px 4px;
-}
-
-/* Timed Activities Container */
-.timed-activities {
-    flex: 1;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    position: relative;
-    height: auto;
-    min-height: 60px;
-    overflow: visible;
-    z-index: 1;
-}
-
 /* Activity Content Styles */
 .activity-content {
     width: 100%;
+    overflow: hidden;
     padding: 2px 0;
     display: flex;
     flex-direction: column;
@@ -251,6 +219,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.1;
+}
+
+/* Container Styles */
+.all-day-activities {
+    padding: 4px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    min-height: 32px;
+    height: auto;
+    background-color: #f8f9fa;
+    transition: height var(--transition-duration) ease;
+}
+
+.all-day-activities.has-events {
+    min-height: fit-content;
+    padding-bottom: 8px;
 }
 
 /* Calendar Grid Styles */
@@ -335,15 +322,14 @@
     position: relative;
     min-height: 32px;
     height: auto;
-    background-color: rgba(222, 226, 230, 0.2);
+    background-color: #f8f9fa;
     transition: height var(--transition-duration) ease;
 }
 
 .all-day-activities.has-events {
     min-height: fit-content;
-    padding: 4px 4px 8px 4px;
+    padding-bottom: 8px;
 }
-
 
 .all-day-activities .activity {
     margin: 1px 0;
@@ -367,6 +353,28 @@
     min-height: 60px;
     overflow: visible;
     z-index: 1;
+}
+
+.activity {
+    margin: 2px 0;
+    padding: var(--activity-padding) 8px;
+    min-height: var(--min-activity-height);
+    border-radius: 4px;
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: auto;
+    transition: height var(--transition-duration) ease,
+                min-height var(--transition-duration) ease,
+                margin var(--transition-duration) ease,
+                padding var(--transition-duration) ease,
+                opacity var(--transition-duration) ease;
+    box-sizing: border-box;
 }
 
 .activity.multi-day {
@@ -437,6 +445,14 @@
 .all-day-activities .activity.multi-day:nth-child(3) { top: calc(2 * var(--min-activity-height) + 10px); }
 .all-day-activities .activity.multi-day:nth-child(4) { top: calc(3 * var(--min-activity-height) + 14px); }
 .all-day-activities .activity.multi-day:nth-child(5) { top: calc(4 * var(--min-activity-height) + 18px); }
+
+.activity-content {
+    width: 100%;
+    padding: 2px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
 .activity-content {
     width: 100%;
